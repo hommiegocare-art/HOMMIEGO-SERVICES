@@ -333,7 +333,7 @@ export default function Booking() {
                   onClick={handleInitiateBooking}
                   className="w-full h-16 rounded-xl text-xl font-bold shadow-xl shadow-primary/20"
                 >
-                  Confirm & Proceed to Payment
+                  Proceed to Payment
                 </Button>
               </CardContent>
             </Card>
