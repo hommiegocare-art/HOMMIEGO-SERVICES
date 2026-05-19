@@ -124,39 +124,32 @@ export default function ProviderDashboard() {
 
       let finalImageUrl = viewingService.cover_image;
 
-      // 1. Check if a new image needs to be uploaded
+      // 1. Check if a new image needs to be uploaded to Cloudinary
       if (newImageFile) {
-        // A. Delete the old image from the bucket if it exists
-        if (viewingService.cover_image) {
-          // Extract the filename from the URL
-          const oldFileName = viewingService.cover_image.split('/').pop();
-          if (oldFileName) {
-            await supabase.storage
-              .from("service-images")
-              .remove([`services/${oldFileName}`]);
+        // --- NEW CLOUDINARY UPLOAD LOGIC ---
+        const formData = new FormData();
+        formData.append("file", newImageFile);
+        formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+        const response = await fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: "POST",
+            body: formData,
           }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to upload new image to Cloudinary");
         }
 
-        // B. Upload the new image
-        const fileExt = newImageFile.name.split(".").pop();
-        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-        const filePath = `services/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("service-images")
-          .upload(filePath, newImageFile);
-
-        if (uploadError) throw uploadError;
-
-        // C. Get the new Public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from("service-images")
-          .getPublicUrl(filePath);
-
-        finalImageUrl = publicUrl;
+        const data = await response.json();
+        finalImageUrl = data.secure_url; // This is the new link
       }
 
-      // 2. Update the Database
+      // 2. Update the Database Row
+      // (We don't need to manually delete the old file from Cloudinary
+      // because we are just overwriting the link in the database)
       const { error: dbError } = await supabase
         .from("services")
         .update({
@@ -164,20 +157,22 @@ export default function ProviderDashboard() {
           price: editForm.price,
           short_description: editForm.short_description,
           location_name: editForm.location_name,
-          cover_image: finalImageUrl // Save the new URL
+          cover_image: finalImageUrl // Save the new Cloudinary link
         })
         .eq("id", viewingService.id);
 
       if (dbError) throw dbError;
 
-      // 3. Sync UI
+      // 3. Sync the UI so the changes show up immediately
       setServices(prev => prev.map(s =>
         s.id === viewingService.id
           ? { ...s, ...editForm, cover_image: finalImageUrl }
           : s
       ));
 
-      toast({ title: "Updated", description: "Service and image updated successfully" });
+      toast({ title: "Updated", description: "Service details and image updated successfully" });
+
+      // Reset the "Edit Mode"
       setIsEditing(false);
       setViewingService(null);
       setNewImageFile(null);
@@ -247,14 +242,41 @@ export default function ProviderDashboard() {
     }
   };
   const deleteService = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this service?")) return;
-    setDeletingId(id);
-    const { error } = await supabase.from("services").delete().eq("id", id);
-    if (!error) {
-      setServices(s => s.filter(x => x.id !== id));
+    if (!confirm("Are you sure? This will permanently remove this service.")) return;
+
+    try {
+      setDeletingId(id);
+
+      // 1. Delete the images from the 'service_images' table first
+      const { error: imgError } = await supabase
+        .from("service_images")
+        .delete()
+        .eq("service_id", id);
+
+      if (imgError) throw imgError;
+
+      // 2. Now delete the service from the 'services' table
+      const { error: srvError } = await supabase
+        .from("services")
+        .delete()
+        .eq("id", id);
+
+      if (srvError) throw srvError;
+
+      // 3. If we got here, it's actually deleted! Update the UI.
+      setServices(prev => prev.filter(s => s.id !== id));
       toast({ title: "Deleted", description: "Service removed successfully" });
+
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Delete failed",
+        description: "If this service has active bookings, you cannot delete it. Try 'Disabling' it instead.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingId(null);
     }
-    setDeletingId(null);
   };
 
   const toggleService = async (id: string, currentStatus: boolean) => {

@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Camera, User, MapPin, Globe, Mail, Phone, Info } from "lucide-react";
 import { HommieLoader } from "@/components/HommieLoader";
-// --- TYPE INTERFACE ---
+
 interface Profile {
     full_name: string | null;
     username: string | null;
@@ -34,7 +34,6 @@ export default function EditProfile() {
         country: "", city: "", address: "",
     });
 
-    // For Image Uploads
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
@@ -71,26 +70,32 @@ export default function EditProfile() {
         }
     };
 
-    async function uploadAvatar(userId: string) {
+    // --- NEW CLOUDINARY UPLOAD FUNCTION ---
+    async function uploadAvatar() {
+        // If the user didn't pick a new photo, just return the old URL
         if (!avatarFile) return profile.avatar_url;
 
-        const fileExt = avatarFile.name.split(".").pop();
-        const fileName = `${userId}-${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        try {
+            const formData = new FormData();
+            formData.append("file", avatarFile);
+            formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-        // Upload to 'avatars' bucket
-        const { error: uploadError } = await supabase.storage
-            .from("avatars")
-            .upload(filePath, avatarFile);
+            const response = await fetch(
+                `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+                {
+                    method: "POST",
+                    body: formData,
+                }
+            );
 
-        if (uploadError) throw uploadError;
+            if (!response.ok) throw new Error("Cloudinary upload failed");
 
-        // Get Public URL
-        const { data: { publicUrl } } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(filePath);
-
-        return publicUrl;
+            const data = await response.json();
+            return data.secure_url; // This is the new Cloudinary link
+        } catch (error) {
+            console.error("Upload error:", error);
+            throw new Error("Failed to upload profile picture.");
+        }
     }
 
     async function updateProfile() {
@@ -99,15 +104,21 @@ export default function EditProfile() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // 1. Handle Image Upload first if a new one is selected
-            const finalAvatarUrl = await uploadAvatar(user.id);
+            // 1. Upload to Cloudinary (or get old URL)
+            const finalAvatarUrl = await uploadAvatar();
 
-            // 2. Update Database
+            // 2. Update Supabase Database with the new link
             const { error } = await supabase
                 .from("profiles")
                 .update({
-                    ...profile,
-                    avatar_url: finalAvatarUrl,
+                    full_name: profile.full_name,
+                    username: profile.username,
+                    phone_number: profile.phone_number,
+                    bio: profile.bio,
+                    country: profile.country,
+                    city: profile.city,
+                    address: profile.address,
+                    avatar_url: finalAvatarUrl, // Saving the Cloudinary link here
                     updated_at: new Date().toISOString(),
                 })
                 .eq("id", user.id);
@@ -115,6 +126,7 @@ export default function EditProfile() {
             if (error) throw error;
 
             toast({ title: "Success", description: "Your profile has been updated." });
+            setAvatarFile(null); // Clear the file after success
         } catch (err: any) {
             toast({ title: "Update failed", description: err.message, variant: "destructive" });
         } finally {

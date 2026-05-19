@@ -72,23 +72,28 @@ export default function CreateAd() {
   }
 
   async function uploadImage(file: File) {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `ads/${fileName}`;
+    // 1. Create the Form Data
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-    const { error } = await supabase.storage
-      .from("ad-images")
-      .upload(filePath, file);
+    // 2. Send to Cloudinary
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
-    if (error) throw error;
+    if (!response.ok) {
+      throw new Error("Failed to upload ad banner to Cloudinary");
+    }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("ad-images")
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    // 3. Get the URL back
+    const data = await response.json();
+    return data.secure_url;
   }
-
   async function handleCreateAd(e: React.FormEvent) {
     e.preventDefault();
     if (!image) {

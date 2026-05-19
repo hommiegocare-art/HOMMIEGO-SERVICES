@@ -17,7 +17,7 @@ interface Category {
 }
 
 export default function NewService() {
-    const BOOKING_FEE = "200";
+    const BOOKING_FEE = "59";
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -52,19 +52,29 @@ export default function NewService() {
         setImages(newFiles);
         setPreviews(newFiles.map(file => URL.createObjectURL(file)));
     };
-
     const uploadImage = async (file: File) => {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `services/${fileName}`;
+        // 1. Create a "Form" to send the image
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-        const { error } = await supabase.storage.from("service-images").upload(filePath, file);
-        if (error) throw error;
+        // 2. Send it to Cloudinary
+        const response = await fetch(
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+            {
+                method: "POST",
+                body: formData,
+            }
+        );
 
-        const { data: { publicUrl } } = supabase.storage.from("service-images").getPublicUrl(filePath);
-        return publicUrl;
+        if (!response.ok) {
+            throw new Error("Failed to upload image to Cloudinary");
+        }
+
+        // 3. Get the web link (URL) of the uploaded image
+        const data = await response.json();
+        return data.secure_url; // This is the link we save to Supabase
     };
-
     const handleCreateService = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCategory) {

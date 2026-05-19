@@ -212,67 +212,75 @@ export default function Booking() {
       <Navbar />
 
       <div className="pt-32 px-4 container mx-auto max-w-5xl">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 hover:bg-white gap-2">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to service
         </Button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="flex flex-col gap-8 max-w-3xl mx-auto">
           {/* LEFT COLUMN */}
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-              <img src={service.cover_image || ""} className="w-full h-48 object-cover" alt="" />
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <Badge variant="secondary">{service.categories?.name}</Badge>
-                  {/* NEW PRICING TYPE BADGE */}
-                  <Badge variant="outline" className="capitalize bg-primary/5 text-primary border-primary/20">
-                    {service.pricing_type || 'Fixed'} Price
-                  </Badge>
-                </div>
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">{service.title}</h2>
-
-                <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
-                  <MapPin className="w-4 h-4" />
-                  {service.location_name}
-                </div>
-
-                {/* NEW FULL DESCRIPTION SECTION */}
-                <div className="space-y-2 mt-6 pt-6 border-t border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Service Description</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    {service.description || service.short_description || "No detailed description available."}
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-3 mt-6">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-xl gap-2 border-primary/20 text-primary"
-                    onClick={fetchReviews}
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    See all {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-sm rounded-xl bg-emerald-600 text-white p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <ShieldCheck className="w-6 h-6" />
-                <h3 className="font-bold">Secure Payment</h3>
-              </div>
-              <p className="text-sm opacity-90 leading-relaxed">
-                Money is held safely by HommieGo and only released after the service is completed.
-              </p>
-            </Card>
-          </div>
 
           {/* RIGHT COLUMN */}
-          <div className="lg:col-span-2">
+          <div>
+            {/* LEFT COLUMN */}
+            <div className="space-y-6">
+              <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
+                <img src={service.cover_image || ""} className="w-full h-48 object-cover" alt="" />
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-3">
+                    <Badge variant="secondary">{service.categories?.name}</Badge>
+                    {/* NEW PRICING TYPE BADGE */}
+                    <Badge variant="outline" className="capitalize bg-primary/5 text-primary border-primary/20">
+                      {service.pricing_type || 'Fixed'} Price
+                    </Badge>
+                  </div>
+
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">{service.title}</h2>
+
+                  <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+                    <MapPin className="w-4 h-4" />
+                    {service.location_name}
+                  </div>
+
+                  {/* NEW FULL DESCRIPTION SECTION */}
+                  <div className="space-y-2 mt-6 pt-6 border-t border-slate-100">
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Service Description</h3>
+                    <div className="text-sm text-slate-600 leading-7 space-y-3">
+                      {(service.description || service.short_description || "No detailed description available.")
+                        .split(/[\n\.]+/)
+                        .filter((line) => line.trim() !== "")
+                        .map((line, index) => (
+                          <p key={index} className="text-slate-600">
+                            {line.trim()}.
+                          </p>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 mt-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full rounded-xl gap-2 border-primary/20 text-primary"
+                      onClick={fetchReviews}
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      See all {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none shadow-sm rounded-xl bg-emerald-600 text-white p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <ShieldCheck className="w-6 h-6" />
+                  <h3 className="font-bold">Secure Payment</h3>
+                </div>
+                <p className="text-sm opacity-90 leading-relaxed">
+                  Money is held safely by HommieGo and only released after the service is completed.
+                </p>
+              </Card>
+            </div>
             <Card className="border-none shadow-xl rounded-xl bg-white overflow-hidden">
               <CardHeader className="p-8 border-b bg-slate-50/50">
                 <CardTitle className="text-2xl font-black">Schedule Appointment</CardTitle>
