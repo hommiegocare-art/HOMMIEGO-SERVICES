@@ -10,12 +10,12 @@ export default function TermsOfService() {
                 <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-100">
 
                     {/* Header Banner */}
-                    <div className="bg-white p-10 md:p-16 text-black">
+                    <div className="bg-white p-2 md:p-16 text-black">
                         <div className="flex items-center gap-3 mb-6 text-primary">
                             <Gavel className="w-8 h-8" />
                             <span className="font-bold tracking-widest uppercase text-sm">Binding Agreement</span>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">
+                        <h1 className="text-3xl md:text-3xl font-black mb-4 tracking-tight">
                             Terms of Service
                         </h1>
                         <p className="text-slate-400 font-medium max-w-2xl">
@@ -26,7 +26,7 @@ export default function TermsOfService() {
                         </p>
                     </div>
 
-                    <div className="p-8 md:p-16 space-y-12 text-slate-600 leading-relaxed text-lg">
+                    <div className="p-2 md:p-16 space-y-12 text-slate-600 leading-relaxed text-lg">
 
                         <section>
                             <div className="flex items-center gap-3 mb-4">
@@ -38,7 +38,7 @@ export default function TermsOfService() {
                             </p>
                         </section>
 
-                        <section className="bg-slate-50 rounded-3xl p-8 border border-slate-100">
+                        <section className="bg-slate-50 rounded-3xl p-2 border border-slate-100">
                             <div className="flex items-center gap-3 mb-4">
                                 <CreditCard className="text-primary w-6 h-6" />
                                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">2. Payments & M-Pesa</h2>
@@ -107,7 +107,7 @@ export default function TermsOfService() {
                                 For formal legal notices or inquiries regarding these terms, please contact our legal team.
                             </p>
                             <div className="inline-block bg-white/10 backdrop-blur-md px-8 py-4 rounded-2xl border border-white/10">
-                                <p className="font-bold text-lg">hommiegocare@gmail.com</p>
+                                <p className="font-bold text-black text-lg">hommiegocare@gmail.com</p>
                                 <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest">HommieGo Legal Dept.</p>
                             </div>
                         </section>
