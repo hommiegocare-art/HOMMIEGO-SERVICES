@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Loader2, Calendar, User, CreditCard, ChevronRight,
-  ShoppingBag, Star, Download, CheckCircle2
+  ShoppingBag, Star, Download, CheckCircle2, ArrowLeft
 } from "lucide-react";
 import { HommieLoader } from "@/components/HommieLoader";
 
@@ -234,13 +234,21 @@ export default function MyBookings() {
       default: return "bg-slate-100 text-slate-700";
     }
   };
-
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Navbar />
       <div className="pt-32 pb-20 px-4 container mx-auto max-w-4xl">
-        <h1 className="text-4xl font-black text-slate-900 mb-8">My Bookings</h1>
 
+        {/* NEW BACK BUTTON */}
+        <Button
+          variant="ghost"
+          className="mb-4 -ml-2 text-slate-600 gap-2 rounded-xl"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </Button>
+
+        <h1 className="text-4xl font-black text-slate-900 mb-8">My Bookings</h1>
         {loading ? (
           <div className="flex justify-center py-24">  if (loading) return <HommieLoader /></div>
         ) : (
@@ -261,16 +269,27 @@ export default function MyBookings() {
                         <p className="text-xs font-bold text-green-600">{booking.payment_status === 'paid' ? "✓ PAID" : "UNPAID"}</p>
                       </div>
                     </div>
-
                     <div className="mt-6 flex flex-wrap gap-3">
-                      {/* DOWNLOAD BUTTON */}
-                      <Button variant="outline" size="sm" className="rounded-xl gap-2" onClick={() => downloadReceipt(booking)}>
-                        <Download className="w-4 h-4" /> Download Receipt
-                      </Button>
+                      {/* DOWNLOAD BUTTON - Now conditional */}
+                      {booking.payment_status === 'paid' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl gap-2"
+                          onClick={() => downloadReceipt(booking)}
+                        >
+                          <Download className="w-4 h-4" /> Download Receipt
+                        </Button>
+                      )}
 
                       {/* REVIEW BUTTON - Only show if paid */}
                       {booking.payment_status === 'paid' && (
-                        <Button variant="secondary" size="sm" className="rounded-xl gap-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100" onClick={() => openReviewModal(booking)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="rounded-xl gap-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                          onClick={() => openReviewModal(booking)}
+                        >
                           <Star className="w-4 h-4" /> Review Service
                         </Button>
                       )}

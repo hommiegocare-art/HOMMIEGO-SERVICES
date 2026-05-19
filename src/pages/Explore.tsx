@@ -4,6 +4,7 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 import {
 
   // UI & Navigation
@@ -11,7 +12,7 @@ import {
   SlidersHorizontal,
   MapPin,
   X,
-
+  Bookmark,
   // Education
   GraduationCap,
   FileText,
@@ -96,6 +97,9 @@ interface Service {
   price: number | null;
   cover_image: string | null;
   location_name: string | null;
+  like_count?: number;
+  is_liked_by_user?: boolean;
+  is_favorited_by_user?: boolean;
   provider_id: string;
   categories: { id: string; name: string; slug: string; icon?: string | null } | null;
   profiles: { full_name: string | null; city: string | null; country: string | null } | null;
@@ -172,6 +176,9 @@ export default function Explore() {
     // Misc
     Baby,
   };
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterParam = searchParams.get("filter");
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([fetchCategories(), fetchServices()]);
@@ -182,49 +189,43 @@ export default function Explore() {
     const { data } = await supabase.from("categories").select("*").order("name");
     if (data) setCategories(data);
   }
-
   async function fetchServices() {
     setLoading(true);
     try {
-      // 1. Fetch Services, Profiles, AND the new reviews summary
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { data: servicesData, error: sError } = await supabase
         .from("services")
         .select(`
-        id, title, short_description, description, price, cover_image, location_name, provider_id,
+        *,
         categories(id, name, slug, icon),
         profiles:profiles!services_provider_id_fkey(full_name, city, country),
-        service_ratings:reviews(rating)
+        service_ratings:reviews(rating),
+        likes:service_likes(user_id),
+        favorites:service_favorites(user_id)
       `)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
+        .eq("is_active", true);
 
       if (sError) throw sError;
 
-      // 2. Fetch Provider Business Names
-      const providerIds = servicesData?.map(s => s.provider_id) || [];
-      const { data: providerData } = await supabase
-        .from("provider_profiles")
-        .select("user_id, business_name")
-        .in("user_id", providerIds);
-
-      // 3. Merge data and calculate ratings manually if not using a view
       const merged = servicesData?.map((service: any) => {
         const revs = service.service_ratings || [];
-        const avg = revs.length > 0
-          ? revs.reduce((acc: number, r: any) => acc + r.rating, 0) / revs.length
-          : 0;
+        const avg = revs.length > 0 ? revs.reduce((acc: any, r: any) => acc + r.rating, 0) / revs.length : 0;
 
         return {
           ...service,
-          provider_profiles: providerData?.find(p => p.user_id === service.provider_id),
           calculated_rating: avg,
-          calculated_count: revs.length
+          calculated_count: revs.length,
+          // Check interactions
+          like_count: service.likes?.length || 0,
+          is_liked_by_user: service.likes?.some((l: any) => l.user_id === user?.id),
+          is_favorited_by_user: service.favorites?.some((f: any) => f.user_id === user?.id)
         };
       });
 
       setServices(merged || []);
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -232,16 +233,19 @@ export default function Explore() {
   const filteredServices = useMemo(() => {
     return services.filter((s) => {
       const query = searchQuery.toLowerCase();
+
       const matchesSearch = !query ||
         s.title?.toLowerCase().includes(query) ||
-        s.location_name?.toLowerCase().includes(query) ||
-        s.provider_profiles?.business_name?.toLowerCase().includes(query);
+        s.location_name?.toLowerCase().includes(query);
 
       const matchesCategory = !selectedCategory || s.categories?.id === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [services, searchQuery, selectedCategory]);
 
+      // FIX: Change 'is_liked_by_user' to 'is_favorited_by_user'
+      const matchesFavorites = filterParam === "favorites" ? s.is_favorited_by_user : true;
+
+      return matchesSearch && matchesCategory && matchesFavorites;
+    });
+  }, [services, searchQuery, selectedCategory, filterParam]);
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Navbar />
@@ -306,21 +310,70 @@ hover:scale-105 transition-all duration-300 shadow-sm">
           ))}
         </div>
 
-        {/* Results Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-900">
-              {loading ? "Searching..." : `${filteredServices.length} Results`}
-            </h2>
-            {selectedCategory && (
-              <Badge variant="secondary" className="gap-1 pl-2">
-                Category Active
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedCategory(null)} />
-              </Badge>
-            )}
+        {/* Unified Results & Filter Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Total Count */}
+            <div className="flex items-baseline gap-1">
+              <h2 className="text-2xl font-black text-slate-900">
+                {loading ? "..." : filteredServices.length}
+              </h2>
+              <span className="text-slate-500 font-semibold text-sm uppercase tracking-tight">
+                {loading ? "Searching" : "Services Found"}
+              </span>
+            </div>
+
+            {/* Vertical Divider (Desktop Only) */}
+            <div className="hidden md:block h-6 w-px bg-slate-200 mx-2" />
+
+            {/* Active Filter Badges Area */}
+            <div className="flex flex-wrap gap-2">
+              {/* 1. Favorites/Saved Badge */}
+              {filterParam === "favorites" && (
+                <Badge className="bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100 transition-colors gap-2 px-3 py-1.5 rounded-lg border shadow-sm animate-in fade-in slide-in-from-left-2">
+                  <Bookmark className="w-3.5 h-3.5 fill-current" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">My Saved List</span>
+                  <X
+                    className="w-3.5 h-3.5 cursor-pointer hover:bg-rose-200 rounded-full transition-colors"
+                    onClick={() => setSearchParams({})}
+                  />
+                </Badge>
+              )}
+
+              {/* 2. Active Category Badge */}
+              {selectedCategory && (
+                <Badge className="bg-primary/5 text-primary border-primary/10 hover:bg-primary/10 transition-colors gap-2 px-3 py-1.5 rounded-lg border shadow-sm animate-in fade-in slide-in-from-left-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    {categories.find(c => c.id === selectedCategory)?.name || "Category"}
+                  </span>
+                  <X
+                    className="w-3.5 h-3.5 cursor-pointer hover:bg-primary/10 rounded-full transition-colors"
+                    onClick={() => setSelectedCategory(null)}
+                  />
+                </Badge>
+              )}
+
+              {/* 3. Clear All Button (Only shows if any filter is active) */}
+              {(filterParam === "favorites" || selectedCategory) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter"
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSearchParams({});
+                  }}
+                >
+                  Reset Filters
+                </Button>
+              )}
+            </div>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <SlidersHorizontal className="w-4 h-4" /> Filters
+
+          {/* Sorting/Filters Button */}
+          <Button variant="outline" size="sm" className="h-10 rounded-xl px-5 gap-2 border-slate-200 shadow-sm  transition-all font-semibold text-slate-700">
+            <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+            Sort & Filters
           </Button>
         </div>
 
@@ -345,7 +398,10 @@ hover:scale-105 transition-all duration-300 shadow-sm">
                 // EDIT THESE TWO LINES:
                 rating={service.calculated_rating || 0}
                 reviews={service.calculated_count || 0}
-
+                // ... other props ...
+                initialIsLiked={service.is_liked_by_user}
+                initialIsFavorited={service.is_favorited_by_user}
+                likeCount={service.like_count}
                 image={service.cover_image || "https://images.unsplash.com/photo-1521790797524-b2497295b8a0"}
                 name={service.provider_profiles?.business_name || service.profiles?.full_name || "Provider"}
               />

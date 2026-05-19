@@ -220,7 +220,7 @@ export default function Booking() {
           {/* LEFT COLUMN */}
           {/* LEFT COLUMN */}
           <div className="lg:col-span-1 space-y-6">
-            <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden bg-white">
+            <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
               <img src={service.cover_image || ""} className="w-full h-48 object-cover" alt="" />
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-3">
@@ -260,7 +260,7 @@ export default function Booking() {
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm rounded-[2rem] bg-emerald-600 text-white p-6">
+            <Card className="border-none shadow-sm rounded-xl bg-emerald-600 text-white p-6">
               <div className="flex items-center gap-3 mb-4">
                 <ShieldCheck className="w-6 h-6" />
                 <h3 className="font-bold">Secure Payment</h3>
@@ -273,7 +273,7 @@ export default function Booking() {
 
           {/* RIGHT COLUMN */}
           <div className="lg:col-span-2">
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
+            <Card className="border-none shadow-xl rounded-xl bg-white overflow-hidden">
               <CardHeader className="p-8 border-b bg-slate-50/50">
                 <CardTitle className="text-2xl font-black">Schedule Appointment</CardTitle>
               </CardHeader>
@@ -323,7 +323,7 @@ export default function Booking() {
 
                 <Button
                   onClick={handleInitiateBooking}
-                  className="w-full h-16 rounded-[2rem] text-xl font-bold shadow-xl shadow-primary/20"
+                  className="w-full h-16 rounded-xl text-xl font-bold shadow-xl shadow-primary/20"
                 >
                   Confirm & Proceed to Payment
                 </Button>
@@ -334,7 +334,7 @@ export default function Booking() {
       </div>
 
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-[400px] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[400px] rounded-xl p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-emerald-600 p-6 text-white text-center">
             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" className="w-12" alt="Mpesa" />
@@ -413,7 +413,7 @@ export default function Booking() {
 
       {/* NEW: REVIEWS DIALOG */}
       <Dialog open={showReviewsModal} onOpenChange={setShowReviewsModal}>
-        <DialogContent className="sm:max-w-[500px] rounded-[2rem] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Service Reviews</DialogTitle>
             <DialogDescription>
