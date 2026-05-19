@@ -186,10 +186,10 @@ export default function Auth() {
     }
   };
 
-  return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
 
-      {/* 1. SMOOTH BACKGROUND SLIDESHOW LAYER */}
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-start md:justify-center overflow-y-scroll overflow-x-hidden no-scrollbar px-4 py-6 md:py-10">
+      {/* Background */}
       <div className="fixed inset-0 z-0">
         {backgrounds.map((bg, index) => (
           <div
@@ -199,26 +199,23 @@ export default function Auth() {
             style={{ backgroundImage: `url(${bg})` }}
           />
         ))}
-        {/* Dark overlay with slight blur for maximum readability */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
       </div>
 
-      {/* 2. CONTENT LAYER */}
-      <div className="relative z-10 w-full max-w-md">
-
-        {/* HOME BUTTON - Positioned above the card for a cleaner look */}
-        <div className="mb-4 flex justify-start">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="group text-white hover:bg-white/20 transition-all pl-2"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Back to Home
-          </Button>
-        </div>
-
-        <Card className="w-full p-8 shadow-2xl border-none bg-white/95 backdrop-blur-md animate-in fade-in zoom-in duration-500">
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-md pb-24 md:pb-0">
+        <Card className="w-full p-4 md:p-6 shadow-2xl border-none bg-white/95 backdrop-blur-md animate-in fade-in zoom-in duration-500">
+          {/* HOME BUTTON - Positioned above the card for a cleaner look */}
+          <div className="mb-4 flex justify-start">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="group text-black transition-all pl-2"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+              Back to Home
+            </Button>
+          </div>
           <div className="text-center mb-8">
             <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/30">
               <ShieldCheck className="text-white w-8 h-8" />
@@ -233,7 +230,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-5">
+          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-2">
             {isSignUp && (
               <>
                 {/* Role Selection Cards */}
@@ -361,7 +358,7 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="mt-8 text-center border-t border-slate-100 pt-6">
+          <div className="mt-8 text-center border-t border-slate-100 pt-2">
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-sm font-semibold text-primary hover:text-primary/70 transition-colors"

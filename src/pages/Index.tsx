@@ -349,7 +349,6 @@ const Index = () => {
           </div>
         </section>
       )}
-
       {/* CATEGORIES GRID */}
       <section className="py-20">
         <div className="container mx-auto px-4">
@@ -357,14 +356,32 @@ const Index = () => {
             <h2 className="text-3xl font-bold mb-4">Explore by Category</h2>
             <div className="w-20 h-1 bg-primary mx-auto" />
           </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {categories.map((cat, index) => (
-              <Card key={cat.id} className="border-none shadow-sm hover:shadow-xl transition-all cursor-pointer group rounded-3xl overflow-hidden py-8">
+              <Card
+                key={cat.id}
+                onClick={() => {
+                  // IF USER NOT LOGGED IN
+                  if (!session) {
+                    navigate("/auth", {
+                      state: {
+                        message: "Join HommieGo to explore services",
+                      },
+                    });
+                    return;
+                  }
+
+                  // GO TO EXPLORE PAGE WITH CATEGORY
+                  navigate(`/explore?category=${cat.slug}`);
+                }}
+                className="border-none shadow-sm hover:shadow-xl transition-all cursor-pointer group rounded-3xl overflow-hidden py-8"
+              >
                 <CardContent className="flex flex-col items-center">
                   <div
                     className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4
-  group-hover:scale-110 transition-transform
-  ${categoryColors[index % categoryColors.length]}`}
+              group-hover:scale-110 transition-transform
+              ${categoryColors[index % categoryColors.length]}`}
                   >
                     {(() => {
                       const IconComponent = iconMap[cat.icon || ""];
@@ -375,9 +392,11 @@ const Index = () => {
                         <div className="text-2xl"></div>
                       );
                     })()}
-
                   </div>
-                  <p className="font-bold text-slate-800 text-sm">{cat.name}</p>
+
+                  <p className="font-bold text-slate-800 text-sm">
+                    {cat.name}
+                  </p>
                 </CardContent>
               </Card>
             ))}

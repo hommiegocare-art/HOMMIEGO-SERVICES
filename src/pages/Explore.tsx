@@ -179,6 +179,19 @@ export default function Explore() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParam = searchParams.get("filter");
+  const categoryParam = searchParams.get("category");
+  // AUTO SELECT CATEGORY FROM URL
+  useEffect(() => {
+    if (categoryParam && categories.length > 0) {
+      const foundCategory = categories.find(
+        (cat) => cat.slug === categoryParam
+      );
+
+      if (foundCategory) {
+        setSelectedCategory(foundCategory.id);
+      }
+    }
+  }, [categoryParam, categories]);
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([fetchCategories(), fetchServices()]);
@@ -293,7 +306,14 @@ export default function Explore() {
             <Button
               key={cat.id}
               variant={selectedCategory === cat.id ? "default" : "outline"}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+
+                // UPDATE URL
+                setSearchParams({
+                  category: cat.slug,
+                });
+              }}
               className="rounded-full px-6 py-5 whitespace-nowrap gap-2
 hover:scale-105 transition-all duration-300 shadow-sm">
               {(() => {
@@ -348,7 +368,10 @@ hover:scale-105 transition-all duration-300 shadow-sm">
                   </span>
                   <X
                     className="w-3.5 h-3.5 cursor-pointer hover:bg-primary/10 rounded-full transition-colors"
-                    onClick={() => setSelectedCategory(null)}
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setSearchParams({});
+                    }}
                   />
                 </Badge>
               )}
