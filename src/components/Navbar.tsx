@@ -1,0 +1,268 @@
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Menu,
+  LogOut,
+  User,
+  LayoutDashboard,
+  Settings,
+  ChevronDown,
+  Bell
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+export const Navbar = () => {
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  useEffect(() => {
+    checkUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkUser();
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function checkUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setUser(null);
+      setProfile(null);
+      return;
+    }
+    setUser(session.user);
+
+    // Fetch full profile data including avatar and name
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("full_name, avatar_url, role, username, email")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profileData) {
+      setProfile(profileData);
+    }
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+  // Helper to get initials if no avatar
+  const getInitials = (name: string) => {
+    return name ? name.split(" ").map(n => n[0]).join("").toUpperCase() : "U";
+  };
+
+  return (
+    <>
+
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+
+            {/* LOGO SECTION */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <img
+                src="/pwa-192x192.png"
+                alt="Logo"
+                className="w-12 h-12 rounded-xl transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="text-2xl font-black tracking-tight">
+                <span className="text-slate-900">Hommie</span>
+                <span className="text-red-600">Go</span>
+              </span>
+            </Link>
+
+            {/* DESKTOP MENU */}
+            <div className="hidden md:flex items-center gap-8">
+              <Link to="/explore" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">Explore</Link>
+              <Link to="/about" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">About</Link>
+              <Link to="/ads" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">Ads</Link>
+
+              {user ? (
+                <div className="flex items-center gap-4">
+                  {/* Notification Bell (Optional) */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-slate-500"
+                    onClick={() => navigate("/notifications")}
+                  >
+                    <Bell className="w-5 h-5" />
+                  </Button>
+
+                  {/* USER DROPDOWN */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-slate-100 transition-all outline-none">
+                        <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
+                          <AvatarImage src={profile?.avatar_url} />
+                          <AvatarFallback className="bg-primary text-white font-bold">
+                            {getInitials(profile?.full_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="text-left hidden lg:block">
+                          <p className="text-sm font-bold text-slate-900 leading-none">
+                            {profile?.full_name?.split(" ")[0]}
+                          </p>
+                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                            {profile?.role || "User"}
+                          </p>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-slate-400" />
+                      </button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent className="w-56 mt-2 p-2 rounded-2xl shadow-xl border-slate-100" align="end">
+                      <DropdownMenuLabel className="p-3">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-bold leading-none text-slate-900">{profile?.full_name}</p>
+                          <p className="text-xs leading-none text-slate-500">{profile?.email}</p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem onClick={() => navigate(`/dashboard/${profile?.role}`)} className="cursor-pointer rounded-lg p-3">
+                        <LayoutDashboard className="mr-3 h-4 w-4 text-slate-500" />
+                        <span>Dashboard</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => navigate("/my-bookings")} className="cursor-pointer rounded-lg p-3">
+                        <User className="mr-3 h-4 w-4 text-slate-500" />
+                        <span>My Bookings</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer rounded-lg p-3">
+                        <Settings className="mr-3 h-4 w-4 text-slate-500" />
+                        <span>Edit Profile</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setShowLogoutPopup(true)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <LogOut className="mr-3 h-4 w-4" />
+                        <span>Sign Out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link to="/auth" className="text-sm font-bold text-slate-600 px-4 py-2 hover:text-primary">Sign In</Link>
+                  <Link to="/auth?mode=signup">
+                    <Button className="rounded-full px-6 font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+                      Join Now
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* MOBILE MENU BUTTON */}
+            <button className="md:hidden p-2 text-slate-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* MOBILE MENU */}
+          {isMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 space-y-2 animate-in slide-in-from-top-4 duration-200">
+              {user && (
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl mb-4">
+                  <Avatar>
+                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarFallback>{getInitials(profile?.full_name)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-bold text-slate-900">{profile?.full_name}</p>
+                    <p className="text-xs text-slate-500 uppercase">{profile?.role}</p>
+                  </div>
+                </div>
+              )}
+              <Link to="/" className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>Home</Link>
+              <Link to="/explore" className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>Explore</Link>
+              {user ? (
+                <>
+                  <Link to={`/dashboard/${profile?.role}`} className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                  <Link to="/my-bookings" className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>My Bookings</Link>
+                  <Button onClick={handleSignOut} variant="destructive" className="w-full rounded-xl mt-4">Sign Out</Button>
+                </>
+              ) : (
+                <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                  <Button className="w-full rounded-xl">Get Started</Button>
+                </Link>
+              )}
+            </div>
+          )}
+
+        </div>
+
+
+      </nav>
+
+
+      {/* Custom Logout Popup */}
+      {
+        showLogoutPopup && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95">
+
+              {/* Icon */}
+              <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <LogOut className="w-8 h-8 text-red-600" />
+              </div>
+
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-center mb-2">
+                Confirm Logout
+              </h2>
+
+              {/* Description */}
+              <p className="text-muted-foreground text-center mb-6">
+                Are you sure you want to logout from your account?
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setShowLogoutPopup(false)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  className="flex-1 rounded-xl bg-red-600 hover:bg-red-700"
+                  onClick={() => {
+                    setShowLogoutPopup(false);
+                    handleLogout();
+                  }}
+                >
+                  Yes, Logout
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </>
+  );
+};

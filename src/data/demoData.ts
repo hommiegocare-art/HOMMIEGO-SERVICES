@@ -1,0 +1,122 @@
+export const demoProviders = [
+  {
+    id: "demo-1",
+    name: "James Photography",
+    category: "photography",
+    title: "Professional Event Photography",
+    description: "Capturing your special moments with creativity and style. Weddings, corporate events, and celebrations.",
+    price: 15000,
+    location: "Nairobi",
+    rating: 4.8,
+    reviews: 127,
+    image: "https://images.unsplash.com/photo-1554080353-a576cf803bda?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-2",
+    name: "Wambui Car Hire",
+    category: "car_hire",
+    title: "Reliable Car Rental Services",
+    description: "Well-maintained vehicles for hire. Daily, weekly, and monthly rates available. Free delivery within Embu.",
+    price: 3500,
+    location: "Embu",
+    rating: 4.9,
+    reviews: 203,
+    image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-3",
+    name: "Karanja Machines",
+    category: "machine_rental",
+    title: "Construction Equipment Rental",
+    description: "Heavy machinery for all your construction needs. Excavators, bulldozers, and more.",
+    price: 25000,
+    location: "Meru",
+    rating: 4.7,
+    reviews: 89,
+    image: "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-4",
+    name: "Lydia Glam Studio",
+    category: "beauty",
+    title: "Professional Beauty & Makeup",
+    description: "Bridal makeup, special occasions, and beauty consultations. Making you look your absolute best.",
+    price: 5000,
+    location: "Mombasa",
+    rating: 5.0,
+    reviews: 156,
+    image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-5",
+    name: "Victor Tutors",
+    category: "tutoring",
+    title: "Home Tuition Services",
+    description: "Mathematics, Science, and English tutoring for primary and secondary students. Proven results.",
+    price: 2000,
+    location: "Nyeri",
+    rating: 4.9,
+    reviews: 94,
+    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-6",
+    name: "Tina Cleaners",
+    category: "cleaning",
+    title: "Professional Home Cleaning",
+    description: "Deep cleaning, regular maintenance, and post-construction cleanup. Eco-friendly products.",
+    price: 3000,
+    location: "Kisumu",
+    rating: 4.8,
+    reviews: 178,
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-7",
+    name: "Makena Repairs",
+    category: "repair",
+    title: "Home Appliance Repair",
+    description: "Quick and reliable repair services for refrigerators, washing machines, and electronics.",
+    price: 1500,
+    location: "Thika",
+    rating: 4.6,
+    reviews: 112,
+    image: "https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-8",
+    name: "Kim Car Wash",
+    category: "other",
+    title: "Premium Auto Detailing",
+    description: "Interior and exterior car cleaning. Steam cleaning and paint protection available.",
+    price: 1200,
+    location: "Nairobi",
+    rating: 4.7,
+    reviews: 145,
+    image: "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-9",
+    name: "Grace Catering",
+    category: "catering",
+    title: "Event Catering Services",
+    description: "Delicious meals for weddings, corporate events, and parties. Custom menus available.",
+    price: 30000,
+    location: "Nakuru",
+    rating: 4.9,
+    reviews: 167,
+    image: "https://images.unsplash.com/photo-1555244162-803834f70033?w=800&h=600&fit=crop"
+  },
+  {
+    id: "demo-10",
+    name: "Pendo Florists",
+    category: "florist",
+    title: "Wedding & Event Decoration",
+    description: "Beautiful floral arrangements and complete event decoration services.",
+    price: 8000,
+    location: "Kericho",
+    rating: 5.0,
+    reviews: 89,
+    image: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=800&h=600&fit=crop"
+  }
+];
