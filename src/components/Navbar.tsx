@@ -7,7 +7,9 @@ import {
   LayoutDashboard,
   Settings,
   ChevronDown,
-  Bell
+  Bell,
+  Info,
+  Megaphone
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,6 +153,29 @@ export const Navbar = () => {
                       <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="cursor-pointer rounded-lg p-3">
                         <Settings className="mr-3 h-4 w-4 text-slate-500" />
                         <span>Edit Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/ads")}
+                        className="cursor-pointer rounded-lg p-3"
+                      >
+                        <Megaphone className="mr-3 h-4 w-4 text-slate-500" />
+                        <span>Ads</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => navigate("/about")}
+                        className="cursor-pointer rounded-lg p-3"
+                      >
+                        <Info className="mr-3 h-4 w-4 text-slate-500" />
+                        <span>About</span>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => navigate("/notifications")}
+                        className="cursor-pointer rounded-lg p-3"
+                      >
+                        <Bell className="mr-3 h-4 w-4 text-slate-500" />
+                        <span>Notifications</span>
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
