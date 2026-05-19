@@ -131,7 +131,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/explore" element={<Explore />} />
-            <Route path="/dashboard/customer" element={<CustomerDashboard />} />
+            <Route path="/dashboard/client" element={<CustomerDashboard />} />
             <Route path="/dashboard/provider" element={<ProviderDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
             <Route path="/service/:id" element={<ServiceDetail />} />

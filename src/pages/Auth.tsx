@@ -86,7 +86,6 @@ export default function Auth() {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -99,16 +98,23 @@ export default function Auth() {
 
       if (error) throw error;
 
-      const { data: roleData } = await supabase
+      // Fetch the role
+      const { data: roleData, error: roleError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", data.user?.id)
-        .maybeSingle();
+        .single();
+
+      if (roleError) {
+        console.error("Error fetching role:", roleError);
+        // If profile isn't found yet, default to client or show error
+      }
+
       const userRole = roleData?.role || "client";
 
       toast({
         title: "Welcome back!",
-        description: "Successfully signed in to your account.",
+        description: "Successfully signed in.",
       });
 
       navigate(`/dashboard/${userRole}`);
@@ -119,10 +125,9 @@ export default function Auth() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // This MUST run to stop the "Please wait"
     }
   };
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -136,39 +141,25 @@ export default function Auth() {
           data: {
             full_name: fullName,
             role: selectedRole,
+            phone_number: phoneNumber,
+            city: location,
           },
         },
       });
 
       if (error) throw error;
 
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            phone_number: phoneNumber,
-            city: location,
-            role: selectedRole,
-          })
-          .eq("id", data.user.id);
-
-        if (profileError) console.error("Profile update error:", profileError);
-
-        if (selectedRole === "provider") {
-          const trialEndDate = new Date();
-          trialEndDate.setMonth(trialEndDate.getMonth() + 6);
-
-          await supabase
-            .from("subscriptions")
-            .insert({
-              provider_id: data.user.id,
-              plan: "trial",
-              status: "active",
-              end_date: trialEndDate.toISOString(),
-            });
-        }
+      // Check if the user needs to confirm their email
+      if (data.user && data.session === null) {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+        });
+        setIsLoading(false);
+        return; // Stop here, they need to verify email first
       }
 
+      // If we reach here, user is auto-confirmed/logged in
       toast({
         title: "Account created successfully",
         description: "Welcome to HommieGo!",
@@ -185,8 +176,6 @@ export default function Auth() {
       setIsLoading(false);
     }
   };
-
-
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-start md:justify-center overflow-y-scroll overflow-x-hidden no-scrollbar px-4 py-6 md:py-10">
       {/* Background */}
