@@ -6,7 +6,16 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload } from "lucide-react";
+import {
+  User,
+  Briefcase,
+  Mail,
+  Lock,
+  Phone,
+  MapPin,
+  Loader2,
+  ShieldCheck
+} from "lucide-react";
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -17,7 +26,10 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"customer" | "provider">(roleParam === "provider" ? "provider" : "customer");
+  // Updated "customer" to "client"
+  const [selectedRole, setSelectedRole] = useState<"client" | "provider">(
+    roleParam === "provider" ? "provider" : "client"
+  );
   const [phoneNumber, setPhoneNumber] = useState("");
   const [location, setLocation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +46,7 @@ export default function Auth() {
           .select("role")
           .eq("id", session.user.id)
           .maybeSingle();
-        const userRole = roleData?.role || "customer";
+        const userRole = roleData?.role || "client";
         navigate(`/dashboard/${userRole}`);
       }
     };
@@ -49,7 +61,7 @@ export default function Auth() {
           .select("role")
           .eq("id", session.user.id)
           .maybeSingle();
-        const userRole = roleData?.role || "customer";
+        const userRole = roleData?.role || "client";
         navigate(`/dashboard/${userRole}`);
       }
     });
@@ -68,23 +80,22 @@ export default function Auth() {
 
       if (error) throw error;
 
-      // Get user role to redirect correctly
       const { data: roleData } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", data.user?.id)
         .maybeSingle();
-      const userRole = roleData?.role || "customer";
+      const userRole = roleData?.role || "client";
 
       toast({
         title: "Welcome back!",
-        description: "You've successfully signed in.",
+        description: "Successfully signed in to your account.",
       });
 
       navigate(`/dashboard/${userRole}`);
     } catch (error: any) {
       toast({
-        title: "Error signing in",
+        title: "Authentication Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -98,8 +109,6 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -114,10 +123,7 @@ export default function Auth() {
 
       if (error) throw error;
 
-      // Add role to user_roles table and update profile
       if (data.user) {
-
-        // Update profile with additional info
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
@@ -127,14 +133,13 @@ export default function Auth() {
           })
           .eq("id", data.user.id);
 
-        if (profileError) console.error("Error updating profile:", profileError);
+        if (profileError) console.error("Profile update error:", profileError);
 
-        // Create subscription for providers
         if (selectedRole === "provider") {
           const trialEndDate = new Date();
           trialEndDate.setMonth(trialEndDate.getMonth() + 6);
 
-          const { error: subError } = await supabase
+          await supabase
             .from("subscriptions")
             .insert({
               provider_id: data.user.id,
@@ -142,20 +147,18 @@ export default function Auth() {
               status: "active",
               end_date: trialEndDate.toISOString(),
             });
-
-          if (subError) console.error("Error creating subscription:", subError);
         }
       }
 
       toast({
-        title: "Account created!",
+        title: "Account created successfully",
         description: "Welcome to HommieGo!",
       });
 
       navigate(`/dashboard/${selectedRole}`);
     } catch (error: any) {
       toast({
-        title: "Error creating account",
+        title: "Registration Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -165,137 +168,157 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/20 p-4">
-      <Card className="w-full max-w-md p-8 animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4">
+      <Card className="w-full max-w-md p-8 shadow-xl border-t-4 border-t-primary animate-in fade-in zoom-in duration-300">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">S</span>
+          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+            <ShieldCheck className="text-white w-7 h-7" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">
-            {isSignUp ? "Join HommieGo" : "Welcome Back"}
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {isSignUp ? "Create an Account" : "Welcome Back"}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-slate-500 mt-1 text-sm">
             {isSignUp
-              ? "Create your account to get started"
-              : "Sign in to your account"}
+              ? "Join HommieGo to access professional services"
+              : "Enter your credentials to access your dashboard"}
           </p>
         </div>
 
-        <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
+        <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-5">
           {isSignUp && (
             <>
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
+              {/* Role Selection Cards */}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole("client")}
+                  className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${selectedRole === "client"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-slate-100 bg-white hover:border-slate-200"
+                    }`}
+                >
+                  <User className={`w-6 h-6 mb-2 ${selectedRole === "client" ? "text-primary" : "text-slate-400"}`} />
+                  <span className={`text-sm font-semibold ${selectedRole === "client" ? "text-primary" : "text-slate-600"}`}>Client</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole("provider")}
+                  className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${selectedRole === "provider"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-slate-100 bg-white hover:border-slate-200"
+                    }`}
+                >
+                  <Briefcase className={`w-6 h-6 mb-2 ${selectedRole === "provider" ? "text-primary" : "text-slate-400"}`} />
+                  <span className={`text-sm font-semibold ${selectedRole === "provider" ? "text-primary" : "text-slate-600"}`}>Provider</span>
+                </button>
               </div>
 
-              <div>
-                <Label htmlFor="role">Join as</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole("customer")}
-                    className={`p-4 rounded-lg border-2 transition-all ${selectedRole === "customer"
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                      }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-1">👤</div>
-                      <div className="font-semibold">Customer</div>
-                      <div className="text-xs text-muted-foreground">Book services</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRole("provider")}
-                    className={`p-4 rounded-lg border-2 transition-all ${selectedRole === "provider"
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                      }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-1">🧰</div>
-                      <div className="font-semibold">Provider</div>
-                      <div className="text-xs text-muted-foreground">Offer services</div>
-                    </div>
-                  </button>
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-xs font-bold uppercase tracking-wider text-slate-500">Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="fullName"
+                    className="pl-10"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="phoneNumber">Phone Number</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  placeholder="+254 700 000 000"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber" className="text-xs font-bold uppercase tracking-wider text-slate-500">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="phoneNumber"
+                    className="pl-10"
+                    type="tel"
+                    placeholder="+254 700 000 000"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  type="text"
-                  placeholder="Nairobi, Kenya"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                />
+              <div className="space-y-2">
+                <Label htmlFor="location" className="text-xs font-bold uppercase tracking-wider text-slate-500">Location</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input
+                    id="location"
+                    className="pl-10"
+                    placeholder="Nairobi, Kenya"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                  />
+                </div>
               </div>
             </>
           )}
 
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-500">Email Address</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                id="email"
+                className="pl-10"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-500">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                id="password"
+                className="pl-10"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+              />
+            </div>
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-primary to-primary-dark"
+            className="w-full h-11 text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
             disabled={isLoading}
           >
-            {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : isSignUp ? (
+              "Create Account"
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary hover:underline"
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
             {isSignUp
               ? "Already have an account? Sign in"
-              : "Don't have an account? Sign up"}
+              : "Don't have an account? Create one"}
           </button>
         </div>
       </Card>
