@@ -22,6 +22,7 @@ import {
   ShoppingBag, Star, Download, CheckCircle2, ArrowLeft
 } from "lucide-react";
 import { HommieLoader } from "@/components/HommieLoader";
+import { motion } from "framer-motion";
 
 // --- Types ---
 interface Booking {
@@ -239,7 +240,7 @@ export default function MyBookings() {
       <Navbar />
       <div className="pt-32 pb-20 px-4 container mx-auto max-w-4xl">
 
-        {/* NEW BACK BUTTON */}
+        {/* BACK BUTTON */}
         <Button
           variant="ghost"
           className="mb-4 -ml-2 text-slate-600 gap-2 rounded-xl"
@@ -249,48 +250,115 @@ export default function MyBookings() {
         </Button>
 
         <h1 className="text-4xl font-black text-slate-900 mb-8">My Bookings</h1>
-        {loading ? (
-          <div className="flex justify-center py-24">  if (loading) return <HommieLoader /></div>
+
+
+        {bookings.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative w-full h-[450px] md:h-[500px] rounded-xl overflow-hidden shadow-2xl flex items-center justify-center group"
+          >
+            {/* 1. THE BACKGROUND IMAGE */}
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] group-hover:scale-110"
+              style={{ backgroundImage: "url('/background1.png')" }}
+            />
+
+            {/* 2. THE SWEET GRADIENT OVERLAY */}
+            {/* This gradient goes from nearly transparent at the top to a deep slate at the bottom */}
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-slate-900/60 to-slate-900/90" />
+
+            {/* 3. THE CONTENT (Aligned for readability) */}
+            <div className="relative z-10 px-8 text-center flex flex-col items-center">
+
+              {/* Glassmorphism Icon Circle */}
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 flex items-center justify-center mb-6 shadow-xl">
+                <ShoppingBag className="w-10 h-10 text-white" />
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <h2 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
+                  Your journey <br /><span className="text-primary-foreground/80">starts here.</span>
+                </h2>
+
+                <p className="text-slate-200 text-base md:text-lg mb-8 max-w-[280px] mx-auto leading-relaxed opacity-90">
+                  You haven't booked any services yet. Discover top-rated professionals nearby.
+                </p>
+
+                <Button
+                  onClick={() => navigate("/explore")}
+                  size="lg"
+                  className="rounded-2xl h-14 px-10 text-lg font-bold bg-white text-slate-900 hover:bg-slate-100 shadow-xl transition-all active:scale-95 border-none"
+                >
+                  Explore Services
+                </Button>
+              </motion.div>
+            </div>
+
+            {/* Small Decorative Tag */}
+            <div className="absolute top-8 right-8 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full">
+              <span className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">HommieGo Premium</span>
+            </div>
+          </motion.div>
         ) : (
+          /* --- BOOKINGS LIST --- */
           <div className="grid gap-6">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="rounded-[2rem] overflow-hidden border-none shadow-sm bg-white">
+              <Card key={booking.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-sm bg-white hover:shadow-md transition-shadow">
                 <div className="flex flex-col md:flex-row">
-                  <img src={booking.services?.cover_image || ""} className="w-full md:w-48 h-48 object-cover" />
-                  <div className="p-6 flex-1">
-                    <div className="flex justify-between items-start">
+                  {/* Service Image */}
+                  <div className="relative w-full md:w-56 h-48 md:h-auto overflow-hidden">
+                    <img
+                      src={booking.services?.cover_image || "/placeholder.svg"}
+                      className="w-full h-full object-cover"
+                      alt="service"
+                    />
+                  </div>
+
+                  <div className="p-8 flex-1">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
-                        <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
-                        <h3 className="text-xl font-bold mt-2">{booking.services?.title}</h3>
-                        <p className="text-slate-500 text-sm">Provider: {booking.profiles?.full_name}</p>
+                        <Badge className={`${getStatusColor(booking.status)} rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-wider`}>
+                          {booking.status}
+                        </Badge>
+                        <h3 className="text-2xl font-black mt-3 text-slate-900">{booking.services?.title}</h3>
+                        <div className="flex items-center gap-2 mt-1 text-slate-500">
+                          <User className="w-4 h-4" />
+                          <span className="text-sm font-medium">Provider: {booking.profiles?.full_name}</span>
+                        </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xl font-black text-primary">KES {booking.total_amount}</p>
-                        <p className="text-xs font-bold text-green-600">{booking.payment_status === 'paid' ? "✓ PAID" : "UNPAID"}</p>
+                        <p className="text-2xl font-black text-primary">KES {booking.total_amount?.toLocaleString()}</p>
+                        <Badge variant="outline" className={`mt-1 border-none bg-transparent ${booking.payment_status === 'paid' ? "text-green-600" : "text-amber-600"}`}>
+                          {booking.payment_status === 'paid' ? "✓ PAID" : "● PENDING PAYMENT"}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      {/* DOWNLOAD BUTTON - Now conditional */}
+
+                    <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-50">
                       {booking.payment_status === 'paid' && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-xl gap-2"
+                          className="rounded-xl gap-2 font-bold border-slate-200"
                           onClick={() => downloadReceipt(booking)}
                         >
-                          <Download className="w-4 h-4" /> Download Receipt
+                          <Download className="w-4 h-4" /> Receipt
                         </Button>
                       )}
 
-                      {/* REVIEW BUTTON - Only show if paid */}
                       {booking.payment_status === 'paid' && (
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="rounded-xl gap-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                          className="rounded-xl gap-2 bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold border-none"
                           onClick={() => openReviewModal(booking)}
                         >
-                          <Star className="w-4 h-4" /> Review Service
+                          <Star className="w-4 h-4 fill-amber-700" /> Review
                         </Button>
                       )}
                     </div>
@@ -301,7 +369,6 @@ export default function MyBookings() {
           </div>
         )}
       </div>
-
       {/* REVIEW DIALOG */}
       <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
         <DialogContent className="rounded-[2rem] max-w-md">
