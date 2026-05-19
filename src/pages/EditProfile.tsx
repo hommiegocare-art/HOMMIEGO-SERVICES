@@ -137,7 +137,7 @@ export default function EditProfile() {
     if (loading) return <HommieLoader />;
 
     return (
-        <div className="min-h-screen bg-slate-50/50 pb-20">
+        <div className="min-h-screen bg-slate-50/50 pb-24">
             <Navbar />
 
             <div className="max-w-4xl mx-auto pt-32 px-4">

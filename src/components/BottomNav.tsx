@@ -62,7 +62,7 @@ export const BottomNav = () => {
       { icon: Home, label: "Home", path: "/" },
       { icon: Search, label: "Explore", path: "/explore" },
       { icon: PlusCircle, label: "Bookings", path: "/my-bookings" }, // Fixed to point to your new page
-      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/customer" },
+      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/client" },
       { icon: Settings, label: "Profile", path: "/edit-profile" },
     ];
   };
