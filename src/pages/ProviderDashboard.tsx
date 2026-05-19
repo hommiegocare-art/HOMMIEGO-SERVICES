@@ -302,7 +302,7 @@ export default function ProviderDashboard() {
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
+    <div className="min-h-screen bg-slate-100/50 pb-20">
       {/* Header */}
       <nav className="bg-white/80 backdrop-blur-md border-b mb-8 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">

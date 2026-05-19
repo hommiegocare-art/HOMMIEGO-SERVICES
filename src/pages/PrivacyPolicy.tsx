@@ -1,21 +1,30 @@
+"use client";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { Shield, Lock, Eye, Scale, Globe, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Shield, Lock, Eye, Scale, Globe, Mail, ArrowLeft } from "lucide-react";
 
 export default function PrivacyPolicy() {
+    const navigate = useNavigate();
     return (
-        <div className="min-h-screen bg-[#F8FAFC]">
+        <div
+            className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative"
+            style={{ backgroundImage: "url('/background1.png')" }}
+        >
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20">
                 <div className="bg-white rounded-xl shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-100">
-
+                    <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 mt-3 gap-2">
+                        <ArrowLeft className="w-4 h-4" /> Back to service
+                    </Button>
                     {/* Header Banner */}
                     <div className="bg-white p-10 md:p-16 text-black">
                         <div className="flex items-center gap-3 mb-6 text-primary">
                             <Shield className="w-8 h-8" />
                             <span className="font-bold tracking-widest uppercase text-sm">Legal Protection</span>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">
+                        <h1 className="text-3xl md:text-3xl font-black mb-4 tracking-tight">
                             Privacy Policy
                         </h1>
                         <p className="text-slate-400 font-medium italic">
@@ -114,14 +123,14 @@ export default function PrivacyPolicy() {
                                 <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest">Nairobi, Kenya</p>
                             </div>
                         </section>
-
+                        <div className="mt-12 text-center text-slate-400 text-sm">
+                            <p>© {new Date().getFullYear()} HommieGo Inc. All Rights Reserved.</p>
+                            <p className="mt-2 font-medium">Regulated by the Data Protection Act of 2019 (Republic of Kenya).</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-12 text-center text-slate-400 text-sm">
-                    <p>© {new Date().getFullYear()} HommieGo Inc. All Rights Reserved.</p>
-                    <p className="mt-2 font-medium">Regulated by the Data Protection Act of 2019 (Republic of Kenya).</p>
-                </div>
+
             </div>
         </div>
     );

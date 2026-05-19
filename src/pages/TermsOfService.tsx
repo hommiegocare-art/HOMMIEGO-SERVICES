@@ -1,14 +1,23 @@
+"use client";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { Gavel, AlertTriangle, CreditCard, UserCheck, ShieldAlert, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Gavel, AlertTriangle, CreditCard, UserCheck, ShieldAlert, Mail, ArrowLeft } from "lucide-react";
 
 export default function TermsOfService() {
+    const navigate = useNavigate();
     return (
-        <div className="min-h-screen bg-[#F8FAFC]">
+        <div
+            className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative"
+            style={{ backgroundImage: "url('/background2.png')" }}
+        >
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20">
-                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-100">
-
+                <div className="bg-white rounded-xl shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-100">
+                    <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 mt-3 gap-2">
+                        <ArrowLeft className="w-4 h-4" /> Back to service
+                    </Button>
                     {/* Header Banner */}
                     <div className="bg-white p-2 md:p-16 text-black">
                         <div className="flex items-center gap-3 mb-6 text-primary">
@@ -111,14 +120,14 @@ export default function TermsOfService() {
                                 <p className="text-xs text-slate-500 mt-1 uppercase tracking-widest">HommieGo Legal Dept.</p>
                             </div>
                         </section>
-
+                        <div className="mt-12 text-center text-slate-400 text-sm">
+                            <p>© {new Date().getFullYear()} HommieGo Inc. Registered in Kenya.</p>
+                            <p className="mt-2 font-medium italic">"Connecting Kenyans to Quality."</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-12 text-center text-slate-400 text-sm">
-                    <p>© {new Date().getFullYear()} HommieGo Inc. Registered in Kenya.</p>
-                    <p className="mt-2 font-medium italic">"Connecting Kenyans to Quality."</p>
-                </div>
+
             </div>
         </div>
     );
