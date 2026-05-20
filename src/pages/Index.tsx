@@ -339,23 +339,35 @@ const Index = () => {
                     }`}
                 >
                   <img src={ad.image_url} className="w-full h-full object-cover" alt="" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center p-12">
+
+                  {/* ADD z-20 here to ensure the content is above the image layer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center p-12 z-20">
                     <div className="max-w-md text-white">
-                      <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase mb-4 inline-block">Special Offer</span>
+                      <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase mb-4 inline-block">
+                        Special Offer
+                      </span>
                       <h2 className="text-4xl font-bold mb-4">{ad.title}</h2>
                       <p className="text-lg text-white/80 mb-6">{ad.caption}</p>
 
                       <Button
                         size="lg"
-                        className="rounded-full px-8 bg-white text-slate-900 hover:bg-slate-100"
-                        onClick={() => {
+                        // Add relative and a high z-index to the button itself
+                        className="relative z-30 rounded-full px-8 bg-white text-slate-900 hover:bg-slate-100 active:scale-95 transition-transform"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevents the carousel from "stealing" the click
+
                           const target = ad.link?.trim();
                           if (!target) {
                             navigate("/ads");
-                          } else if (target.startsWith("http")) {
+                            return;
+                          }
+
+                          if (target.startsWith("http")) {
                             window.open(target, "_blank", "noopener,noreferrer");
                           } else {
-                            navigate(target.startsWith("/") ? target : `/${target}`);
+                            // Standardize the path to ensure it navigates correctly
+                            const path = target.startsWith("/") ? target : `/${target}`;
+                            navigate(path);
                           }
                         }}
                       >
@@ -365,7 +377,7 @@ const Index = () => {
                   </div>
                 </div>
               ))}
-              <div className="absolute bottom-6 right-6 z-20 flex gap-2">
+              <div className="absolute bottom-6 right-6 z-40 flex gap-2">
                 <Button size="icon" variant="secondary" onClick={() => setCurrentAdIndex(p => (p - 1 + ads.length) % ads.length)} className="rounded-full bg-white/10 border-white/20 backdrop-blur-md text-white hover:bg-white/20"><ChevronLeft /></Button>
                 <Button size="icon" variant="secondary" onClick={() => setCurrentAdIndex(p => (p + 1) % ads.length)} className="rounded-full bg-white/10 border-white/20 backdrop-blur-md text-white hover:bg-white/20"><ChevronRight /></Button>
               </div>

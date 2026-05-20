@@ -15,7 +15,8 @@ import {
   Compass,
   Home,
   CalendarCheck,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,13 @@ export const Navbar = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false); // Added for animation
+
+  // Function to handle refresh
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    window.location.reload();
+  };
   useEffect(() => {
     checkUser();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
@@ -99,6 +107,15 @@ export const Navbar = () => {
 
             {/* DESKTOP MENU */}
             <div className="hidden md:flex items-center gap-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                className="flex items-center gap-2 text-slate-500 hover:text-primary"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span className="text-xs font-medium">Refresh</span>
+              </Button>
               <Link to="/" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
                 <Home size={20} />
                 <span>Home</span>
@@ -212,9 +229,26 @@ export const Navbar = () => {
             </div>
 
             {/* MOBILE MENU BUTTON */}
-            <button className="md:hidden p-2 text-slate-600" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              <Menu className="w-6 h-6" />
-            </button>
+
+            <div className="flex items-center gap-2 md:hidden">
+              {/* REFRESH BUTTON (Beside Menu for Phone) */}
+              <button
+                className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                onClick={handleRefresh}
+                aria-label="Refresh page"
+              >
+                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+
+              {/* MOBILE MENU BUTTON */}
+              <button
+                className="p-2 text-slate-600 hover:bg-slate-100 rounded-full"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </div>
+
           </div>
 
           {/* MOBILE MENU */}
@@ -233,6 +267,7 @@ export const Navbar = () => {
                   </div>
                 </div>
               )}
+              {/* REFRESH BUTTON (Beside Home for Laptop) */}
 
               <Link to="/" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
                 <Home size={20} />
@@ -293,7 +328,7 @@ export const Navbar = () => {
         </div>
 
 
-      </nav>
+      </nav >
 
 
       {/* Custom Logout Popup */}
