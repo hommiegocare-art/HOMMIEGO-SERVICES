@@ -242,7 +242,7 @@ export default function ClientDashboard() {
             {discoveryImages.map((img, index) => (
               <div
                 key={img}
-                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ease-in-out ${index === bgIndex ? "opacity-100 scale-105" : "opacity-0 scale-100"
+                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2s]] ease-in-out ${index === bgIndex ? "opacity-100 scale-105" : "opacity-0 scale-100"
                   }`}
                 style={{
                   backgroundImage: `url(${img})`,

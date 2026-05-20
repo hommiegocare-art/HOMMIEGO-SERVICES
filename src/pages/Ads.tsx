@@ -206,11 +206,12 @@ export default function CreateAd() {
                       <Label htmlFor="link" className="text-base font-bold">External Link (Optional)</Label>
                       <Input
                         id="link"
-                        placeholder="https://yourwebsite.com"
+                        placeholder="https://yourwebsite.com or /explore" // Added /explore as a hint
                         value={link}
                         onChange={(e) => setLink(e.target.value)}
                         className="h-12 rounded-xl"
                       />
+                      <p className="text-[10px] text-slate-400 italic">Include http:// for external websites</p>
                     </div>
                   </div>
 

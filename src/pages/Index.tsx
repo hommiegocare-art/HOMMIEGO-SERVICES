@@ -324,19 +324,43 @@ const Index = () => {
       </section>
 
       {/* AD CAROUSEL / PROMOTIONS */}
+      {/* AD CAROUSEL / PROMOTIONS */}
       {ads.length > 0 && (
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="relative h-[450px] md:h-[450px] rounded-xl overflow-hidden group shadow-xl">
               {ads.map((ad, i) => (
-                <div key={ad.id} className={`absolute inset-0 transition-all duration-1000 transform ${i === currentAdIndex ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}>
+                <div
+                  key={ad.id}
+                  className={`absolute inset-0 transition-all duration-1000 transform
+      ${i === currentAdIndex
+                      ? "opacity-100 scale-100 z-10 pointer-events-auto"
+                      : "opacity-0 scale-105 z-0 pointer-events-none"
+                    }`}
+                >
                   <img src={ad.image_url} className="w-full h-full object-cover" alt="" />
                   <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center p-12">
                     <div className="max-w-md text-white">
                       <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase mb-4 inline-block">Special Offer</span>
                       <h2 className="text-4xl font-bold mb-4">{ad.title}</h2>
                       <p className="text-lg text-white/80 mb-6">{ad.caption}</p>
-                      <Button size="lg" className="rounded-full px-8 bg-white text-slate-900 hover:bg-slate-100">Claim Now</Button>
+
+                      <Button
+                        size="lg"
+                        className="rounded-full px-8 bg-white text-slate-900 hover:bg-slate-100"
+                        onClick={() => {
+                          const target = ad.link?.trim();
+                          if (!target) {
+                            navigate("/ads");
+                          } else if (target.startsWith("http")) {
+                            window.open(target, "_blank", "noopener,noreferrer");
+                          } else {
+                            navigate(target.startsWith("/") ? target : `/${target}`);
+                          }
+                        }}
+                      >
+                        Claim Now
+                      </Button>
                     </div>
                   </div>
                 </div>

@@ -183,7 +183,7 @@ export default function Auth() {
         {backgrounds.map((bg, index) => (
           <div
             key={bg}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2000ms] ease-in-out ${index === currentBg ? "opacity-100" : "opacity-0"
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2s]] ease-in-out ${index === currentBg ? "opacity-100" : "opacity-0"
               }`}
             style={{ backgroundImage: `url(${bg})` }}
           />

@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+
 import {
   Menu,
   LogOut,
@@ -98,6 +99,10 @@ export const Navbar = () => {
 
             {/* DESKTOP MENU */}
             <div className="hidden md:flex items-center gap-8">
+              <Link to="/" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Home size={20} />
+                <span>Home</span>
+              </Link>
               <Link to="/explore" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">Explore</Link>
               <Link to="/about" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">About</Link>
               <Link to="/ads" className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors">Ads</Link>

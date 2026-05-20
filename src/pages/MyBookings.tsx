@@ -9,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
-
 import {
   Dialog,
   DialogContent,
@@ -260,7 +259,7 @@ export default function MyBookings() {
           >
             {/* 1. THE BACKGROUND IMAGE */}
             <div
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] group-hover:scale-110"
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s]] group-hover:scale-110"
               style={{ backgroundImage: "url('/background1.png')" }}
             />
 
