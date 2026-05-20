@@ -9,7 +9,12 @@ import {
   ChevronDown,
   Bell,
   Info,
-  Megaphone
+  Megaphone,
+  UserPen,
+  Compass,
+  Home,
+  CalendarCheck,
+  ArrowRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +148,7 @@ export const Navbar = () => {
                       <DropdownMenuItem onClick={() => navigate(`/dashboard/${profile?.role}`)} className="cursor-pointer rounded-lg p-3">
                         <LayoutDashboard className="mr-3 h-4 w-4 text-slate-500" />
                         <span>Dashboard</span>
+
                       </DropdownMenuItem>
 
                       <DropdownMenuItem onClick={() => navigate("/my-bookings")} className="cursor-pointer rounded-lg p-3">
@@ -221,17 +227,58 @@ export const Navbar = () => {
                   </div>
                 </div>
               )}
-              <Link to="/" className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>Home</Link>
-              <Link to="/explore" className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>Explore</Link>
+
+              <Link to="/" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Home size={20} />
+                <span>Home</span>
+              </Link>
+
+              <Link to="/explore" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Compass size={20} />
+                <span>Explore</span>
+              </Link>
+
+              <Link to="/edit-profile" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <UserPen size={20} />
+                <span>Edit Profile</span>
+              </Link>
+
+              <Link to="/ads" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Megaphone size={20} />
+                <span>Ads</span>
+              </Link>
+
+              <Link to="/notifications" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Bell size={20} />
+                <span>Notifications</span>
+              </Link>
+
+              <Link to="/about" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                <Info size={20} />
+                <span>About</span>
+              </Link>
+
               {user ? (
                 <>
-                  <Link to={`/dashboard/${profile?.role}`} className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-                  <Link to="/my-bookings" className="block p-3 font-semibold text-slate-600" onClick={() => setIsMenuOpen(false)}>My Bookings</Link>
-                  <Button onClick={handleSignOut} variant="destructive" className="w-full rounded-xl mt-4">Sign Out</Button>
+                  <Link to={`/dashboard/${profile?.role}`} className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                    <LayoutDashboard size={20} />
+                    <span>Dashboard</span>
+                  </Link>
+                  <Link to="/my-bookings" className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
+                    <CalendarCheck size={20} />
+                    <span>My Bookings</span>
+                  </Link>
+                  <Button onClick={() => setShowLogoutPopup(true)} variant="destructive" className="w-full rounded-xl mt-4 flex items-center justify-center gap-2">
+                    <LogOut size={18} />
+                    Sign Out
+                  </Button>
                 </>
               ) : (
                 <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                  <Button className="w-full rounded-xl">Get Started</Button>
+                  <Button className="w-full rounded-xl flex items-center justify-center gap-2">
+                    Get Started
+                    <ArrowRight size={18} />
+                  </Button>
                 </Link>
               )}
             </div>

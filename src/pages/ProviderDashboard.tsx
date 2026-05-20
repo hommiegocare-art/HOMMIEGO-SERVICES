@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, ImagePlus, Smartphone, XCircle } from "lucide-react";
+import { CheckCircle, ChevronRight, ImagePlus, LayoutDashboard, Smartphone, XCircle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -307,17 +307,24 @@ export default function ProviderDashboard() {
       <nav className="bg-white/80 backdrop-blur-md border-b mb-8 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Left: Branding */}
-          <div className="flex items-center gap-4">
-            <div className="bg-primary text-white w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-lg shadow-primary/20">
-              {providerProfile?.business_name?.[0] || profile?.full_name?.[0] || "P"}
+          {/* Left: Branding */}
+          <div className="flex items-center gap-3">
+            {/* Professional Icon instead of just a letter */}
+            <div className="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200">
+              <LayoutDashboard size={20} />
             </div>
-            <div className="hidden sm:block">
-              <h1 className="font-black text-slate-900 leading-none tracking-tight">
-                {providerProfile?.business_name || profile?.full_name}
+
+            {/* Removed 'hidden sm:block' so it shows on mobile */}
+            <div className="flex flex-col">
+              <h1 className="font-black text-slate-900 leading-none tracking-tight text-sm md:text-base">
+                {providerProfile?.business_name || profile?.full_name || "Provider"}
               </h1>
-              <Badge variant="outline" className="mt-1 text-[9px] uppercase border-primary/20 text-primary py-0 px-1">
-                Provider Dashboard
-              </Badge>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Provider Dashboard
+                </span>
+              </div>
             </div>
           </div>
 
