@@ -272,7 +272,7 @@ export default function MyBookings() {
             <div className="relative z-10 px-8 text-center flex flex-col items-center">
 
               {/* Glassmorphism Icon Circle */}
-              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 flex items-center justify-center mb-6 shadow-xl">
+              <div className="w-18 h-18 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 flex items-center justify-center mb-6 shadow-xl">
                 <ShoppingBag className="w-10 h-10 text-white" />
               </div>
 
@@ -301,7 +301,7 @@ export default function MyBookings() {
 
             {/* Small Decorative Tag */}
             <div className="absolute top-8 right-8 bg-white/10 backdrop-blur-md border border-white/10 px-4 py-1.5 rounded-full">
-              <span className="text-[10px] font-bold text-white uppercase tracking-[0.2em]">HommieGo Premium</span>
+              <span className="text-[5px] font-bold text-white uppercase tracking-[0.2em]">HommieGo is free</span>
             </div>
           </motion.div>
         ) : (

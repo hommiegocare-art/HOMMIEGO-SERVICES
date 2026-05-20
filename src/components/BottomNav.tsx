@@ -41,7 +41,7 @@ export const BottomNav = () => {
         { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/provider" },
         { icon: Search, label: "Explore", path: "/explore" },
         { icon: PlusCircle, label: "New", path: "/provider/services/new", primary: true }, // Main action
-        { icon: Calendar, label: "Bookings", path: "/dashboard/provider" }, // Usually a tab in dashboard
+        { icon: Calendar, label: "My Bookings", path: "/my-bookings" }, // Usually a tab in dashboard
         { icon: Settings, label: "Profile", path: "/edit-profile" },
       ];
     }
