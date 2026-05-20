@@ -213,8 +213,9 @@ export const Navbar = () => {
           </div>
 
           {/* MOBILE MENU */}
+          {/* MOBILE MENU */}
           {isMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 space-y-2 animate-in slide-in-from-top-4 duration-200">
+            <div className="md:hidden mt-1 pb-28 space-y-2 animate-in slide-in-from-top-4 duration-200 max-h-[calc(100vh-120px)] overflow-y-auto">
               {user && (
                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl mb-4">
                   <Avatar>
@@ -258,6 +259,7 @@ export const Navbar = () => {
                 <span>About</span>
               </Link>
 
+
               {user ? (
                 <>
                   <Link to={`/dashboard/${profile?.role}`} className="flex items-center gap-3 p-3 font-semibold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
@@ -274,7 +276,7 @@ export const Navbar = () => {
                   </Button>
                 </>
               ) : (
-                <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                <Link to="/auth" onClick={() => setIsMenuOpen(false)} className="block">
                   <Button className="w-full rounded-xl flex items-center justify-center gap-2">
                     Get Started
                     <ArrowRight size={18} />
@@ -283,7 +285,6 @@ export const Navbar = () => {
               )}
             </div>
           )}
-
         </div>
 
 
