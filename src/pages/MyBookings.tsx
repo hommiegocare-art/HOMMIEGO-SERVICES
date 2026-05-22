@@ -227,28 +227,31 @@ export default function MyBookings() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "completed": return "bg-green-100 text-green-700 border-green-200";
-      case "pending": return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "confirmed": return "bg-blue-100 text-blue-700 border-blue-200";
-      case "cancelled": return "bg-red-100 text-red-700 border-red-200";
-      default: return "bg-slate-100 text-slate-700";
+      case "completed": return "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800";
+      case "pending": return "bg-yellow-100 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+      case "confirmed": return "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+      case "cancelled": return "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800";
+      default: return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400";
     }
   };
+
+  if (loading) return <HommieLoader />;
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-300">
       <Navbar />
       <div className="pt-32 pb-20 px-4 container mx-auto max-w-4xl">
 
         {/* BACK BUTTON */}
         <Button
           variant="ghost"
-          className="mb-4 -ml-2 text-slate-600 gap-2 rounded-xl"
+          className="mb-4 -ml-2 text-slate-600 dark:text-slate-400 gap-2 rounded-xl"
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </Button>
 
-        <h1 className="text-4xl font-black text-slate-900 mb-8">My Bookings</h1>
+        <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-8">My Bookings</h1>
 
 
         {bookings.length === 0 ? (
@@ -259,7 +262,7 @@ export default function MyBookings() {
           >
             {/* 1. THE BACKGROUND IMAGE */}
             <div
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s]] group-hover:scale-110"
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-[2s] group-hover:scale-110"
               style={{ backgroundImage: "url('/background1.png')" }}
             />
 
@@ -291,7 +294,7 @@ export default function MyBookings() {
                 <Button
                   onClick={() => navigate("/explore")}
                   size="lg"
-                  className="rounded-2xl h-14 px-10 text-lg font-bold bg-white text-slate-900 hover:bg-slate-100 shadow-xl transition-all active:scale-95 border-none"
+                  className="rounded-2xl h-14 px-10 text-lg font-bold bg-white text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-200 shadow-xl transition-all active:scale-95 border-none"
                 >
                   Explore Services
                 </Button>
@@ -307,14 +310,14 @@ export default function MyBookings() {
           /* --- BOOKINGS LIST --- */
           <div className="grid gap-6">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-sm bg-white hover:shadow-md transition-shadow">
+              <Card key={booking.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all duration-300">
                 <div className="flex flex-col md:flex-row">
                   {/* Service Image */}
                   <div className="relative w-full md:w-56 h-48 md:h-auto overflow-hidden">
                     <img
                       src={booking.services?.cover_image || "/placeholder.svg"}
                       className="w-full h-full object-cover"
-                      alt="service"
+                      alt={booking.services?.title || "Service"}
                     />
                   </div>
 
@@ -324,26 +327,26 @@ export default function MyBookings() {
                         <Badge className={`${getStatusColor(booking.status)} rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-wider`}>
                           {booking.status}
                         </Badge>
-                        <h3 className="text-2xl font-black mt-3 text-slate-900">{booking.services?.title}</h3>
-                        <div className="flex items-center gap-2 mt-1 text-slate-500">
+                        <h3 className="text-2xl font-black mt-3 text-slate-900 dark:text-white">{booking.services?.title}</h3>
+                        <div className="flex items-center gap-2 mt-1 text-slate-500 dark:text-slate-400">
                           <User className="w-4 h-4" />
                           <span className="text-sm font-medium">Provider: {booking.profiles?.full_name}</span>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-black text-primary">KES {booking.total_amount?.toLocaleString()}</p>
-                        <Badge variant="outline" className={`mt-1 border-none bg-transparent ${booking.payment_status === 'paid' ? "text-green-600" : "text-amber-600"}`}>
+                        <Badge variant="outline" className={`mt-1 border-none bg-transparent ${booking.payment_status === 'paid' ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}>
                           {booking.payment_status === 'paid' ? "✓ PAID" : "● PENDING PAYMENT"}
                         </Badge>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-50">
+                    <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-50 dark:border-slate-800">
                       {booking.payment_status === 'paid' && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-xl gap-2 font-bold border-slate-200"
+                          className="rounded-xl gap-2 font-bold border-slate-200 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                           onClick={() => downloadReceipt(booking)}
                         >
                           <Download className="w-4 h-4" /> Receipt
@@ -354,10 +357,10 @@ export default function MyBookings() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="rounded-xl gap-2 bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold border-none"
+                          className="rounded-xl gap-2 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900 font-bold border-none"
                           onClick={() => openReviewModal(booking)}
                         >
-                          <Star className="w-4 h-4 fill-amber-700" /> Review
+                          <Star className="w-4 h-4 fill-amber-700 dark:fill-amber-400" /> Review
                         </Button>
                       )}
                     </div>
@@ -370,25 +373,25 @@ export default function MyBookings() {
       </div>
       {/* REVIEW DIALOG */}
       <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
-        <DialogContent className="rounded-[2rem] max-w-md">
+        <DialogContent className="rounded-[2rem] max-w-md dark:bg-slate-900 dark:border-slate-800 transition-colors">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Rate Service</DialogTitle>
+            <DialogTitle className="text-2xl font-bold dark:text-white">Rate Service</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="flex justify-center gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-10 h-10 cursor-pointer transition-colors ${rating >= star ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`}
+                  className={`w-10 h-10 cursor-pointer transition-colors ${rating >= star ? "fill-yellow-400 text-yellow-400" : "text-slate-300 dark:text-slate-600"}`}
                   onClick={() => setRating(star)}
                 />
               ))}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Your Feedback</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Your Feedback</label>
               <Textarea
                 placeholder="How was the service?"
-                className="rounded-2xl min-h-[100px]"
+                className="rounded-2xl min-h-[100px] dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />

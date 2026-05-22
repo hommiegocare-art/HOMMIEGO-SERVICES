@@ -302,26 +302,26 @@ export default function ProviderDashboard() {
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-slate-100/50 pb-20">
+    <div className="min-h-screen bg-slate-100/50 dark:bg-slate-950 pb-20 transition-colors duration-300">
       {/* Header */}
-      <nav className="bg-white/80 backdrop-blur-md border-b mb-8 sticky top-0 z-50">
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-slate-800 mb-8 sticky top-0 z-50 transition-colors duration-300">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
           {/* Left: Branding */}
           {/* Left: Branding */}
           <div className="flex items-center gap-3">
             {/* Professional Icon instead of just a letter */}
-            <div className="bg-slate-900 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200">
+            <div className="bg-slate-900 dark:bg-slate-700 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-slate-900">
               <LayoutDashboard size={20} />
             </div>
 
             {/* Removed 'hidden sm:block' so it shows on mobile */}
             <div className="flex flex-col">
-              <h1 className="font-black text-slate-900 leading-none tracking-tight text-sm md:text-base">
+              <h1 className="font-black text-slate-900 dark:text-white leading-none tracking-tight text-sm md:text-base">
                 {providerProfile?.business_name || profile?.full_name || "Provider"}
               </h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Provider Dashboard
                 </span>
               </div>
@@ -342,50 +342,50 @@ export default function ProviderDashboard() {
             {/* The Unified Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="rounded-full h-12 gap-2 px-2 pr-4 border-slate-200 hover:bg-slate-50 transition-all">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border">
+                <Button variant="outline" className="rounded-full h-12 gap-2 px-2 pr-4 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border dark:border-slate-700">
                     {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                      <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
                     ) : (
-                      <User className="w-4 h-4 text-slate-400" />
+                      <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     )}
                   </div>
-                  <Menu className="w-4 h-4 text-slate-600" />
+                  <Menu className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-100 mt-2">
+              <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-100 dark:border-slate-800 mt-2 bg-white dark:bg-slate-900">
                 <DropdownMenuLabel className="p-3">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Navigation</p>
+                  <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Navigation</p>
                 </DropdownMenuLabel>
 
-                <DropdownMenuItem onClick={() => navigate("/")} className="rounded-xl p-3 cursor-pointer">
-                  <Home className="w-4 h-4 mr-3 text-slate-500" /> <span className="font-medium">Public Home</span>
+                <DropdownMenuItem onClick={() => navigate("/")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
+                  <Home className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">Public Home</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => navigate("/explore")} className="rounded-xl p-3 cursor-pointer">
-                  <Search className="w-4 h-4 mr-3 text-slate-500" /> <span className="font-medium">Explore Services</span>
+                <DropdownMenuItem onClick={() => navigate("/explore")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
+                  <Search className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">Explore Services</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuSeparator className="my-2 dark:bg-slate-800" />
 
                 <DropdownMenuLabel className="p-3 pt-1">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Account</p>
+                  <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Account</p>
                 </DropdownMenuLabel>
 
-                <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="rounded-xl p-3 cursor-pointer">
-                  <Settings className="w-4 h-4 mr-3 text-slate-500" /> <span className="font-medium">Edit Profile</span>
+                <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
+                  <Settings className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">Edit Profile</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => navigate("/about")} className="rounded-xl p-3 cursor-pointer">
-                  <Briefcase className="w-4 h-4 mr-3 text-slate-500" /> <span className="font-medium">About HommieGo</span>
+                <DropdownMenuItem onClick={() => navigate("/about")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
+                  <Briefcase className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">About HommieGo</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuSeparator className="my-2 dark:bg-slate-800" />
 
                 <DropdownMenuItem
                   onClick={() => setShowLogoutPopup(true)}
-                  className="rounded-xl p-3 cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
+                  className="rounded-xl p-3 cursor-pointer text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-950 focus:text-red-600 dark:focus:text-red-400"
                 >
                   <LogOut className="w-4 h-4 mr-3" /> <span className="font-bold">Logout</span>
                 </DropdownMenuItem>
@@ -396,21 +396,21 @@ export default function ProviderDashboard() {
       </nav>
       {/* Custom Logout Popup */}
       {showLogoutPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 transition-colors">
 
             {/* Icon */}
-            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 flex items-center justify-center mb-4">
-              <LogOut className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center mb-4">
+              <LogOut className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
 
             {/* Title */}
-            <h2 className="text-2xl font-bold text-center mb-2">
+            <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">
               Confirm Logout
             </h2>
 
             {/* Description */}
-            <p className="text-muted-foreground text-center mb-6">
+            <p className="text-muted-foreground dark:text-slate-400 text-center mb-6">
               Are you sure you want to logout from your account?
             </p>
 
@@ -418,14 +418,14 @@ export default function ProviderDashboard() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl"
+                className="flex-1 rounded-xl dark:border-slate-700 dark:text-slate-300"
                 onClick={() => setShowLogoutPopup(false)}
               >
                 Cancel
               </Button>
 
               <Button
-                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700"
+                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
                 onClick={() => {
                   setShowLogoutPopup(false);
                   handleLogout();
@@ -445,91 +445,91 @@ export default function ProviderDashboard() {
               label: "Total Reviews",
               val: stats.reviewCount,
               icon: MessageSquare,
-              color: "text-emerald-600"
+              color: "text-emerald-600 dark:text-emerald-400"
             },
             {
               label: "Avg Rating",
               val: stats.rating > 0 ? `${stats.rating} / 5` : "No ratings",
               icon: Star,
-              color: "text-orange-500"
+              color: "text-orange-500 dark:text-orange-400"
             },
             {
               label: "My Services",
               val: stats.totalServices,
               icon: Briefcase,
-              color: "text-blue-600"
+              color: "text-blue-600 dark:text-blue-400"
             },
             {
               label: "Bookings",
               val: stats.totalBookings,
               icon: Calendar,
-              color: "text-purple-600"
+              color: "text-purple-600 dark:text-purple-400"
             },
           ].map((s, i) => (
-            <Card key={i} className="border-none shadow-sm rounded-2xl overflow-hidden bg-white">
+            <Card key={i} className="border-none shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-slate-900 transition-colors">
               <CardContent className="p-4 flex items-center gap-4">
-                <div className={`p-3 rounded-xl bg-slate-50 ${s.color}`}>
+                <div className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800 ${s.color}`}>
                   <s.icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-wider">{s.label}</p>
-                  <p className="text-xl font-black text-slate-900">{s.val}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">{s.label}</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-white">{s.val}</p>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
         <Tabs defaultValue="services" className="space-y-6">
-          <TabsList className="bg-white border p-1 h-12 w-full justify-start overflow-x-auto">
-            <TabsTrigger value="services" className="px-6">My Services</TabsTrigger>
-            <TabsTrigger value="bookings" className="px-6">Bookings</TabsTrigger>
-            <TabsTrigger value="subscription" className="px-6">Subscription</TabsTrigger>
+          <TabsList className="bg-white dark:bg-slate-900 border dark:border-slate-800 p-1 h-12 w-full justify-start overflow-x-auto transition-colors">
+            <TabsTrigger value="services" className="px-6 dark:data-[state=active]:bg-slate-800 dark:text-slate-400 dark:data-[state=active]:text-white">My Services</TabsTrigger>
+            <TabsTrigger value="bookings" className="px-6 dark:data-[state=active]:bg-slate-800 dark:text-slate-400 dark:data-[state=active]:text-white">Bookings</TabsTrigger>
+            <TabsTrigger value="subscription" className="px-6 dark:data-[state=active]:bg-slate-800 dark:text-slate-400 dark:data-[state=active]:text-white">Subscription</TabsTrigger>
           </TabsList>
 
           <TabsContent value="services" className="space-y-4">
             {services.length === 0 ? (
-              <Card className="p-12 text-center border-dashed">
-                <Briefcase className="w-12 h-12 mx-auto text-slate-300 mb-4" />
-                <h3 className="text-lg font-medium">No services listed</h3>
+              <Card className="p-12 text-center border-dashed dark:border-slate-800 dark:bg-slate-900 transition-colors">
+                <Briefcase className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+                <h3 className="text-lg font-medium dark:text-white">No services listed</h3>
                 <Button className="mt-4" onClick={() => navigate("/provider/services/new")}>Create Service</Button>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {services.map((service) => (
-                  <Card key={service.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
+                  <Card key={service.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow dark:bg-slate-900">
                     <div className="relative h-48">
                       <img
                         src={service.cover_image || service.service_images?.[0]?.image_url}
                         className="w-full h-full object-cover"
-                        alt=""
+                        alt={service.title}
                       />
                       <Badge className={`absolute top-3 right-3 ${service.is_active ? 'bg-green-500' : 'bg-slate-500'}`}>
                         {service.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                     <CardContent className="p-5">
-                      <h3 className="font-bold text-lg mb-1 line-clamp-1">{service.title}</h3>
-                      <div className="flex items-center text-xs text-muted-foreground mb-4">
+                      <h3 className="font-bold text-lg mb-1 line-clamp-1 dark:text-white">{service.title}</h3>
+                      <div className="flex items-center text-xs text-muted-foreground dark:text-slate-400 mb-4">
                         <MapPin className="w-3 h-3 mr-1" /> {service.location_name}
                       </div>
                       <div className="flex justify-between items-end mb-6">
                         <div>
-                          <p className="text-[10px] uppercase text-muted-foreground font-bold">Booking Price</p>
+                          <p className="text-[10px] uppercase text-muted-foreground dark:text-slate-400 font-bold">Booking Price</p>
                           <p className="text-lg font-bold text-primary">KES {Number(service.price).toLocaleString()}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] uppercase text-muted-foreground font-bold">Category</p>
-                          <p className="text-sm font-medium">{service.categories?.name}</p>
+                          <p className="text-[10px] uppercase text-muted-foreground dark:text-slate-400 font-bold">Category</p>
+                          <p className="text-sm font-medium dark:text-slate-300">{service.categories?.name}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => setViewingService(service)}>
+                        <Button variant="outline" size="sm" className="flex-1 dark:border-slate-700 dark:text-slate-300" onClick={() => setViewingService(service)}>
                           <Eye className="w-4 h-4 mr-2" /> View
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => toggleService(service.id, !!service.is_active)}>
+                        <Button variant="outline" size="sm" className="dark:border-slate-700 dark:text-slate-300" onClick={() => toggleService(service.id, !!service.is_active)}>
                           {service.is_active ? 'Disable' : 'Enable'}
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" disabled={deletingId === service.id} onClick={() => deleteService(service.id)}>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20" disabled={deletingId === service.id} onClick={() => deleteService(service.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -541,7 +541,7 @@ export default function ProviderDashboard() {
           </TabsContent>
           <TabsContent value="bookings" className="space-y-4">
             {bookings.length === 0 ? (
-              <Card className="p-12 text-center border-dashed text-muted-foreground">
+              <Card className="p-12 text-center border-dashed text-muted-foreground dark:text-slate-400 dark:border-slate-800 dark:bg-slate-900 transition-colors">
                 <div className="flex flex-col items-center gap-2">
                   <Calendar className="w-10 h-10 opacity-20" />
                   <p>No bookings found yet.</p>
@@ -550,25 +550,25 @@ export default function ProviderDashboard() {
             ) : (
               <div className="grid gap-6">
                 {bookings.map((booking) => (
-                  <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white">
+                  <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 transition-colors">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
 
                         {/* LEFT SIDE: CUSTOMER IDENTITY ONLY */}
-                        <div className="p-8 bg-slate-50/50 md:w-64 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col items-center justify-center">
+                        <div className="p-8 bg-slate-50/50 dark:bg-slate-800/50 md:w-64 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center">
                           <div className="relative mb-4">
-                            <div className="h-24 w-24 rounded-[2rem] bg-white shadow-xl flex items-center justify-center overflow-hidden border-4 border-white">
+                            <div className="h-24 w-24 rounded-[2rem] bg-white dark:bg-slate-700 shadow-xl flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-700">
                               {booking.customer.avatar_url ? (
-                                <img src={booking.customer.avatar_url} className="w-full h-full object-cover" />
+                                <img src={booking.customer.avatar_url} className="w-full h-full object-cover" alt={booking.customer.full_name} />
                               ) : (
                                 <span className="text-3xl font-black text-primary">{booking.customer.full_name[0]}</span>
                               )}
                             </div>
                           </div>
-                          <h4 className="font-black text-slate-900 text-center text-lg leading-tight">
+                          <h4 className="font-black text-slate-900 dark:text-white text-center text-lg leading-tight">
                             {booking.customer.full_name}
                           </h4>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Customer</p>
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Customer</p>
                         </div>
 
                         {/* RIGHT SIDE: BOOKING DETAILS */}
@@ -576,22 +576,22 @@ export default function ProviderDashboard() {
                           <div>
                             <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
                               <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Service Requested</p>
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{booking.services?.title}</h3>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Service Requested</p>
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{booking.services?.title}</h3>
                               </div>
                               <div className="sm:text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Revenue</p>
-                                <p className="text-3xl font-black text-emerald-600">KES {booking.total_amount.toLocaleString()}</p>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Revenue</p>
+                                <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">KES {booking.total_amount.toLocaleString()}</p>
                               </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                               {/* Time Detail */}
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
                                   <Calendar className="w-3 h-3 text-primary" /> Appointment Date
                                 </p>
-                                <p className="font-bold text-slate-700">
+                                <p className="font-bold text-slate-700 dark:text-slate-300">
                                   {booking.scheduled_at ? new Date(booking.scheduled_at).toLocaleString('en-GB', {
                                     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
                                   }) : "Not Scheduled"}
@@ -600,10 +600,10 @@ export default function ProviderDashboard() {
 
                               {/* Notes Detail */}
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2">
+                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
                                   <MessageSquare className="w-3 h-3 text-primary" /> Instructions
                                 </p>
-                                <p className="text-slate-600 italic text-sm line-clamp-2">
+                                <p className="text-slate-600 dark:text-slate-400 italic text-sm line-clamp-2">
                                   {booking.notes ? `"${booking.notes}"` : "No specific notes provided."}
                                 </p>
                               </div>
@@ -611,9 +611,9 @@ export default function ProviderDashboard() {
                           </div>
 
                           {/* BOTTOM ACTION BAR */}
-                          <div className="flex items-center justify-between pt-6 border-t border-slate-100">
+                          <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
                             <Badge className={`uppercase text-[10px] font-black px-4 py-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-blue-500' :
-                              booking.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-200 text-slate-500'
+                              booking.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
                               }`}>
                               {booking.status}
                             </Badge>
@@ -640,13 +640,13 @@ export default function ProviderDashboard() {
                                   const message = encodeURIComponent(`Hello, I am the professional from HommieGo regarding your booking for ${booking.services?.title}.`);
                                   window.open(`https://wa.me/${cleanNum}?text=${message}`, '_blank');
                                 }}
-                                className="rounded-xl font-bold gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200"
+                                className="rounded-xl font-bold gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white shadow-lg shadow-green-200 dark:shadow-green-900/30"
                               >
                                 <Smartphone className="w-4 h-4" />
                                 WhatsApp Customer
                               </Button>
                             ) : (
-                              <div className="flex items-center gap-2 text-slate-400 italic">
+                              <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 italic">
                                 <Loader2 className="w-3 h-3 animate-spin" />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Awaiting Confirmation</span>
                               </div>
@@ -665,18 +665,18 @@ export default function ProviderDashboard() {
 
 
           <TabsContent value="subscription">
-            <Card className="max-w-md border-none shadow-sm">
+            <Card className="max-w-md border-none shadow-sm dark:bg-slate-900 transition-colors">
               <CardHeader>
-                <CardTitle>Plan Details</CardTitle>
-                <CardDescription>Manage your provider subscription and billing</CardDescription>
+                <CardTitle className="dark:text-white">Plan Details</CardTitle>
+                <CardDescription className="dark:text-slate-400">Manage your provider subscription and billing</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                  <span className="font-medium">Status</span>
+                <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors">
+                  <span className="font-medium dark:text-slate-300">Status</span>
                   <Badge className="bg-green-500 capitalize">{subscription?.status || 'Inactive'}</Badge>
                 </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 rounded-lg">
-                  <span className="font-medium">Current Plan</span>
+                <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors">
+                  <span className="font-medium dark:text-slate-300">Current Plan</span>
                   <span className="font-bold uppercase text-primary">{subscription?.plan || 'None'}</span>
                 </div>
                 <Button className="w-full">Upgrade Plan</Button>
@@ -687,19 +687,19 @@ export default function ProviderDashboard() {
       </div>
       {/* FULL DETAILS MODAL */}
       <Dialog open={!!viewingService} onOpenChange={() => { setViewingService(null); setIsEditing(false); }}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white">
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 transition-colors">
           {viewingService && (
             <>
               <div className="h-64 w-full relative group">
                 {/* Show image preview if chosen, otherwise show existing image */}
                 <img
-                  src={imagePreview || viewingService.cover_image}
+                  src={imagePreview || viewingService.cover_image || undefined}
                   className="w-full h-full object-cover"
-                  alt="Service"
+                  alt={viewingService.title}
                 />
 
                 {isEditing && (
-                  <label className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                  <label className="absolute inset-0 bg-black/40 dark:bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
                     <ImagePlus className="w-10 h-10 text-white mb-2" />
                     <span className="text-white font-bold text-sm">Change Photo</span>
                     <input
@@ -728,26 +728,26 @@ export default function ProviderDashboard() {
                     <div className="space-y-2 flex-1 w-full">
                       {isEditing ? (
                         <div className="space-y-1">
-                          <Label className="text-xs font-bold text-slate-400 uppercase">Service Title</Label>
+                          <Label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Service Title</Label>
                           <Input
                             value={editForm.title}
                             onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                            className="h-12 text-xl font-bold rounded-xl border-primary/20 focus:border-primary"
+                            className="h-12 text-xl font-bold rounded-xl border-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                           />
                         </div>
                       ) : (
-                        <DialogTitle className="text-3xl font-black text-slate-900 leading-tight">
+                        <DialogTitle className="text-3xl font-black text-slate-900 dark:text-white leading-tight">
                           {viewingService.title}
                         </DialogTitle>
                       )}
 
-                      <div className="flex items-center gap-2 text-slate-500 font-medium">
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
                         <MapPin className="w-4 h-4 text-primary" />
                         {isEditing ? (
                           <Input
                             value={editForm.location_name}
                             onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
-                            className="h-9 rounded-lg border-slate-200"
+                            className="h-9 rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             placeholder="Location"
                           />
                         ) : (
@@ -756,14 +756,14 @@ export default function ProviderDashboard() {
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 min-w-[150px] text-center">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Price (KES)</p>
+                    <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[150px] text-center transition-colors">
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Price (KES)</p>
                       {isEditing ? (
                         <Input
                           type="number"
                           value={editForm.price}
                           onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
-                          className="h-10 text-center font-bold text-primary rounded-xl border-primary/20"
+                          className="h-10 text-center font-bold text-primary rounded-xl border-primary/20 dark:bg-slate-800 dark:border-slate-700"
                         />
                       ) : (
                         <p className="text-2xl font-black text-primary">KES {viewingService.price?.toLocaleString()}</p>
@@ -773,19 +773,19 @@ export default function ProviderDashboard() {
                 </DialogHeader>
 
                 <div className="space-y-4">
-                  <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                  <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-primary" /> Service Description
                   </h4>
                   {isEditing ? (
                     <Textarea
                       value={editForm.short_description}
                       onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })}
-                      className="rounded-2xl min-h-[120px] p-4 bg-slate-50/50 border-slate-200 focus:border-primary"
+                      className="rounded-2xl min-h-[120px] p-4 bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:border-primary dark:text-white dark:placeholder:text-slate-500"
                       placeholder="Describe what you offer..."
                     />
                   ) : (
-                    <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
-                      <p className="text-slate-600 leading-relaxed italic">
+                    <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 transition-colors">
+                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed italic">
                         "{viewingService.short_description || "No description provided."}"
                       </p>
                     </div>
@@ -805,7 +805,7 @@ export default function ProviderDashboard() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex-1 rounded-2xl h-14 font-bold border-slate-200"
+                        className="flex-1 rounded-2xl h-14 font-bold border-slate-200 dark:border-slate-700 dark:text-slate-300"
                         onClick={() => setIsEditing(false)}
                       >
                         <XCircle className="w-5 h-5 mr-2" /> Cancel
@@ -821,7 +821,7 @@ export default function ProviderDashboard() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex-1 rounded-2xl h-14 font-bold border-slate-200"
+                        className="flex-1 rounded-2xl h-14 font-bold border-slate-200 dark:border-slate-700 dark:text-slate-300"
                         onClick={() => setViewingService(null)}
                       >
                         Close Preview

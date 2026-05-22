@@ -108,28 +108,28 @@ export default function ClientDashboard() {
 
   // Adjusted cards to 3 items for a professional layout
   const statCards = [
-    { label: "Bookings", value: stats.bookings, icon: Calendar, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Reviews", value: stats.reviews, icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
-    { label: "Saved Services", value: stats.favorites, icon: Bookmark, color: "text-rose-500", bg: "bg-rose-50" },
+    { label: "Bookings", value: stats.bookings, icon: Calendar, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950" },
+    { label: "Reviews", value: stats.reviews, icon: Star, color: "text-amber-500 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950" },
+    { label: "Saved Services", value: stats.favorites, icon: Bookmark, color: "text-rose-500 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-12">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-12 transition-colors duration-300">
       {/* Top Navigation Bar */}
-      <nav className="bg-white border-b sticky top-0 z-10 shadow-sm">
+      <nav className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-10 shadow-sm transition-colors duration-300">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             Client Portal
           </span>
 
           <div className="flex gap-1 md:gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="hidden sm:flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="hidden sm:flex gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
               <Home className="w-4 h-4" /> Home
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/explore")} className="gap-2 text-primary font-semibold">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/explore")} className="gap-2 text-primary font-semibold dark:hover:bg-slate-800">
               <Search className="w-4 h-4" /> Explore
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")} className="dark:text-slate-300 dark:hover:bg-slate-800">
               Profile
             </Button>
 
@@ -137,7 +137,7 @@ export default function ClientDashboard() {
               variant="ghost"
               size="sm"
               onClick={() => setShowLogoutPopup(true)}
-              className="text-slate-500 hover:text-destructive"
+              className="text-slate-500 dark:text-slate-400 hover:text-destructive dark:hover:text-destructive"
             >
               <LogOut className="w-4 h-4" />
             </Button>
@@ -147,18 +147,18 @@ export default function ClientDashboard() {
 
       {/* Logout Popup */}
       {showLogoutPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white w-[90%] max-w-md rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in-95">
-            <div className="w-16 h-16 mx-auto rounded-full bg-rose-50 flex items-center justify-center mb-4">
-              <LogOut className="w-8 h-8 text-rose-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 w-[90%] max-w-md rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in-95 transition-colors">
+            <div className="w-16 h-16 mx-auto rounded-full bg-rose-50 dark:bg-rose-950 flex items-center justify-center mb-4">
+              <LogOut className="w-8 h-8 text-rose-600 dark:text-rose-400" />
             </div>
-            <h2 className="text-2xl font-bold text-center text-slate-900 mb-2">Confirm Logout</h2>
-            <p className="text-slate-500 text-center mb-6">Are you sure you want to exit your session?</p>
+            <h2 className="text-2xl font-bold text-center text-slate-900 dark:text-white mb-2">Confirm Logout</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-center mb-6">Are you sure you want to exit your session?</p>
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 h-11 rounded-xl" onClick={() => setShowLogoutPopup(false)}>
+              <Button variant="outline" className="flex-1 h-11 rounded-xl dark:border-slate-700 dark:text-slate-300" onClick={() => setShowLogoutPopup(false)}>
                 Cancel
               </Button>
-              <Button className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700" onClick={handleLogout}>
+              <Button className="flex-1 h-11 rounded-xl bg-rose-600 hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700" onClick={handleLogout}>
                 Yes, Logout
               </Button>
             </div>
@@ -170,32 +170,32 @@ export default function ClientDashboard() {
         {/* Header Section with Avatar */}
         <header className="mb-10 flex flex-col md:flex-row md:items-center gap-6">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full border-4 border-white shadow-md bg-slate-200 overflow-hidden flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full border-4 border-white dark:border-slate-700 shadow-md bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center transition-colors">
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                <User className="w-12 h-12 text-slate-400" />
+                <User className="w-12 h-12 text-slate-400 dark:text-slate-500" />
               )}
             </div>
             {profile?.is_verified && (
-              <div className="absolute bottom-1 right-1 bg-white rounded-full p-0.5">
+              <div className="absolute bottom-1 right-1 bg-white dark:bg-slate-800 rounded-full p-0.5">
                 <ShieldCheck className="w-6 h-6 text-primary fill-primary/10" />
               </div>
             )}
           </div>
 
           <div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-1">
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-1">
               Hello, {profile?.full_name?.split(' ')[0] || "Client"}
             </h1>
-            <div className="flex items-center text-slate-500">
+            <div className="flex items-center text-slate-500 dark:text-slate-400">
               <MapPin className="w-4 h-4 mr-1.5" />
               <span className="text-sm font-medium">
                 {profile?.city ? `${profile.city}, ${profile.country}` : "Location not set"}
               </span>
             </div>
             {profile?.bio && (
-              <p className="text-slate-400 text-sm mt-2 max-w-md line-clamp-1 italic">
+              <p className="text-slate-400 dark:text-slate-500 text-sm mt-2 max-w-md line-clamp-1 italic">
                 "{profile.bio}"
               </p>
             )}
@@ -208,8 +208,8 @@ export default function ClientDashboard() {
           {statCards.map((stat) => (
             <Card
               key={stat.label}
-              className={`border-none shadow-sm transition-all duration-300 ${stat.label === "Saved Services"
-                ? "cursor-pointer hover:shadow-md hover:ring-2 hover:ring-rose-100"
+              className={`border-none shadow-sm transition-all duration-300 dark:bg-slate-900 ${stat.label === "Saved Services"
+                ? "cursor-pointer hover:shadow-md hover:ring-2 hover:ring-rose-100 dark:hover:ring-rose-900"
                 : ""
                 }`}
               onClick={() => {
@@ -219,14 +219,14 @@ export default function ClientDashboard() {
               }}
             >
               <CardContent className="p-6">
-                <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-4`}>
+                <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-4 transition-colors`}>
                   <stat.icon className="w-6 h-6" />
                 </div>
-                <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                  <p className="text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{stat.label}</p>
                   {stat.label === "Saved Services" && (
-                    <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">View All</span>
+                    <span className="text-[10px] font-bold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950 px-2 py-0.5 rounded-full">View All</span>
                   )}
                 </div>
               </CardContent>
@@ -235,14 +235,14 @@ export default function ClientDashboard() {
         </div>
         {/* Discovery Section */}
         {/* Discovery Section with Smooth Slideshow */}
-        <Card className="relative overflow-hidden border-none shadow-2xl min-h-[400px] flex flex-col justify-center">
+        <Card className="relative overflow-hidden border-none shadow-2xl min-h-[400px] flex flex-col justify-center dark:bg-slate-900 transition-colors">
 
           {/* --- SLIDESHOW LAYER --- */}
           <div className="absolute inset-0 z-0">
             {discoveryImages.map((img, index) => (
               <div
                 key={img}
-                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2s]] ease-in-out ${index === bgIndex ? "opacity-100 scale-105" : "opacity-0 scale-100"
+                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-[2s] ease-in-out ${index === bgIndex ? "opacity-100 scale-105" : "opacity-0 scale-100"
                   }`}
                 style={{
                   backgroundImage: `url(${img})`,
@@ -251,14 +251,14 @@ export default function ClientDashboard() {
               />
             ))}
             {/* Professional Overlay: Darkens the image so white text pops */}
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/70 backdrop-blur-[1px]" />
           </div>
 
           {/* --- CONTENT LAYER --- */}
           <CardHeader className="relative z-10 pt-12 px-8 md:px-12">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-1 w-8 bg-primary rounded-full" />
-              <span className="text-primary-foreground/80 text-xs font-bold uppercase tracking-widest">
+              <span className="text-primary-foreground/80 dark:text-slate-300 text-xs font-bold uppercase tracking-widest">
                 Exclusive Services
               </span>
             </div>
@@ -269,7 +269,7 @@ export default function ClientDashboard() {
           </CardHeader>
 
           <CardContent className="relative z-10 px-8 md:px-12 pb-12">
-            <p className="text-slate-200 max-w-xl mb-8 text-lg leading-relaxed">
+            <p className="text-slate-200 dark:text-slate-300 max-w-xl mb-8 text-lg leading-relaxed">
               Find and book top-rated professionals near you. We ensure all service providers meet our high quality standards for your peace of mind.
             </p>
 
@@ -286,7 +286,7 @@ export default function ClientDashboard() {
               <Button
                 size="lg"
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md px-10 rounded-xl transition-all"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20 dark:hover:bg-white/30 backdrop-blur-md px-10 rounded-xl transition-all"
                 onClick={() => navigate("/my-bookings")}
               >
                 My Bookings

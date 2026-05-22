@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Bell, ArrowLeft, Badge } from "lucide-react";
+import { Bell, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { HommieLoader } from "@/components/HommieLoader";
 import { useNavigate } from "react-router-dom";
@@ -114,14 +115,14 @@ export default function Notifications() {
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24">
-      <div className="bg-white border-b sticky top-0 z-10">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-24 transition-colors duration-300">
+      <div className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-10 transition-colors duration-300">
         <div className="container max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="dark:hover:bg-slate-800">
+              <ArrowLeft className="w-5 h-5 dark:text-slate-300" />
             </Button>
-            <h1 className="text-xl font-black text-[#0B1623]">Notifications</h1>
+            <h1 className="text-xl font-black text-[#0B1623] dark:text-white">Notifications</h1>
           </div>
           {notifications.some(n => !n.is_read) && (
             <Badge variant="destructive" className="animate-pulse">New</Badge>
@@ -132,11 +133,11 @@ export default function Notifications() {
       <div className="container max-w-2xl mx-auto px-4 py-6">
         {notifications.length === 0 ? (
           <div className="text-center py-20">
-            <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Bell className="text-slate-300 w-8 h-8" />
+            <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
+              <Bell className="text-slate-300 dark:text-slate-600 w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold">No notifications</h3>
-            <p className="text-slate-500">We will notify you when things happen.</p>
+            <h3 className="text-lg font-bold dark:text-white">No notifications</h3>
+            <p className="text-slate-500 dark:text-slate-400">We will notify you when things happen.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -144,23 +145,31 @@ export default function Notifications() {
               <Card
                 key={n.id}
                 onClick={() => markAsRead(n.id)}
-                className={`p-5 border-none shadow-sm cursor-pointer transition-all ${!n.is_read ? "bg-white border-l-4 border-l-red-600 shadow-md" : "bg-white/60 opacity-80"
+                className={`p-5 border-none shadow-sm cursor-pointer transition-all ${!n.is_read
+                  ? "bg-white dark:bg-slate-900 border-l-4 border-l-red-600 shadow-md"
+                  : "bg-white/60 dark:bg-slate-900/60 opacity-80"
                   }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className={`p-2 rounded-xl ${!n.is_read ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-400'}`}>
+                  <div className={`p-2 rounded-xl ${!n.is_read
+                    ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+                    } transition-colors`}>
                     <Bell className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-1">
-                      <h3 className={`text-sm tracking-tight ${!n.is_read ? 'font-black text-slate-900' : 'font-bold text-slate-600'}`}>
+                      <h3 className={`text-sm tracking-tight ${!n.is_read
+                        ? 'font-black text-slate-900 dark:text-white'
+                        : 'font-bold text-slate-600 dark:text-slate-400'
+                        }`}>
                         {n.title}
                       </h3>
-                      <span className="text-[10px] font-medium text-slate-400">
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                         {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                       {n.body}
                     </p>
                   </div>

@@ -123,7 +123,7 @@ export const ServiceCard = ({
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-secondary/10 border-slate-100">
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-100 dark:border-slate-800">
       <CardHeader className="p-0 relative group/card">
         {/* --- IMAGE VIEWER DIALOG --- */}
         <Dialog>
@@ -151,7 +151,7 @@ export const ServiceCard = ({
             </div>
           </DialogTrigger>
 
-          <DialogContent className="max-w-3xl w-[95vw] p-0 overflow-hidden bg-white border-none shadow-2xl">
+          <DialogContent className="max-w-3xl w-[95vw] p-0 overflow-hidden bg-white dark:bg-slate-900 border-none shadow-2xl">
             <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
               {/* Full Image Section */}
               <div className="flex-1 bg-black flex items-center justify-center">
@@ -160,9 +160,9 @@ export const ServiceCard = ({
 
               {/* Details Side Panel in Viewer */}
               {/* Details Side Panel in Viewer */}
-              <div className="w-full md:w-80 p-6 bg-white flex flex-col gap-4 overflow-y-auto">
+              <div className="w-full md:w-80 p-6 bg-white dark:bg-slate-900 flex flex-col gap-4 overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-slate-900 leading-tight">
+                  <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
                     {title}
                   </DialogTitle>
                 </DialogHeader>
@@ -173,17 +173,17 @@ export const ServiceCard = ({
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase text-slate-400 tracking-widest">Description</h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
+                  <h4 className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Description</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{description}</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 pt-2">
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <MapPin className="w-4 h-4 text-slate-400" />
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <MapPin className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     {location}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <User className="w-4 h-4 text-slate-400" />
+                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                     Professional: {name}
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export const ServiceCard = ({
       <CardContent className="p-4">
         {/* Title and Total Likes count */}
         <div className="flex justify-between items-start mb-2 gap-2">
-          <h3 className="font-semibold text-lg line-clamp-1 text-slate-800">
+          <h3 className="font-semibold text-lg line-clamp-1 text-slate-800 dark:text-white">
             {title}
           </h3>
           <div className="flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-md border border-slate-100">

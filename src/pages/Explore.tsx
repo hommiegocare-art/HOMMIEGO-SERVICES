@@ -260,25 +260,34 @@ export default function Explore() {
     });
   }, [services, searchQuery, selectedCategory, filterParam]);
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
       <Navbar />
 
       {/* Hero / Search Section */}
-      <section className="pt-32 pb-12 bg-white border-b">
+      <section className="pt-32 pb-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 mb-4">
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
             Find the perfect professional
           </h1>
-          <p className="text-slate-500 mb-8 max-w-xl mx-auto">
+          <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xl mx-auto">
             Browse through thousands of trusted service providers for your needs.
           </p>
 
           <div className="max-w-3xl mx-auto relative group">
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-slate-400 group-focus-within:text-primary transition-colors" />
+              <Search className="h-5 w-5 text-slate-400 dark:text-slate-500 group-focus-within:text-primary transition-colors" />
             </div>
             <Input
-              className="w-full h-14 pl-12 pr-32 rounded-2xl border-slate-200 shadow-lg focus-visible:ring-primary text-lg"
+              className="
+    w-full h-14 pl-12 pr-32 rounded-2xl
+    border-slate-200 dark:border-slate-700
+    bg-white dark:bg-slate-800
+    text-slate-900 dark:text-white
+    placeholder:text-slate-400 dark:placeholder:text-slate-500
+    shadow-lg dark:shadow-black/20
+    focus-visible:ring-primary
+    text-lg
+  "
               placeholder="What service are you looking for?"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -314,8 +323,14 @@ export default function Explore() {
                   category: cat.slug,
                 });
               }}
-              className="rounded-full px-6 py-5 whitespace-nowrap gap-2
-hover:scale-105 transition-all duration-300 shadow-sm">
+              className="
+rounded-full px-6 py-5 whitespace-nowrap gap-2
+hover:scale-105 transition-all duration-300 shadow-sm
+bg-white dark:bg-slate-900
+text-slate-700 dark:text-slate-200
+border border-slate-200 dark:border-slate-700
+hover:bg-slate-100 dark:hover:bg-slate-800
+">
               {(() => {
                 const IconComponent = iconMap[cat.icon || ""];
 
@@ -335,16 +350,16 @@ hover:scale-105 transition-all duration-300 shadow-sm">
           <div className="flex flex-wrap items-center gap-3">
             {/* Total Count */}
             <div className="flex items-baseline gap-1">
-              <h2 className="text-2xl font-black text-slate-900">
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">
                 {loading ? "..." : filteredServices.length}
               </h2>
-              <span className="text-slate-500 font-semibold text-sm uppercase tracking-tight">
+              <span className="text-slate-500 dark:text-slate-400 font-semibold text-sm uppercase tracking-tight">
                 {loading ? "Searching" : "Services Found"}
               </span>
             </div>
 
             {/* Vertical Divider (Desktop Only) */}
-            <div className="hidden md:block h-6 w-px bg-slate-200 mx-2" />
+            <div className="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
 
             {/* Active Filter Badges Area */}
             <div className="flex flex-wrap gap-2">
@@ -381,7 +396,12 @@ hover:scale-105 transition-all duration-300 shadow-sm">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-tighter"
+                  className="
+h-8 px-2 text-[10px] font-bold
+text-slate-400 dark:text-slate-500
+hover:text-slate-900 dark:hover:text-white
+uppercase tracking-tighter
+"
                   onClick={() => {
                     setSelectedCategory(null);
                     setSearchParams({});
@@ -394,8 +414,19 @@ hover:scale-105 transition-all duration-300 shadow-sm">
           </div>
 
           {/* Sorting/Filters Button */}
-          <Button variant="outline" size="sm" className="h-10 rounded-xl px-5 gap-2 border-slate-200 shadow-sm  transition-all font-semibold text-slate-700">
-            <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+          <Button
+            variant="outline"
+            size="sm"
+            className="
+    h-10 rounded-xl px-5 gap-2
+    border-slate-200 dark:border-slate-700
+    bg-white dark:bg-slate-900
+    text-slate-700 dark:text-slate-200
+    hover:bg-slate-100 dark:hover:bg-slate-800
+    shadow-sm transition-all font-semibold
+  "
+          >
+            <SlidersHorizontal className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             Sort & Filters
           </Button>
         </div>
@@ -404,7 +435,10 @@ hover:scale-105 transition-all duration-300 shadow-sm">
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-80 w-full bg-slate-200 animate-pulse rounded-2xl" />
+              <div
+                key={i}
+                className="h-80 w-full bg-slate-200 dark:bg-slate-800 animate-pulse rounded-2xl"
+              />
             ))}
           </div>
         ) : filteredServices.length > 0 ? (
@@ -431,12 +465,12 @@ hover:scale-105 transition-all duration-300 shadow-sm">
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
-            <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="text-slate-300 w-8 h-8" />
+          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+            <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="text-slate-300 dark:text-slate-600 w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold">No services found</h3>
-            <p className="text-slate-500">Try adjusting your search or category filters.</p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">No services found</h3>
+            <p className="text-slate-500 dark:text-slate-400">Try adjusting your search or category filters.</p>
             <Button variant="link" onClick={() => { setSearchQuery(""); setSelectedCategory(null); }}>
               Clear all filters
             </Button>

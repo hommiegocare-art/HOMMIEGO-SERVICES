@@ -122,49 +122,49 @@ export default function NewService() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] pb-20">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-20 transition-colors duration-300">
             <div className="container mx-auto px-4 pt-2">
 
                 {/* Navigation & Title Header */}
                 <div className="max-w-2xl mx-auto mb-2 flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full bg-white shadow-sm border">
-                        <ArrowLeft className="w-5 h-5" />
+                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-700">
+                        <ArrowLeft className="w-5 h-5 dark:text-slate-300" />
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">List New Service</h1>
-                        <p className="text-slate-500">Share your expertise with the community.</p>
+                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">List New Service</h1>
+                        <p className="text-slate-500 dark:text-slate-400">Share your expertise with the community.</p>
                     </div>
                 </div>
 
                 <div className="max-w-2xl mx-auto">
-                    <form onSubmit={handleCreateService} className="space-y-8">
+                    <form onSubmit={handleCreateService} className="space-y-2">
 
                         {/* BLOCK 1: General Info */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-                            <div className="bg-slate-900 p-2 flex items-center gap-3">
+                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-slate-900 transition-colors">
+                            <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
                                 <Briefcase className="text-primary w-6 h-6" />
                                 <h2 className="text-white font-bold text-lg">Service Details</h2>
                             </div>
                             <CardContent className="p-2 space-y-2">
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-slate-700">Service Title</Label>
+                                    <Label className="font-bold text-slate-700 dark:text-slate-300">Service Title</Label>
                                     <Input
                                         placeholder="e.g. Professional Home Cleaning"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         required
-                                        className="h-12 rounded-xl border-slate-200"
+                                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-slate-700">Summary</Label>
+                                    <Label className="font-bold text-slate-700 dark:text-slate-300">Summary</Label>
                                     <Input
                                         placeholder="One-liner that appears in search results"
                                         value={shortDescription}
                                         onChange={(e) => setShortDescription(e.target.value)}
                                         required
-                                        className="h-12 rounded-xl border-slate-200"
+                                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                                     />
                                 </div>
 
@@ -173,15 +173,15 @@ export default function NewService() {
                                 <div className="space-y-6">
                                     {/* Price Section */}
                                     <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700 flex items-center gap-2">
+                                        <Label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                                             <DollarSign className="w-4 h-4 text-primary" />
                                             Standard Booking Fee (KES)
                                         </Label>
                                         <div className="relative">
-                                            <DollarSign className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                                            <DollarSign className="absolute left-3 top-3 w-5 h-5 text-slate-400 dark:text-slate-500" />
                                             <Input
                                                 type="number"
-                                                className="pl-10 h-12 rounded-xl border-slate-200 bg-slate-100 font-bold text-slate-900 cursor-not-allowed"
+                                                className="pl-10 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white cursor-not-allowed"
                                                 value={price}
                                                 readOnly
                                             />
@@ -190,35 +190,35 @@ export default function NewService() {
 
                                     {/* NEW: PRICING TYPE SELECTION */}
                                     <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700">How is your total service charged?</Label>
+                                        <Label className="font-bold text-slate-700 dark:text-slate-300">How is your total service charged?</Label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <button
                                                 type="button"
                                                 onClick={() => setPricingType("fixed")}
-                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "fixed" ? "border-primary bg-primary/5" : "border-slate-100 bg-white"
+                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "fixed" ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
                                                     }`}
                                             >
-                                                <span className={`font-bold ${pricingType === "fixed" ? "text-primary" : "text-slate-600"}`}>Fixed</span>
-                                                <span className="text-[10px] text-slate-400">Set final price</span>
+                                                <span className={`font-bold ${pricingType === "fixed" ? "text-primary" : "text-slate-600 dark:text-slate-300"}`}>Fixed</span>
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500">Set final price</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setPricingType("negotiable")}
-                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "negotiable" ? "border-primary bg-primary/5" : "border-slate-100 bg-white"
+                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "negotiable" ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
                                                     }`}
                                             >
-                                                <span className={`font-bold ${pricingType === "negotiable" ? "text-primary" : "text-slate-600"}`}>Negotiable</span>
-                                                <span className="text-[10px] text-slate-400">Price varies per job</span>
+                                                <span className={`font-bold ${pricingType === "negotiable" ? "text-primary" : "text-slate-600 dark:text-slate-300"}`}>Negotiable</span>
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500">Price varies per job</span>
                                             </button>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="font-bold text-slate-700">Service Location</Label>
+                                        <Label className="font-bold text-slate-700 dark:text-slate-300">Service Location</Label>
                                         <div className="relative">
-                                            <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                                            <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400 dark:text-slate-500" />
                                             <Input
                                                 placeholder="e.g. Westlands, Nairobi"
-                                                className="pl-10 h-12 rounded-xl border-slate-200"
+                                                className="pl-10 h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                                                 value={locationName}
                                                 onChange={(e) => setLocationName(e.target.value)}
                                                 required
@@ -228,13 +228,13 @@ export default function NewService() {
                                 </div>
 
                                 {/* SMART DESCRIPTION CHECKLIST */}
-                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                                     <div className="flex justify-between items-center">
                                         <div className="flex flex-col">
-                                            <Label className="font-bold text-slate-700">Detailed Description</Label>
-                                            <span className="text-[10px] text-slate-400 font-medium italic">Make sure to explain your total charges here.</span>
+                                            <Label className="font-bold text-slate-700 dark:text-slate-300">Detailed Description</Label>
+                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium italic">Make sure to explain your total charges here.</span>
                                         </div>
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${description.length > 100 ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${description.length > 100 ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'}`}>
                                             {description.length} chars
                                         </span>
                                     </div>
@@ -242,15 +242,15 @@ export default function NewService() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <Textarea
                                             placeholder="Describe your service... e.g. 'My total fee is KES 2000. I bring my own vacuum. Transport to Westlands is free, but KES 300 elsewhere...'"
-                                            className="min-h-[250px] rounded-xl p-4 border-slate-200 focus:ring-primary md:col-span-1 shadow-inner bg-white"
+                                            className="min-h-[250px] rounded-xl p-4 border-slate-200 dark:border-slate-700 focus:ring-primary md:col-span-1 shadow-inner bg-white dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             required
                                         />
 
                                         {/* THE SMART CHECKLIST BOX */}
-                                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
-                                            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 space-y-4">
+                                            <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                                 <Check className="w-3 h-3" /> Booking Transparency Checklist
                                             </h4>
 
@@ -294,20 +294,20 @@ export default function NewService() {
                                                                     <Check className="w-3 h-3" />
                                                                 </div>
                                                             ) : (
-                                                                <div className="bg-slate-200 rounded-full w-4 h-4 flex-shrink-0" />
+                                                                <div className="bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex-shrink-0" />
                                                             )}
-                                                            <span className={item.check ? "text-slate-900" : "text-slate-400"}>
+                                                            <span className={item.check ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}>
                                                                 {item.label}
                                                             </span>
                                                         </div>
                                                         {!item.check && item.tip && (
-                                                            <span className="text-[10px] text-slate-400 ml-6 italic">{item.tip}</span>
+                                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-6 italic">{item.tip}</span>
                                                         )}
                                                     </li>
                                                 ))}
                                             </ul>
 
-                                            <div className="bg-blue-600 p-4 rounded-xl text-white shadow-md shadow-blue-100">
+                                            <div className="bg-blue-600 dark:bg-blue-700 p-4 rounded-xl text-white shadow-md shadow-blue-100 dark:shadow-blue-900/30">
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <DollarSign className="w-3 h-3" />
                                                     <span className="text-[10px] font-black uppercase">Provider Tip</span>
@@ -323,26 +323,26 @@ export default function NewService() {
                         </Card>
 
                         {/* BLOCK 2: Images Gallery */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-                            <div className="bg-slate-900 p-2 flex items-center gap-3">
+                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-slate-900 transition-colors">
+                            <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
                                 <ImagePlus className="text-primary w-6 h-6" />
                                 <h2 className="text-white font-bold text-lg">Service Gallery</h2>
                             </div>
                             <CardContent className="p-2">
-                                <label className="border-2 border-dashed border-slate-200 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all hover:border-primary group">
-                                    <div className="bg-primary/10 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
+                                <label className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:border-primary group">
+                                    <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
                                         <Upload className="w-8 h-8 text-primary" />
                                     </div>
-                                    <p className="font-bold text-slate-700">Add Photos</p>
-                                    <p className="text-xs text-slate-400 mt-1 text-center">Click to browse your gallery</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">Add Photos</p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 text-center">Click to browse your gallery</p>
                                     <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
                                 </label>
 
                                 {previews.length > 0 && (
                                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
                                         {previews.map((src, i) => (
-                                            <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                                                <img src={src} className="w-full h-full object-cover" alt="" />
+                                            <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
+                                                <img src={src} className="w-full h-full object-cover" alt={`Preview ${i + 1}`} />
                                                 {i === 0 && (
                                                     <Badge className="absolute top-1 left-1 text-[10px] bg-primary text-white border-none shadow-md">
                                                         Main
@@ -356,33 +356,33 @@ export default function NewService() {
                         </Card>
 
                         {/* BLOCK 3: Category Selection */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden">
-                            <div className="bg-slate-900 p-2 flex items-center gap-3">
+                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-slate-900 transition-colors">
+                            <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
                                 <Check className="text-primary w-6 h-6" />
                                 <h2 className="text-white font-bold text-lg">Category</h2>
                             </div>
                             <CardContent className="p-2">
                                 <div className="mb-4">
-                                    <Label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Select One</Label>
+                                    <Label className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select One</Label>
                                 </div>
 
                                 {/* Categories list - Single Column List */}
-                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
                                     {categories.map((cat) => (
                                         <button
                                             key={cat.id}
                                             type="button"
                                             onClick={() => setSelectedCategory(cat.id)}
                                             className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${selectedCategory === cat.id
-                                                ? 'border-primary bg-primary/5 shadow-inner'
-                                                : 'border-slate-50 bg-slate-50/50 hover:border-slate-200'
+                                                ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-inner'
+                                                : 'border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-700'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
                                                 <div
                                                     className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-sm shadow-sm overflow-hidden flex-shrink-0 ${selectedCategory === cat.id
                                                         ? "bg-primary text-white"
-                                                        : "bg-white"
+                                                        : "bg-white dark:bg-slate-700"
                                                         }`}
                                                 >
                                                     <span className="truncate">
@@ -392,7 +392,7 @@ export default function NewService() {
                                                 <span
                                                     className={`font-bold text-base break-words text-left leading-tight ${selectedCategory === cat.id
                                                         ? "text-primary"
-                                                        : "text-slate-600"
+                                                        : "text-slate-600 dark:text-slate-300"
                                                         }`}
                                                 >
                                                     {cat.name}
@@ -419,7 +419,7 @@ export default function NewService() {
                                 {loading ? <Loader2 className="animate-spin mr-2 w-6 h-6" /> : <Upload className="mr-2 w-6 h-6" />}
                                 Publish Live Now
                             </Button>
-                            <p className="text-xs text-center text-slate-400 px-6 leading-relaxed">
+                            <p className="text-xs text-center text-slate-400 dark:text-slate-500 px-6 leading-relaxed">
                                 By publishing, you confirm that your service details are accurate and comply with HommieGo's Professional Guidelines.
                             </p>
                         </div>

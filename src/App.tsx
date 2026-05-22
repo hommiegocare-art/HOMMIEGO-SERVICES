@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client"; // Ensure this import exists
 import { Bell, GraduationCap, Info } from "lucide-react"; // Icons for notification
-
+import { ThemeProvider } from "./components/theme-provider";
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -31,6 +31,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import Careers from "./pages/Careers";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -121,40 +122,42 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        {/* We use Sonner for the global popups */}
-        <Sonner position="top-center" expand={true} richColors closeButton />
-        <Toaster />
+      <ThemeProvider>
+        <TooltipProvider>
+          {/* We use Sonner for the global popups */}
+          <Sonner position="top-center" expand={true} richColors closeButton />
+          <Toaster />
 
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/dashboard/client" element={<CustomerDashboard />} />
-            <Route path="/dashboard/provider" element={<ProviderDashboard />} />
-            <Route path="/dashboard/admin" element={<AdminDashboard />} />
-            <Route path="/service/:id" element={<ServiceDetail />} />
-            <Route path="/booking/:serviceId" element={<Booking />} />
-            <Route path="/payment/:bookingId" element={<Payment />} />
-            <Route path="/booking/confirmation/:id" element={<BookingConfirmation />} />
-            <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/ads" element={<Ads />} />
-            <Route path="/provider/onboarding" element={<ProviderOnboarding />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/about" element={<AboutUsPage />} />
-            <Route path="/edit-profile" element={<EditProfile />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/provider/services/new" element={<NewService />} />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNav />
-        </BrowserRouter>
-      </TooltipProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/dashboard/client" element={<CustomerDashboard />} />
+              <Route path="/dashboard/provider" element={<ProviderDashboard />} />
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/service/:id" element={<ServiceDetail />} />
+              <Route path="/booking/:serviceId" element={<Booking />} />
+              <Route path="/payment/:bookingId" element={<Payment />} />
+              <Route path="/booking/confirmation/:id" element={<BookingConfirmation />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
+              <Route path="/ads" element={<Ads />} />
+              <Route path="/provider/onboarding" element={<ProviderOnboarding />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/about" element={<AboutUsPage />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/provider/services/new" element={<NewService />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <BottomNav />
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

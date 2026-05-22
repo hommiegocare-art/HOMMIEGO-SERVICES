@@ -20,7 +20,7 @@ import {
 import {
   Loader2, MapPin, Star, Calendar, Clock,
   ArrowLeft, ShieldCheck, Smartphone, CheckCircle2,
-  MessageSquare // Added icon
+  MessageSquare, X // Added X icon for full-screen close
 } from "lucide-react";
 import { format } from "date-fns"; // To format review dates
 
@@ -75,6 +75,10 @@ export default function Booking() {
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+
+  // NEW: Full Screen Image State
+  const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+
   useEffect(() => {
     initializePage();
   }, [serviceId]);
@@ -208,11 +212,11 @@ export default function Booking() {
   if (!service) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-20">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-20 transition-colors duration-300">
       <Navbar />
 
       <div className="pt-32 px-4 container mx-auto max-w-5xl">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 gap-2">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
           <ArrowLeft className="w-4 h-4" /> Back to service
         </Button>
 
@@ -224,33 +228,38 @@ export default function Booking() {
           <div>
             {/* LEFT COLUMN */}
             <div className="space-y-6">
-              <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white">
-                <img src={service.cover_image || ""} className="w-full h-48 object-cover" alt="" />
+              <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-slate-900 transition-colors">
+                <img
+                  src={service.cover_image || ""}
+                  className="w-full h-48 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                  alt={service.title}
+                  onClick={() => setShowFullScreenImage(true)}
+                />
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-3">
                     <Badge variant="secondary">{service.categories?.name}</Badge>
                     {/* NEW PRICING TYPE BADGE */}
-                    <Badge variant="outline" className="capitalize bg-primary/5 text-primary border-primary/20">
+                    <Badge variant="outline" className="capitalize bg-primary/5 dark:bg-primary/10 text-primary border-primary/20">
                       {service.pricing_type || 'Fixed'} Price
                     </Badge>
                   </div>
 
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">{service.title}</h2>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{service.title}</h2>
 
-                  <div className="flex items-center gap-1 text-sm text-slate-500 mb-4">
+                  <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400 mb-4">
                     <MapPin className="w-4 h-4" />
                     {service.location_name}
                   </div>
 
                   {/* NEW FULL DESCRIPTION SECTION */}
-                  <div className="space-y-2 mt-6 pt-6 border-t border-slate-100">
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Service Description</h3>
-                    <div className="text-sm text-slate-600 leading-7 space-y-3">
+                  <div className="space-y-2 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Service Description</h3>
+                    <div className="text-sm text-slate-600 dark:text-slate-400 leading-7 space-y-3">
                       {(service.description || service.short_description || "No detailed description available.")
                         .split(/[\n\.]+/)
                         .filter((line) => line.trim() !== "")
                         .map((line, index) => (
-                          <p key={index} className="text-slate-600">
+                          <p key={index} className="text-slate-600 dark:text-slate-400">
                             {line.trim()}.
                           </p>
                         ))}
@@ -261,7 +270,7 @@ export default function Booking() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full rounded-xl gap-2 border-primary/20 text-primary"
+                      className="w-full rounded-xl gap-2 border-primary/20 text-primary dark:border-primary/30 dark:hover:bg-primary/10"
                       onClick={fetchReviews}
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -271,7 +280,7 @@ export default function Booking() {
                 </CardContent>
               </Card>
 
-              <Card className="border-none shadow-sm rounded-xl bg-emerald-600 text-white p-6">
+              <Card className="border-none shadow-sm rounded-xl bg-emerald-600 dark:bg-emerald-700 text-white p-6 transition-colors">
                 <div className="flex items-center gap-3 mb-4">
                   <ShieldCheck className="w-6 h-6" />
                   <h3 className="font-bold">Secure Payment</h3>
@@ -281,50 +290,50 @@ export default function Booking() {
                 </p>
               </Card>
             </div>
-            <Card className="border-none shadow-xl rounded-xl bg-white overflow-hidden">
-              <CardHeader className="p-8 border-b bg-slate-50/50">
-                <CardTitle className="text-2xl font-black">Schedule Appointment</CardTitle>
+            <Card className="border-none shadow-xl rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-colors mt-8">
+              <CardHeader className="p-8 border-b bg-slate-50/50 dark:bg-slate-800/50 dark:border-slate-800">
+                <CardTitle className="text-2xl font-black dark:text-white">Schedule Appointment</CardTitle>
               </CardHeader>
               <CardContent className="p-8 space-y-8">
                 <div className="space-y-3">
-                  <Label className="text-base font-bold flex items-center gap-2">
+                  <Label className="text-base font-bold flex items-center gap-2 dark:text-slate-300">
                     <Calendar className="w-4 h-4 text-primary" /> Select Date & Time
                   </Label>
                   <Input
                     type="datetime-local"
-                    className="h-14 rounded-2xl border-slate-200"
+                    className="h-14 rounded-2xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     value={bookingDate}
                     onChange={(e) => setBookingDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-base font-bold flex items-center gap-2">
+                  <Label className="text-base font-bold flex items-center gap-2 dark:text-slate-300">
                     <Smartphone className="w-4 h-4 text-primary" /> WhatsApp Number
                   </Label>
                   <Input
                     placeholder="e.g. 0712345678"
-                    className="h-14 rounded-2xl border-slate-200"
+                    className="h-14 rounded-2xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
                   />
-                  <p className="text-[10px] text-slate-400">The professional will contact you here after payment.</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">The professional will contact you here after payment.</p>
                 </div>
                 <div className="space-y-3">
-                  <Label className="text-base font-bold flex items-center gap-2">
+                  <Label className="text-base font-bold flex items-center gap-2 dark:text-slate-300">
                     <Clock className="w-4 h-4 text-primary" /> Instructions
                   </Label>
                   <Textarea
                     placeholder="Any special requirements?"
-                    className="rounded-2xl min-h-[120px]"
+                    className="rounded-2xl min-h-[120px] dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-3xl space-y-3 border border-slate-100">
-                  <div className="flex justify-between text-slate-600"><span>Booking Price</span><span>KES {service.price.toLocaleString()}</span></div>
-                  <div className="border-t pt-3 flex justify-between items-center">
-                    <span className="font-bold text-slate-900">Total Amount</span>
+                <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl space-y-3 border border-slate-100 dark:border-slate-700 transition-colors">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400"><span>Booking Price</span><span>KES {service.price.toLocaleString()}</span></div>
+                  <div className="border-t dark:border-slate-700 pt-3 flex justify-between items-center">
+                    <span className="font-bold text-slate-900 dark:text-white">Total Amount</span>
                     <span className="text-3xl font-black text-primary">KES {service.price.toLocaleString()}</span>
                   </div>
                 </div>
@@ -341,10 +350,31 @@ export default function Booking() {
         </div>
       </div>
 
+      {/* FULL SCREEN IMAGE MODAL */}
+      {showFullScreenImage && service.cover_image && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowFullScreenImage(false)}
+        >
+          <button
+            onClick={() => setShowFullScreenImage(false)}
+            className="absolute top-4 right-4 text-white/80 hover:text-white p-2 rounded-full bg-black/50 hover:bg-black/70 transition-all z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={service.cover_image}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            alt={service.title}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-[400px] rounded-xl p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-emerald-600 p-6 text-white text-center">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <DialogContent className="sm:max-w-[400px] rounded-xl p-0 overflow-hidden border-none shadow-2xl dark:bg-slate-900 transition-colors">
+          <div className="bg-emerald-600 dark:bg-emerald-700 p-6 text-white text-center">
+            <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" className="w-12" alt="Mpesa" />
             </div>
             <DialogTitle className="text-xl font-bold text-white">M-Pesa Express</DialogTitle>
@@ -354,17 +384,17 @@ export default function Booking() {
           <div className="p-8">
             {paymentStep === "input" && (
               <div className="space-y-6">
-                <div className="bg-slate-50 p-6 rounded-3xl space-y-3 border border-slate-100">
-                  <div className="flex justify-between text-slate-600">
+                <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl space-y-3 border border-slate-100 dark:border-slate-700 transition-colors">
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
                     <span>Platform Booking Fee</span>
                     <span>KES {service.price.toLocaleString()}</span>
                   </div>
 
-                  <div className="border-t pt-3 flex justify-between items-end">
+                  <div className="border-t dark:border-slate-700 pt-3 flex justify-between items-end">
                     <div>
-                      <span className="font-bold text-slate-900 block">Total Due Now</span>
+                      <span className="font-bold text-slate-900 dark:text-white block">Total Due Now</span>
                       {/* PRICING TYPE NOTICE */}
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         Note: This is a {service.pricing_type} platform fee to secure service.
                       </span>
                     </div>
@@ -373,17 +403,17 @@ export default function Booking() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-bold text-slate-700">M-Pesa Phone Number</Label>
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">M-Pesa Phone Number</Label>
                   <div className="relative">
-                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
                     <Input
                       placeholder="2547XXXXXXXX"
-                      className="h-14 pl-12 rounded-xl text-lg font-medium border-slate-200 focus:ring-emerald-500"
+                      className="h-14 pl-12 rounded-xl text-lg font-medium border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-emerald-500"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
                   </div>
-                  <p className="text-[10px] text-slate-400 text-center">Enter number starting with 254</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center">Enter number starting with 254</p>
                 </div>
 
                 <Button
@@ -400,18 +430,18 @@ export default function Booking() {
                 <div className="relative w-20 h-20 mx-auto animate-pulse">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" className="w-12 mx-auto" alt="Mpesa" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">Requesting Payment...</h3>
-                <p className="text-slate-500">Please check your phone and enter your <b>M-Pesa PIN</b>.</p>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Requesting Payment...</h3>
+                <p className="text-slate-500 dark:text-slate-400">Please check your phone and enter your <b>M-Pesa PIN</b>.</p>
               </div>
             )}
 
             {paymentStep === "success" && (
               <div className="py-10 text-center space-y-4">
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-12 h-12" />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900">Request Sent!</h3>
-                <p className="text-slate-500">Redirecting to your booking history...</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Request Sent!</h3>
+                <p className="text-slate-500 dark:text-slate-400">Redirecting to your booking history...</p>
               </div>
             )}
           </div>
@@ -421,10 +451,10 @@ export default function Booking() {
 
       {/* NEW: REVIEWS DIALOG */}
       <Dialog open={showReviewsModal} onOpenChange={setShowReviewsModal}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800 transition-colors">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Service Reviews</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold dark:text-white">Service Reviews</DialogTitle>
+            <DialogDescription className="dark:text-slate-400">
               What other customers say about this service.
             </DialogDescription>
           </DialogHeader>
@@ -434,30 +464,30 @@ export default function Booking() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : reviews.length === 0 ? (
-            <div className="py-10 text-center text-slate-500">
+            <div className="py-10 text-center text-slate-500 dark:text-slate-400">
               No reviews yet for this service.
             </div>
           ) : (
             <div className="space-y-6 py-4">
               {reviews.map((review) => (
-                <div key={review.id} className="border-b border-slate-100 pb-4 last:border-0">
+                <div key={review.id} className="border-b border-slate-100 dark:border-slate-800 pb-4 last:border-0">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="font-bold text-slate-900">{review.customer?.full_name || "Verified Customer"}</p>
+                      <p className="font-bold text-slate-900 dark:text-white">{review.customer?.full_name || "Verified Customer"}</p>
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-3 h-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}`}
+                            className={`w-3 h-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200 dark:text-slate-600"}`}
                           />
                         ))}
                       </div>
                     </div>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
                       {format(new Date(review.created_at), "MMM d, yyyy")}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 italic">"{review.comment}"</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 italic">"{review.comment}"</p>
                 </div>
               ))}
             </div>

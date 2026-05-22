@@ -277,30 +277,30 @@ const Index = () => {
   const dashboardLink = profile?.role === "provider" ? "/dashboard/provider" : "/dashboard/customer";
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col">
       <Navbar />
 
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-16 overflow-hidden bg-slate-50">
+      <section className="relative pt-32 pb-16 overflow-hidden bg-slate-50 dark:bg-slate-900">
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-left">
               <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
                 ✨ Trusted by 10,000+ local users
               </div>
-              <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-tight mb-6">
+              <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white leading-tight mb-6">
                 Your Comfort, <br /> Our <span className="text-primary">Commitment.</span>
               </h1>
-              <p className="text-xl text-slate-600 mb-8 max-w-lg leading-relaxed">
+              <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-lg leading-relaxed">
                 Book top-rated verified professionals for any service you need. Reliable, fast, and secure.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 p-2 bg-white shadow-2xl rounded-2xl border border-slate-200 mb-8 max-w-xl">
+              <div className="flex flex-col sm:flex-row gap-3 p-2 bg-white dark:bg-slate-800 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-700 mb-8 max-w-xl">
                 <div className="flex-1 flex items-center px-4">
-                  <Search className="text-slate-400 mr-2 h-5 w-5" />
+                  <Search className="text-slate-400 dark:text-slate-500 mr-2 h-5 w-5" />
                   <Input
                     placeholder="What do you need help with?"
-                    className="border-none shadow-none focus-visible:ring-0 text-lg h-12"
+                    className="border-none shadow-none focus-visible:ring-0 text-lg h-12 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -310,7 +310,7 @@ const Index = () => {
                 </Button>
               </div>
 
-              <div className="flex flex-wrap gap-6 text-slate-500">
+              <div className="flex flex-wrap gap-6 text-slate-500 dark:text-slate-300">
                 <div className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-500" /> Verified Pros</div>
                 <div className="flex items-center gap-2"><Globe className="w-5 h-5 text-blue-500" /> 24/7 Service</div>
               </div>
@@ -389,7 +389,7 @@ const Index = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Explore by Category</h2>
+            <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">Explore by Category</h2>
             <div className="w-20 h-1 bg-primary mx-auto" />
           </div>
 
@@ -411,7 +411,7 @@ const Index = () => {
                   // GO TO EXPLORE PAGE WITH CATEGORY
                   navigate(`/explore?category=${cat.slug}`);
                 }}
-                className="border-none shadow-sm hover:shadow-xl transition-all cursor-pointer group rounded-3xl overflow-hidden py-8"
+                className="border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-all cursor-pointer group rounded-3xl overflow-hidden py-8"
               >
                 <CardContent className="flex flex-col items-center">
                   <div
@@ -430,7 +430,7 @@ const Index = () => {
                     })()}
                   </div>
 
-                  <p className="font-bold text-slate-800 text-sm">
+                  <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
                     {cat.name}
                   </p>
                 </CardContent>
@@ -441,10 +441,10 @@ const Index = () => {
       </section>
 
       {/* TRENDING SERVICES */}
-      <section className="py-20 bg-slate-50">
+      <section className="py-20 bg-slate-50 dark:bg-slate-900">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-bold">Recommended for You</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Recommended for You</h2>
             <Button variant="ghost" className="text-primary font-bold" onClick={() => navigate("/explore")}>
               See all services <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
