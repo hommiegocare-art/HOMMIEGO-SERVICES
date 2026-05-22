@@ -267,9 +267,10 @@ export const Navbar = () => {
                     <p className="font-bold text-foreground">{profile?.full_name}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">{profile?.role}</p>
                   </div>
+                  <ThemeToggle />
                 </div>
               )}
-              <ThemeToggle />
+
 
               <Link to="/" className="flex items-center gap-3 p-3 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 rounded-xl transition-colors" onClick={() => setIsMenuOpen(false)}>
                 <Home size={20} />
