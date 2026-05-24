@@ -451,7 +451,7 @@ export default function Booking() {
 
       {/* NEW: REVIEWS DIALOG */}
       <Dialog open={showReviewsModal} onOpenChange={setShowReviewsModal}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto dark:bg-slate-900 dark:border-slate-800 transition-colors">
+        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto no-scrollbar dark:bg-slate-900 dark:border-slate-800 transition-colors">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold dark:text-white">Service Reviews</DialogTitle>
             <DialogDescription className="dark:text-slate-400">
