@@ -455,7 +455,7 @@ export default function Booking() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold dark:text-white">Service Reviews</DialogTitle>
             <DialogDescription className="dark:text-slate-400">
-              What other customers say about this service.
+              What other client say about this service.
             </DialogDescription>
           </DialogHeader>
 
