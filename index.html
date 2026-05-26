@@ -1,26 +1,28 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
   <title>HommieGo - Connecting You to Trusted Services, Instantly</title>
 
   <!-- SEO & PWA Meta Tags -->
   <meta name="description"
     content="Find verified service providers near you in Kenya. Car hire, photographers, tutors, beauticians, and more. Chat instantly, book easily, pay securely with M-Pesa." />
   <meta name="author" content="HommieGo" />
-  <meta name="theme-color" content="#0F172A" /> <!-- Dark theme color to match dark mode -->
+  <meta name="theme-color" content="#0F172A" />
 
   <!-- Manifest & Mobile App Tags -->
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="HommieGo" />
   <meta name="mobile-web-app-capable" content="yes" />
 
-  <!-- Open Graph / Facebook -->
+  <!-- Open Graph -->
   <meta property="og:title" content="HommieGo - Connecting You to Trusted Services, Instantly" />
   <meta property="og:description"
     content="Find verified service providers near you in Kenya. Book services instantly with secure M-Pesa payments." />
@@ -34,89 +36,41 @@
   <meta name="twitter:title" content="HommieGo - Connecting You to Trusted Services, Instantly" />
   <meta name="twitter:description"
     content="Find verified service providers near you in Kenya. Book services instantly with secure M-Pesa payments." />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-  <!-- Favicons -->
+  <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
 
-  <!-- ANTI-FLASH: Set dark background immediately before React loads -->
-  <style>
-    /* Prevent white flash by setting dark background instantly */
-    html,
-    body {
-      background-color: #020617 !important;
-      /* slate-950 */
-      color: #e2e8f0 !important;
-      /* slate-200 */
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-    }
-
-    /* If user prefers light mode, override to light colors */
-    @media (prefers-color-scheme: light) {
-
-      html.light,
-      html.light body {
-        background-color: #F8FAFC !important;
-        color: #0F172A !important;
-      }
-    }
-
-    /* Loading state - subtle dark loader */
-    #root:empty::before {
-      content: '';
-      display: block;
-      width: 40px;
-      height: 40px;
-      margin: 40vh auto;
-      border: 3px solid #334155;
-      border-top-color: #3B82F6;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-  </style>
-
-  <!-- Inline script to check saved theme preference immediately -->
+  <!-- Theme Initialization -->
   <script>
     (function () {
       try {
-        // Check localStorage for saved theme preference
         const savedTheme = localStorage.getItem('theme');
+        const root = document.documentElement;
+        const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-        if (savedTheme === 'light') {
-          // User prefers light mode
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#F8FAFC');
-        } else if (savedTheme === 'dark' || !savedTheme) {
-          // User prefers dark mode or no preference set (default to dark)
-          document.documentElement.classList.add('dark');
-          document.documentElement.classList.remove('light');
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0F172A');
-        }
+        root.classList.remove('dark', 'light');
 
-        // If no saved preference, check system preference
-        if (!savedTheme) {
-          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.classList.add('light');
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#F8FAFC');
+        if (savedTheme === 'dark') {
+          root.classList.add('dark');
+          themeMeta?.setAttribute('content', '#0F172A');
+        } else if (savedTheme === 'light') {
+          root.classList.add('light');
+          themeMeta?.setAttribute('content', '#F8FAFC');
+        } else {
+          const prefersDark =
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+          if (prefersDark) {
+            root.classList.add('dark');
+            themeMeta?.setAttribute('content', '#0F172A');
           } else {
-            document.documentElement.classList.add('dark');
-            document.documentElement.classList.remove('light');
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0F172A');
+            root.classList.add('light');
+            themeMeta?.setAttribute('content', '#F8FAFC');
           }
         }
       } catch (e) {
-        // Fallback to dark mode if localStorage fails
-        document.documentElement.classList.add('dark');
+        // Do nothing. Let the app determine the theme normally.
       }
     })();
   </script>
@@ -124,7 +78,7 @@
 
 <body>
   <div id="root"></div>
-  <!-- Standard script for Vite/React -->
+
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
