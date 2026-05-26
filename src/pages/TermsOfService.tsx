@@ -17,7 +17,7 @@ export default function TermsOfService() {
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20 relative z-10">
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="bg-white dark:bg-gray-950 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
                     <div className="p-4 md:p-6">
                         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
                             <ArrowLeft className="w-4 h-4" /> Back
@@ -25,7 +25,7 @@ export default function TermsOfService() {
                     </div>
 
                     {/* Header Banner */}
-                    <div className="bg-white dark:bg-slate-900 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
+                    <div className="bg-white dark:bg-gray-950 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
                         <div className="flex items-center gap-3 mb-6 text-primary">
                             <Gavel className="w-8 h-8" />
                             <span className="font-bold tracking-widest uppercase text-sm">Binding Agreement</span>
@@ -210,7 +210,7 @@ export default function TermsOfService() {
                         </section>
 
                         {/* Section 12: Contact & Legal Inquiries */}
-                        <section className="bg-white dark:bg-slate-900 text-white rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
+                        <section className="bg-white dark:bg-gray-950 text-white rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
                             <Mail className="w-12 h-12 mx-auto mb-6 text-primary" />
                             <h2 className="text-2xl font-black uppercase tracking-tighter mb-4 text-slate-900 dark:text-white">12. Legal Inquiries & Contact</h2>
                             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">

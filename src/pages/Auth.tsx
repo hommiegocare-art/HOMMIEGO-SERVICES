@@ -217,7 +217,7 @@ export default function Auth() {
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md pb-24 md:pb-0">
-        <Card className="w-full p-4 md:p-6 shadow-2xl border-none bg-white/95 dark:bg-slate-900/95 backdrop-blur-md animate-in fade-in zoom-in duration-500 transition-colors">
+        <Card className="w-full p-4 md:p-6 shadow-2xl border-none bg-white/95 dark:bg-gray-950/95 backdrop-blur-md animate-in fade-in zoom-in duration-500 transition-colors">
           {/* HOME BUTTON - Positioned above the card for a cleaner look */}
           <div className="mb-4 flex justify-start">
             <Button
@@ -375,7 +375,7 @@ export default function Auth() {
                 <span className="w-full border-t border-slate-200 dark:border-slate-700"></span>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-500 dark:text-slate-400">Or continue with</span>
+                <span className="bg-white dark:bg-gray-950 px-2 text-slate-500 dark:text-slate-400">Or continue with</span>
               </div>
             </div>
 
@@ -422,7 +422,7 @@ export default function Auth() {
         {/* Google Role Modal */}
         {showGoogleRoleModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-[90%] max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-6 shadow-2xl animate-in zoom-in-95 duration-200 transition-colors">
+            <div className="w-[90%] max-w-sm rounded-3xl bg-white dark:bg-gray-950 p-6 shadow-2xl animate-in zoom-in-95 duration-200 transition-colors">
 
               <div className="text-center mb-6">
                 <div className="w-14 h-14 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center mx-auto mb-4">

@@ -260,11 +260,11 @@ export default function Explore() {
     });
   }, [services, searchQuery, selectedCategory, filterParam]);
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 transition-colors">
       <Navbar />
 
       {/* Hero / Search Section */}
-      <section className="pt-32 pb-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
+      <section className="pt-32 pb-12 bg-white dark:bg-zinc-950 border-0 transition-colors">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
             Find the perfect professional
@@ -326,7 +326,7 @@ export default function Explore() {
               className="
 rounded-full px-6 py-5 whitespace-nowrap gap-2
 hover:scale-105 transition-all duration-300 shadow-sm
-bg-white dark:bg-slate-900
+bg-white dark:bg-gray-950
 text-slate-700 dark:text-slate-200
 border border-slate-200 dark:border-slate-700
 hover:bg-slate-100 dark:hover:bg-slate-800
@@ -420,7 +420,7 @@ uppercase tracking-tighter
             className="
     h-10 rounded-xl px-5 gap-2
     border-slate-200 dark:border-slate-700
-    bg-white dark:bg-slate-900
+    bg-white dark:bg-gray-950
     text-slate-700 dark:text-slate-200
     hover:bg-slate-100 dark:hover:bg-slate-800
     shadow-sm transition-all font-semibold
@@ -465,7 +465,7 @@ uppercase tracking-tighter
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
+          <div className="text-center py-20 bg-white dark:bg-gray-950 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700">
             <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="text-slate-300 dark:text-slate-600 w-8 h-8" />
             </div>

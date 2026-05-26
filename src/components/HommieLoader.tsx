@@ -4,7 +4,7 @@ import { GraduationCap } from "lucide-react";
 
 export const HommieLoader = () => {
     return (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-[#020817] transition-colors duration-500">
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-zinc-950 transition-colors duration-500">
             {/* Background Glow Effects */}
             <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-red-500/10 dark:bg-red-500/20 blur-3xl rounded-full animate-pulse" />

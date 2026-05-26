@@ -328,11 +328,11 @@ export default function ProviderDashboard() {
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 pb-20 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 pb-20 transition-colors duration-300">
       {/* Header */}
-      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b dark:border-slate-800 mb-8 sticky top-0 z-50 transition-colors duration-300">
+      <nav className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b dark:border-slate-800 mb-8 sticky top-0 z-50 transition-colors duration-300">
         <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          {/* Left: Branding */}
+
           {/* Left: Branding */}
           <div className="flex items-center gap-3">
             {/* Professional Icon instead of just a letter */}
@@ -355,7 +355,7 @@ export default function ProviderDashboard() {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Primary Action - Always visible on desktop */}
             <Button
               size="sm"
@@ -380,7 +380,7 @@ export default function ProviderDashboard() {
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-100 dark:border-slate-800 mt-2 bg-white dark:bg-slate-900">
+              <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-100 dark:border-slate-800 mt-2 bg-white dark:bg-gray-950">
                 <DropdownMenuLabel className="p-3">
                   <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Navigation</p>
                 </DropdownMenuLabel>
@@ -423,7 +423,7 @@ export default function ProviderDashboard() {
       {/* Custom Logout Popup */}
       {showLogoutPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 transition-colors">
+          <div className="bg-white dark:bg-gray-950 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 transition-colors">
 
             {/* Icon */}
             <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center mb-4">
@@ -465,7 +465,7 @@ export default function ProviderDashboard() {
       )}
       <div className="container mx-auto px-4">
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
           {[
             {
               label: "Total Reviews",
@@ -492,8 +492,8 @@ export default function ProviderDashboard() {
               color: "text-purple-600 dark:text-purple-400"
             },
           ].map((s, i) => (
-            <Card key={i} className="border-none shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-slate-900 transition-colors">
-              <CardContent className="p-4 flex items-center gap-4">
+            <Card key={i} className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-950 transition-colors">
+              <CardContent className="p-4 flex items-center gap-2">
                 <div className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800 ${s.color}`}>
                   <s.icon className="w-5 h-5" />
                 </div>
@@ -505,24 +505,24 @@ export default function ProviderDashboard() {
             </Card>
           ))}
         </div>
-        <Tabs defaultValue="services" className="space-y-6">
-          <TabsList className="bg-white dark:bg-slate-900 border dark:border-slate-800 p-1 h-12 w-full justify-start overflow-x-auto transition-colors">
-            <TabsTrigger value="services" className="px-6 dark:data-[state=active]:bg-slate-800 dark:text-slate-400 dark:data-[state=active]:text-white">My Services</TabsTrigger>
-            <TabsTrigger value="bookings" className="px-6 dark:data-[state=active]:bg-slate-800 dark:text-slate-400 dark:data-[state=active]:text-white">Bookings</TabsTrigger>
-            <TabsTrigger value="subscription" className="px-6 dark:data-[state=active]:bg-slate-800 dark:text-slate-400 dark:data-[state=active]:text-white">Subscription</TabsTrigger>
+        <Tabs defaultValue="services" className="space-y-4">
+          <TabsList className="mx-auto flex w-fit items-center justify-center rounded-2xl border-0  bg-gray-100 dark:bg-gray-900 p-1 h-14 shadow-sm">
+            <TabsTrigger value="services" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">My Services</TabsTrigger>
+            <TabsTrigger value="bookings" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">Bookings</TabsTrigger>
+            <TabsTrigger value="subscription" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">Subscription</TabsTrigger>
           </TabsList>
 
           <TabsContent value="services" className="space-y-4">
             {services.length === 0 ? (
-              <Card className="p-12 text-center border-dashed dark:border-slate-800 dark:bg-slate-900 transition-colors">
+              <Card className="p-12 text-center border-dashed dark:border-slate-800 dark:bg-gray-950 transition-colors">
                 <Briefcase className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
                 <h3 className="text-lg font-medium dark:text-white">No services listed</h3>
                 <Button className="mt-4" onClick={() => navigate("/provider/services/new")}>Create Service</Button>
               </Card>
             ) : (
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
                 {services.map((service) => (
-                  <Card key={service.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow dark:bg-slate-900">
+                  <Card key={service.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow dark:bg-gray-950">
                     <div className="relative h-48">
                       <img
                         src={service.cover_image || service.service_images?.[0]?.image_url}
@@ -567,16 +567,16 @@ export default function ProviderDashboard() {
           </TabsContent>
           <TabsContent value="bookings" className="space-y-4">
             {bookings.length === 0 ? (
-              <Card className="p-12 text-center border-dashed text-muted-foreground dark:text-slate-400 dark:border-slate-800 dark:bg-slate-900 transition-colors">
+              <Card className="p-12 text-center border-0 text-muted-foreground dark:text-slate-400 dark:bg-zinc-950 transition-colors">
                 <div className="flex flex-col items-center gap-2">
                   <Calendar className="w-10 h-10 opacity-20" />
                   <p>No bookings found yet.</p>
                 </div>
               </Card>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid gap-6 max-w-6xl mx-auto">
                 {sortedBookings.map((booking) => (
-                  <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 transition-colors">
+                  <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white dark:bg-gray-950 transition-colors">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
 
@@ -716,7 +716,7 @@ export default function ProviderDashboard() {
 
 
           <TabsContent value="subscription">
-            <Card className="max-w-md border-none shadow-sm dark:bg-slate-900 transition-colors">
+            <Card className="max-w-md border-none shadow-sm dark:bg-gray-950 transition-colors">
               <CardHeader>
                 <CardTitle className="dark:text-white">Plan Details</CardTitle>
                 <CardDescription className="dark:text-slate-400">Manage your provider subscription and billing</CardDescription>
@@ -738,7 +738,7 @@ export default function ProviderDashboard() {
       </div>
       {/* FULL DETAILS MODAL */}
       <Dialog open={!!viewingService} onOpenChange={() => { setViewingService(null); setIsEditing(false); }}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-slate-900 transition-colors">
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-gray-950 transition-colors">
           {viewingService && (
             <>
               <div className="h-64 w-full relative group">

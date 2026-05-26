@@ -89,7 +89,7 @@ export default function AuthCallback() {
 
             <div className="relative z-10 w-full max-w-md">
                 {/* Main Card */}
-                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 dark:shadow-slate-950/60 border border-slate-100 dark:border-slate-800 p-8 md:p-10 text-center transition-colors duration-300">
+                <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 dark:shadow-slate-950/60 border border-slate-100 dark:border-slate-800 p-8 md:p-10 text-center transition-colors duration-300">
 
                     {/* Logo / Icon Section */}
                     <div className="relative mb-8">

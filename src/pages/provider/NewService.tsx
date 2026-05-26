@@ -131,7 +131,7 @@ export default function NewService() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-20 transition-colors duration-300">
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-20 transition-colors duration-300">
             <div className="container mx-auto px-4 pt-2">
 
                 {/* Navigation & Title Header */}
@@ -146,10 +146,10 @@ export default function NewService() {
                 </div>
 
                 <div className="max-w-2xl mx-auto">
-                    <form onSubmit={handleCreateService} className="space-y-2">
+                    <form onSubmit={handleCreateService} className="space-y-4">
 
                         {/* BLOCK 1: General Info */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-slate-900 transition-colors">
+                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-gray-950 transition-colors">
                             <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
                                 <Briefcase className="text-primary w-6 h-6" />
                                 <h2 className="text-white font-bold text-lg">Service Details</h2>
@@ -362,7 +362,7 @@ export default function NewService() {
                         </Card>
 
                         {/* BLOCK 2: Images Gallery */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-slate-900 transition-colors">
+                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-gray-950 transition-colors">
                             <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
                                 <ImagePlus className="text-primary w-6 h-6" />
                                 <h2 className="text-white font-bold text-lg">Service Gallery</h2>
@@ -395,7 +395,7 @@ export default function NewService() {
                         </Card>
 
                         {/* BLOCK 3: Category Selection */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-slate-900 transition-colors">
+                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-gray-950 transition-colors">
                             <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
                                 <Check className="text-primary w-6 h-6" />
                                 <h2 className="text-white font-bold text-lg">Category</h2>

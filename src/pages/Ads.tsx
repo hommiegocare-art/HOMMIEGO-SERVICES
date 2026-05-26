@@ -146,7 +146,7 @@ export default function CreateAd() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 transition-colors">
       <Navbar />
 
       <div className="pt-32 pb-20 px-4">
@@ -176,11 +176,11 @@ dark:shadow-primary/10
           {showPanel && (
             <Card className="
 border border-slate-200 dark:border-slate-800
-bg-white dark:bg-slate-900
+bg-white dark:bg-gray-950
 shadow-xl rounded-xl overflow-hidden mb-2
 animate-in slide-in-from-top-10 duration-500
 ">
-              <CardHeader className="bg-slate-900 dark:bg-slate-950 text-white p-3 border-b border-slate-800">
+              <CardHeader className="bg-slate-900 dark:bg-zinc-950 text-white p-3 border-b border-slate-800">
                 <CardTitle className="text-2xl">Advertisement Details</CardTitle>
                 <CardDescription className="text-slate-400 dark:text-slate-500">Fill in the details to reach thousands of customers</CardDescription>
               </CardHeader>
@@ -248,7 +248,7 @@ relative group cursor-pointer border-2 border-dashed
 border-slate-200 dark:border-slate-700
 rounded-[2rem] h-[280px]
 flex flex-col items-center justify-center
-bg-slate-50 dark:bg-slate-900
+bg-slate-50 dark:bg-gray-950
 hover:bg-slate-100 dark:hover:bg-slate-800
 hover:border-primary
 transition-all overflow-hidden
@@ -295,7 +295,7 @@ group-hover:scale-110 transition-transform
               <Card className="
 border-dashed
 border-slate-200 dark:border-slate-700
-bg-transparent dark:bg-slate-900/30
+bg-transparent dark:bg-gray-950/30
 p-20 text-center
 ">
                 <Megaphone className="w-16 h-16 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
@@ -309,7 +309,7 @@ p-20 text-center
                     key={ad.id}
                     className="
     group overflow-hidden rounded-[2rem]
-    bg-white dark:bg-slate-900
+    bg-white dark:bg-gray-950
     border border-slate-200 dark:border-slate-800
     shadow-sm hover:shadow-xl
     dark:hover:shadow-black/20

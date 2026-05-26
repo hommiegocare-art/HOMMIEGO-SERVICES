@@ -114,9 +114,9 @@ export default function ClientDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-12 transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-12 transition-colors duration-300">
       {/* Top Navigation Bar */}
-      <nav className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-10 shadow-sm transition-colors duration-300">
+      <nav className="bg-white dark:bg-gray-950 border-b dark:border-slate-800 sticky top-0 z-10 shadow-sm transition-colors duration-300">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             Client Portal
@@ -148,7 +148,7 @@ export default function ClientDashboard() {
       {/* Logout Popup */}
       {showLogoutPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-900 w-[90%] max-w-md rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in-95 transition-colors">
+          <div className="bg-white dark:bg-gray-950 w-[90%] max-w-md rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in-95 transition-colors">
             <div className="w-16 h-16 mx-auto rounded-full bg-rose-50 dark:bg-rose-950 flex items-center justify-center mb-4">
               <LogOut className="w-8 h-8 text-rose-600 dark:text-rose-400" />
             </div>
@@ -208,7 +208,7 @@ export default function ClientDashboard() {
           {statCards.map((stat) => (
             <Card
               key={stat.label}
-              className={`border-none shadow-sm transition-all duration-300 dark:bg-slate-900 ${stat.label === "Saved Services"
+              className={`border-none shadow-sm transition-all duration-300 dark:bg-gray-950 ${stat.label === "Saved Services"
                 ? "cursor-pointer hover:shadow-md hover:ring-2 hover:ring-rose-100 dark:hover:ring-rose-900"
                 : ""
                 }`}
@@ -235,7 +235,7 @@ export default function ClientDashboard() {
         </div>
         {/* Discovery Section */}
         {/* Discovery Section with Smooth Slideshow */}
-        <Card className="relative overflow-hidden border-none shadow-2xl min-h-[400px] flex flex-col justify-center dark:bg-slate-900 transition-colors">
+        <Card className="relative overflow-hidden border-none shadow-2xl min-h-[400px] flex flex-col justify-center dark:bg-gray-950 transition-colors">
 
           {/* --- SLIDESHOW LAYER --- */}
           <div className="absolute inset-0 z-0">
@@ -251,7 +251,7 @@ export default function ClientDashboard() {
               />
             ))}
             {/* Professional Overlay: Darkens the image so white text pops */}
-            <div className="absolute inset-0 bg-slate-900/60 dark:bg-slate-950/70 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 bg-slate-900/60 dark:bg-zinc-950/70 backdrop-blur-[1px]" />
           </div>
 
           {/* --- CONTENT LAYER --- */}

@@ -89,7 +89,7 @@ export const Navbar = () => {
   return (
     <>
 
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
 
@@ -256,9 +256,9 @@ export const Navbar = () => {
           {/* MOBILE MENU */}
           {/* MOBILE MENU */}
           {isMenuOpen && (
-            <div className="md:hidden mt-1 pb-28 space-y-2 bg-white dark:bg-slate-950 animate-in slide-in-from-top-4 duration-200 max-h-[calc(100vh-120px)] overflow-y-auto">
+            <div className="md:hidden mt-1 pb-28 space-y-2 bg-white dark:bg-zinc-950 animate-in slide-in-from-top-4 duration-200 max-h-[calc(100vh-120px)] overflow-y-auto">
               {user && (
-                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl mb-4">
+                <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-gray-950 rounded-2xl mb-4">
                   <Avatar>
                     <AvatarImage src={profile?.avatar_url} />
                     <AvatarFallback>{getInitials(profile?.full_name)}</AvatarFallback>

@@ -18,7 +18,7 @@ export default function CookiePolicy() {
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20 relative z-10">
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="bg-white dark:bg-gray-950 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
                     <div className="p-4 md:p-6">
                         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
                             <ArrowLeft className="w-4 h-4" /> Back
@@ -26,7 +26,7 @@ export default function CookiePolicy() {
                     </div>
 
                     {/* Header Banner */}
-                    <div className="bg-white dark:bg-slate-900 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
+                    <div className="bg-white dark:bg-gray-950 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
                         <div className="flex items-center gap-3 mb-6 text-primary">
                             <Cookie className="w-8 h-8" />
                             <span className="font-bold tracking-widest uppercase text-sm">Transparency & Compliance</span>
@@ -103,7 +103,7 @@ export default function CookiePolicy() {
                                         icon: Database
                                     }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="bg-white dark:bg-gray-950 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
                                         <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center mb-4 text-primary">
                                             <item.icon className="w-5 h-5" />
                                         </div>
@@ -208,7 +208,7 @@ export default function CookiePolicy() {
                                 <li><strong>Right to object:</strong> You can object to the processing of your personal data for marketing purposes.</li>
                                 <li><strong>Right to erasure:</strong> You can request deletion of your personal data where applicable.</li>
                             </ul>
-                            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                            <div className="bg-white dark:bg-gray-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
                                 <h4 className="font-bold text-slate-900 dark:text-white mb-2">How to Manage Cookies:</h4>
                                 <ul className="list-disc pl-6 space-y-1 text-sm">
                                     <li><strong>Browser Settings:</strong> You can set or amend your web browser controls to accept or refuse cookies through your browser's settings menu.</li>
@@ -266,7 +266,7 @@ export default function CookiePolicy() {
                         </section>
 
                         {/* Section 9: Contact */}
-                        <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
+                        <section className="bg-white dark:bg-gray-950 rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
                             <Mail className="w-12 h-12 mx-auto mb-6 text-primary" />
                             <h2 className="text-2xl font-black uppercase tracking-tighter mb-4 text-slate-900 dark:text-white">9. Questions or Concerns?</h2>
                             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">

@@ -222,7 +222,7 @@ export default function Booking() {
   if (!service) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 pb-20 transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-20 transition-colors duration-300">
       <Navbar />
 
       <div className="pt-32 px-4 container mx-auto max-w-5xl">
@@ -238,7 +238,7 @@ export default function Booking() {
           <div>
             {/* LEFT COLUMN */}
             <div className="space-y-6">
-              <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-slate-900 transition-colors">
+              <Card className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-950 transition-colors">
                 <img
                   src={service.cover_image || ""}
                   className="w-full h-48 object-cover cursor-pointer hover:opacity-95 transition-opacity"
@@ -300,7 +300,7 @@ export default function Booking() {
                 </p>
               </Card>
             </div>
-            <Card className="border-none shadow-xl rounded-xl bg-white dark:bg-slate-900 overflow-hidden transition-colors mt-8">
+            <Card className="border-none shadow-xl rounded-xl bg-white dark:bg-gray-950 overflow-hidden transition-colors mt-8">
               <CardHeader className="p-8 border-b bg-slate-50/50 dark:bg-slate-800/50 dark:border-slate-800">
                 <CardTitle className="text-2xl font-black dark:text-white">Schedule Appointment</CardTitle>
               </CardHeader>
@@ -435,7 +435,7 @@ export default function Booking() {
       )}
 
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-[400px] rounded-xl p-0 overflow-hidden border-none shadow-2xl dark:bg-slate-900 transition-colors">
+        <DialogContent className="sm:max-w-[400px] rounded-xl p-0 overflow-hidden border-none shadow-2xl dark:bg-gray-950 transition-colors">
           <div className="bg-emerald-600 dark:bg-emerald-700 p-6 text-white text-center">
             <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" className="w-12" alt="Mpesa" />
@@ -514,7 +514,7 @@ export default function Booking() {
 
       {/* NEW: REVIEWS DIALOG */}
       <Dialog open={showReviewsModal} onOpenChange={setShowReviewsModal}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto no-scrollbar dark:bg-slate-900 dark:border-slate-800 transition-colors">
+        <DialogContent className="sm:max-w-[500px] rounded-xl max-h-[80vh] overflow-y-auto no-scrollbar dark:bg-gray-950 dark:border-slate-800 transition-colors">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold dark:text-white">Service Reviews</DialogTitle>
             <DialogDescription className="dark:text-slate-400">

@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20 relative z-10">
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="bg-white dark:bg-gray-950 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
                     <div className="p-4 md:p-6">
                         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
                             <ArrowLeft className="w-4 h-4" /> Back
@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
                     </div>
 
                     {/* Header Banner */}
-                    <div className="bg-white dark:bg-slate-900 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
+                    <div className="bg-white dark:bg-gray-950 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
                         <div className="flex items-center gap-3 mb-6 text-primary">
                             <Shield className="w-8 h-8" />
                             <span className="font-bold tracking-widest uppercase text-sm">Legal Protection & Compliance</span>
@@ -109,7 +109,7 @@ export default function PrivacyPolicy() {
                                         icon: AlertTriangle
                                     }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="bg-white dark:bg-gray-950 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
                                         <div className="flex items-center gap-2 mb-2">
                                             <item.icon className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="font-bold text-slate-900 dark:text-white text-sm">{item.title}</span>
@@ -201,7 +201,7 @@ export default function PrivacyPolicy() {
                                     { right: "Right to Restrict Processing (Section 36)", desc: "You may request limitation of processing under certain circumstances." },
                                     { right: "Right to Lodge a Complaint", desc: "You have the right to complain to the Office of the Data Protection Commissioner (ODPC) at info@odpc.go.ke." }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="flex items-start gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="flex items-start gap-3 bg-white dark:bg-gray-950 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
                                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                                         <div>
                                             <span className="font-bold text-slate-900 dark:text-white text-sm">{item.right}</span>
@@ -287,7 +287,7 @@ export default function PrivacyPolicy() {
                         </section>
 
                         {/* Section 10: Contact */}
-                        <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
+                        <section className="bg-white dark:bg-gray-950 rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
                             <Mail className="w-12 h-12 mx-auto mb-6 text-primary" />
                             <h2 className="text-2xl font-black uppercase tracking-tighter mb-4 text-slate-900 dark:text-white">10. Contact Our Data Protection Officer</h2>
                             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">

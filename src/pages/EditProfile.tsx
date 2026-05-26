@@ -205,7 +205,7 @@ export default function EditProfile() {
     if (loading) return <HommieLoader />;
 
     return (
-        <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-24 transition-colors duration-300">
+        <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950 pb-24 transition-colors duration-300">
             <Navbar />
 
             <div className="max-w-4xl mx-auto pt-32 px-4">
@@ -238,7 +238,7 @@ export default function EditProfile() {
 
                 <div className="grid grid-cols-1 gap-2">
                     {/* Section 1: Basic Info */}
-                    <Card className="rounded-xl border-none shadow-sm overflow-hidden dark:bg-slate-900 transition-colors">
+                    <Card className="rounded-xl border-none shadow-sm overflow-hidden dark:bg-gray-950 transition-colors">
                         <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-2 text-white">
                             <Info size={18} className="text-primary" />
                             <span className="font-bold uppercase text-xs tracking-widest">Personal Details</span>
@@ -303,7 +303,7 @@ export default function EditProfile() {
                     </Card>
 
                     {/* Section 2: Location */}
-                    <Card className="rounded-xl border-none shadow-sm overflow-hidden dark:bg-slate-900 transition-colors">
+                    <Card className="rounded-xl border-none shadow-sm overflow-hidden dark:bg-gray-950 transition-colors">
                         <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-2 text-white">
                             <MapPin size={18} className="text-primary" />
                             <span className="font-bold uppercase text-xs tracking-widest">Location Info</span>
@@ -377,7 +377,7 @@ export default function EditProfile() {
                     if (!open) setDeleteStep("confirm");
                 }
             }}>
-                <DialogContent className="sm:max-w-[440px] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl dark:bg-slate-900 transition-colors">
+                <DialogContent className="sm:max-w-[440px] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl dark:bg-gray-950 transition-colors">
                     {/* STEP 1: CONFIRMATION */}
                     {deleteStep === "confirm" && (
                         <>

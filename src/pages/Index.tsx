@@ -295,11 +295,11 @@ const Index = () => {
   const dashboardLink = profile?.role === "provider" ? "/dashboard/provider" : "/dashboard/customer";
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 flex flex-col">
       <Navbar />
       {/* HERO SECTION */}
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-16 overflow-hidden bg-white dark:bg-slate-950">
+      <section className="relative pt-32 pb-16 overflow-hidden bg-white dark:bg-zinc-950">
 
         {/* Nature Background Layer - Adjusted opacity and saturation for better text contrast */}
         <div
@@ -434,7 +434,7 @@ const Index = () => {
         </section>
       )}
       {/* CATEGORIES GRID */}
-      <section className="py-24 bg-white dark:bg-slate-950 relative overflow-hidden">
+      <section className="py-24 bg-white dark:bg-zinc-950 relative overflow-hidden">
         {/* Decorative Background Elements for "Worthiness" */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -465,7 +465,7 @@ const Index = () => {
                     }
                     navigate(`/explore?category=${cat.slug}`);
                   }}
-                  className="group relative border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-xl overflow-hidden py-10"
+                  className="group relative border-0 bg-white dark:bg-gray-950 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-xl overflow-hidden py-10"
                 >
                   {/* THE "SILVER SHINE" EFFECT (The 'Swaaaa' feeling) */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none overflow-hidden">
@@ -511,7 +511,7 @@ const Index = () => {
         </div>
       </section>
       {/* TRENDING SERVICES */}
-      <section className="py-20 bg-slate-50 dark:bg-slate-900">
+      <section className="py-20 bg-slate-50 dark:bg-zinc-950">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-10">
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Recommended for You</h2>
@@ -539,7 +539,7 @@ const Index = () => {
       </section>
       {/* FOOTER SECTION */}
       {/* FOOTER SECTION */}
-      <footer className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 pt-20 pb-10 transition-colors">
+      <footer className="bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-slate-800 pt-20 pb-10 transition-colors">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             {/* Branding */}

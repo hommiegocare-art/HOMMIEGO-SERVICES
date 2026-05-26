@@ -12,7 +12,7 @@ export default function AboutUsPage() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+        <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-200 transition-colors duration-300">
 
             {/* HERO SECTION */}
             <section className="relative overflow-hidden bg-gradient-to-r from-primary to-blue-600 dark:from-primary dark:to-blue-800 text-white py-24 px-6 transition-colors duration-300">
@@ -93,7 +93,7 @@ export default function AboutUsPage() {
                     </div>
 
                     {/* RIGHT */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl border dark:border-slate-800 p-10 transition-colors duration-300">
+                    <div className="bg-white dark:bg-gray-950 rounded-[2rem] shadow-2xl border dark:border-slate-800 p-10 transition-colors duration-300">
 
                         <div className="grid grid-cols-2 gap-6">
 
@@ -143,7 +143,7 @@ export default function AboutUsPage() {
             </section>
 
             {/* WHY CHOOSE US */}
-            <section className="bg-white dark:bg-slate-900 py-24 px-6 border-y dark:border-slate-800 transition-colors duration-300">
+            <section className="bg-white dark:bg-gray-950 py-24 px-6 border-y dark:border-slate-800 transition-colors duration-300">
 
                 <div className="max-w-6xl mx-auto">
 

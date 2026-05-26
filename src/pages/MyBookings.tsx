@@ -241,7 +241,7 @@ export default function MyBookings() {
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 transition-colors duration-300">
       <Navbar />
       <div className="pt-32 pb-20 px-4 container mx-auto max-w-4xl">
 
@@ -313,7 +313,7 @@ export default function MyBookings() {
           /* --- BOOKINGS LIST --- */
           <div className="grid gap-6">
             {bookings.map((booking) => (
-              <Card key={booking.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-sm bg-white dark:bg-slate-900 hover:shadow-md transition-all duration-300">
+              <Card key={booking.id} className="rounded-[2.5rem] overflow-hidden border-none shadow-sm bg-white dark:bg-gray-950 hover:shadow-md transition-all duration-300">
                 <div className="flex flex-col md:flex-row">
                   {/* Service Image */}
                   <div className="relative w-full md:w-56 h-48 md:h-auto overflow-hidden">
@@ -388,7 +388,7 @@ export default function MyBookings() {
       </div>
       {/* REVIEW DIALOG */}
       <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
-        <DialogContent className="rounded-[2rem] max-w-md dark:bg-slate-900 dark:border-slate-800 transition-colors">
+        <DialogContent className="rounded-[2rem] max-w-md dark:bg-gray-950 dark:border-slate-800 transition-colors">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold dark:text-white">Rate Service</DialogTitle>
           </DialogHeader>
