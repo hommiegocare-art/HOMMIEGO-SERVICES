@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 
 interface ServiceCardProps {
@@ -142,7 +143,7 @@ export const ServiceCard = ({
               {/* Original Price Badge - Kept exactly the same */}
               <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-xl shadow-lg flex flex-col items-center leading-none z-10">
                 <span className="text-[8px] uppercase font-black opacity-90 mb-0.5 tracking-tighter">
-                  Booking Fee
+                  Service Fee
                 </span>
                 <span className="text-sm font-bold">
                   KES {price.toLocaleString()}
@@ -151,52 +152,54 @@ export const ServiceCard = ({
             </div>
           </DialogTrigger>
 
-          <DialogContent className="max-w-3xl w-[95vw] p-0 overflow-hidden bg-white dark:bg-slate-900 border-none shadow-2xl">
-            <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
-              {/* Full Image Section */}
-              <div className="flex-1 bg-black flex items-center justify-center">
-                <img src={image} alt={title} className="max-w-full max-h-full object-contain" />
+          <DialogContent className="max-w-[100vw] w-screen h-screen p-0 m-0 border-none bg-black/95 backdrop-blur-xl flex items-center justify-center z-[100]">
+
+            {/* 1. This DialogClose acts as the "Background" button */}
+            <DialogClose asChild>
+              <div className="absolute inset-0 w-full h-full cursor-zoom-out">
+                {/* This div is empty but fills the whole screen to catch clicks */}
               </div>
+            </DialogClose>
 
-              {/* Details Side Panel in Viewer */}
-              {/* Details Side Panel in Viewer */}
-              <div className="w-full md:w-80 p-6 bg-white dark:bg-slate-900 flex flex-col gap-4 overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
-                    {title}
-                  </DialogTitle>
-                </DialogHeader>
-
-                <div className="flex items-center gap-2 text-primary font-semibold">
-                  <Info className="w-4 h-4" />
-                  <span>KES {price.toLocaleString()} Booking Fee</span>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold uppercase text-slate-400 dark:text-slate-500 tracking-widest">Description</h4>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{description}</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 pt-2">
-                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                    <MapPin className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    {location}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                    <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    Professional: {name}
-                  </div>
-                </div>
-
-                {/* UPDATED BUTTON: Now matches the main card style and text */}
-                <Button
-                  className="mt-auto w-full shadow-sm hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/booking/${id}`)}
-                >
-                  More Details
-                </Button>
-              </div>
+            {/* 2. THE IMAGE */}
+            <div
+              className="relative z-10 p-4 md:p-10"
+              onClick={(e) => e.stopPropagation()} // This stops the "Close" command when clicking the image
+            >
+              <img
+                src={image}
+                alt={title}
+                className="max-w-full max-h-[80vh] object-contain shadow-2xl rounded-sm animate-in zoom-in-95 duration-300"
+              />
             </div>
+
+            {/* 3. THE BOTTOM BAR */}
+            <div
+              className="absolute bottom-10 z-20 flex items-center gap-6 bg-white/10 backdrop-blur-2xl px-8 py-4 rounded-full border border-white/20 shadow-2xl"
+              onClick={(e) => e.stopPropagation()} // This stops the "Close" command when clicking the bar/button
+            >
+              <div className="flex flex-col border-r border-white/20 pr-6">
+                <span className="text-[10px] text-white/50 uppercase font-black tracking-widest leading-none mb-1">
+                  Service Fee
+                </span>
+                <span className="text-white font-bold text-xl">
+                  KES {price.toLocaleString()}
+                </span>
+              </div>
+
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-white rounded-full px-8 h-12 font-bold shadow-lg transition-transform active:scale-95"
+                onClick={() => navigate(`/booking/${id}`)}
+              >
+                Go to Booking
+              </Button>
+            </div>
+
+            {/* Close Hint */}
+            <p className="absolute bottom-4 text-white/30 text-[10px] uppercase tracking-[0.3em] font-bold">
+              Tap outside to close
+            </p>
           </DialogContent>
         </Dialog>
 

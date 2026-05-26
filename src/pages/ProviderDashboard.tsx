@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, ImagePlus, LayoutDashboard, Smartphone, XCircle } from "lucide-react";
+import { CheckCircle, ChevronRight, ImagePlus, LayoutDashboard, Smartphone, XCircle, Zap } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -79,7 +79,9 @@ interface Booking {
   scheduled_at: string | null; // Added
   notes: string | null;        // Added
   payment_status: string | null; // Added
-  whatsapp_number: string; // ADD THIS
+  whatsapp_number: string;
+  booking_type: string | null;
+  service_number: number; // ADD THIS
   services: { title: string };
   customer: {
     id: string;
@@ -196,7 +198,19 @@ export default function ProviderDashboard() {
         supabase.from("provider_profiles").select("business_name, tagline, average_rating").eq("user_id", userId).single(),
         supabase.from("subscriptions").select("*").eq("provider_id", userId).single(),
         supabase.from("services").select(`id, title, short_description, price, cover_image, location_name, is_active, categories(name, icon), service_images(image_url)`).eq("provider_id", userId).order("created_at", { ascending: false }),
-        supabase.from("bookings").select(`id, status, total_amount, created_at, services(title), whatsapp_number, customer:profiles!bookings_customer_id_fkey(full_name, avatar_url)`).eq("provider_id", userId).order("created_at", { ascending: false }),
+        supabase.from("bookings").select(`
+  id,
+  status,
+  total_amount,
+  booking_type,
+  service_number,
+  scheduled_at,
+  notes,
+  created_at,
+  services(title),
+  whatsapp_number,
+  customer:profiles!bookings_customer_id_fkey(full_name, avatar_url)
+`).eq("provider_id", userId).order("created_at", { ascending: false }),
         // ADD THIS: Fetch all ratings for this provider
         supabase.from("reviews").select("rating").eq("provider_id", userId)
       ]);
@@ -230,6 +244,18 @@ export default function ProviderDashboard() {
     rating: calculatedRating,
     reviewCount: totalReviewCount
   }), [services, bookings, calculatedRating, totalReviewCount]);
+
+  // This keeps VIP/Priority bookings at the very top of the list!
+  const sortedBookings = useMemo(() => {
+    return [...bookings].sort((a, b) => {
+      // 1. If 'a' is priority and 'b' is not, 'a' goes first
+      if (a.booking_type === 'priority' && b.booking_type !== 'priority') return -1;
+      // 2. If 'b' is priority and 'a' is not, 'b' goes first
+      if (b.booking_type === 'priority' && a.booking_type !== 'priority') return 1;
+      // 3. Otherwise, sort by the newest ones first
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [bookings]);
   // Paste this inside your export default function ProviderDashboard() { ... }
   const handleLogout = async () => {
     try {
@@ -549,7 +575,7 @@ export default function ProviderDashboard() {
               </Card>
             ) : (
               <div className="grid gap-6">
-                {bookings.map((booking) => (
+                {sortedBookings.map((booking) => (
                   <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-900 transition-colors">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
@@ -569,6 +595,23 @@ export default function ProviderDashboard() {
                             {booking.customer.full_name}
                           </h4>
                           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Customer</p>
+
+
+                          {/* ADD THIS BADGE BLOCK HERE */}
+                          <div className="mt-3 flex items-center gap-2">
+                            <Badge variant="outline" className="bg-slate-900 text-white border-none font-mono">
+                              #{booking.service_number}
+                            </Badge>
+                            {booking.booking_type === 'priority' ? (
+                              <Badge className="bg-orange-500 text-white border-none rounded-lg px-3 py-1 text-[10px] font-black animate-bounce shadow-lg shadow-orange-200">
+                                <Zap className="w-3 h-3 mr-1 fill-white" /> PRIORITY VIP
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-slate-400 border-slate-200 text-[10px] font-bold">
+                                Regular Order
+                              </Badge>
+                            )}
+                          </div>
                         </div>
 
                         {/* RIGHT SIDE: BOOKING DETAILS */}
@@ -622,29 +665,37 @@ export default function ProviderDashboard() {
                             {(booking.status === 'confirmed' || booking.status === 'completed') ? (
                               <Button
                                 onClick={() => {
-                                  // Format number: remove leading 0 and add 254
                                   const rawNumber = booking.whatsapp_number || "";
-
                                   if (!rawNumber) {
-                                    toast({
-                                      title: "No WhatsApp Number",
-                                      description: "Customer has no WhatsApp number saved.",
-                                      variant: "destructive",
-                                    });
+                                    toast({ title: "No Number", variant: "destructive" });
                                     return;
                                   }
 
-                                  const cleanNum = rawNumber.startsWith("0")
-                                    ? `254${rawNumber.substring(1)}`
-                                    : rawNumber;
-                                  const message = encodeURIComponent(`Hello, I am the professional from HommieGo regarding your booking for ${booking.services?.title}.`);
+                                  const cleanNum = rawNumber.startsWith("0") ? `254${rawNumber.substring(1)}` : rawNumber;
+
+                                  const apptDate = booking.scheduled_at
+                                    ? new Date(booking.scheduled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })
+                                    : "TBD";
+                                  const apptTime = booking.scheduled_at
+                                    ? new Date(booking.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                                    : "TBD";
+
+                                  const message = encodeURIComponent(
+                                    `Hello! I am your HommieGo Service Provider regarding your booking for *${booking.services?.title}*.\n\n` +
+                                    `🎫 *Service Number:* #${booking.service_number}\n` +
+                                    `📅 *Scheduled For:* ${apptDate} at ${apptTime}\n` +
+                                    `⚡ *Priority Type:* ${booking.booking_type?.toUpperCase()}\n\n` +
+                                    `Thank you for using HommieGo!`
+                                  );
+
                                   window.open(`https://wa.me/${cleanNum}?text=${message}`, '_blank');
                                 }}
-                                className="rounded-xl font-bold gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white shadow-lg shadow-green-200 dark:shadow-green-900/30"
+                                className="rounded-xl font-bold gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg"
                               >
                                 <Smartphone className="w-4 h-4" />
                                 WhatsApp Customer
                               </Button>
+
                             ) : (
                               <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 italic">
                                 <Loader2 className="w-3 h-3 animate-spin" />

@@ -53,3 +53,44 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateX(150%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes shooting-star {
+  0% {
+    transform: translate(-100%, 100%) scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+    scale: 1.2;
+  }
+
+  100% {
+    transform: translate(200%, -200%) scale(0);
+    opacity: 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s infinite;
+}
+
+.group:hover .animate-shooting-star {
+  animation: shooting-star 0.8s ease-out forwards;
+}

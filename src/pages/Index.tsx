@@ -99,6 +99,7 @@ import {
 
 } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
+import HeroCube from "@/components/HeroCube";
 
 // --- TYPES (Fixed Red Lines) ---
 interface Category {
@@ -144,6 +145,17 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  // 1. Define your images
+  const heroImages = [
+    "/background2.png",
+    "/background3.png",
+    "/background4.png",
+    "/background5.png",
+    "/background6.png",
+  ];
+
+  const [currentHeroImage, setCurrentHeroImage] = useState(0);
+
 
   const iconMap: Record<string, any> = {
 
@@ -234,7 +246,13 @@ const Index = () => {
     };
     initialize();
   }, []);
-
+  // 2. Setup the auto-swap timer (every 5 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentHeroImage((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
   useEffect(() => {
     if (ads.length === 0) return;
     const interval = setInterval(() => setCurrentAdIndex(p => (p + 1) % ads.length), 6000);
@@ -279,45 +297,75 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col">
       <Navbar />
-
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-16 overflow-hidden bg-slate-50 dark:bg-slate-900">
+      {/* HERO SECTION */}
+      <section className="relative pt-32 pb-16 overflow-hidden bg-white dark:bg-slate-950">
+
+        {/* Nature Background Layer - Adjusted opacity and saturation for better text contrast */}
+        <div
+          className="absolute inset-0 z-0 pointer-events-none opacity-40 dark:opacity-60 transition-opacity duration-1000 mix-blend-multiply dark:mix-blend-normal"
+          style={{
+            backgroundImage: "url('/background11.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center bottom',
+            filter: 'contrast(0.9) brightness(1.1)', // Softens the image for light mode
+          }}
+        />
+
+        {/* Content Shield: Stronger gradients to ensure text visibility */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-white/80 to-transparent dark:from-slate-950 dark:via-slate-950/80 dark:to-transparent pointer-events-none" />
+        <div className="absolute inset-0 z-0 bg-gradient-to-t from-white via-transparent to-white/50 dark:from-slate-950 dark:via-transparent dark:to-slate-950/50 pointer-events-none" />
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-left">
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
+              {/* Badge - Darkened text for light mode */}
+              <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary dark:text-primary-foreground mb-6 backdrop-blur-md border border-primary/20">
                 ✨ Trusted by 10,000+ local users
               </div>
-              <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 dark:text-white leading-tight mb-6">
+
+              {/* Heading - Now using slate-950 for maximum punch in light mode */}
+              <h1 className="text-5xl md:text-7xl font-black text-slate-950 dark:text-white leading-[1.1] mb-6 drop-shadow-sm">
                 Your Comfort, <br /> Our <span className="text-primary">Commitment.</span>
               </h1>
-              <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-lg leading-relaxed">
+
+              {/* Paragraph - Darker slate for readability */}
+              <p className="text-xl text-slate-800 dark:text-slate-200 mb-8 max-w-lg leading-relaxed font-semibold">
                 Book top-rated verified professionals for any service you need. Reliable, fast, and secure.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 p-2 bg-white dark:bg-slate-800 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-700 mb-8 max-w-xl">
+              {/* Search Bar - Stronger border and shadow to lift it off the nature background */}
+              <div className="flex flex-col sm:flex-row gap-3 p-2.5 bg-white/95 dark:bg-slate-800/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl border border-slate-300 dark:border-slate-700 mb-8 max-w-xl">
                 <div className="flex-1 flex items-center px-4">
-                  <Search className="text-slate-400 dark:text-slate-500 mr-2 h-5 w-5" />
+                  <Search className="text-slate-500 dark:text-slate-400 mr-2 h-5 w-5" />
                   <Input
                     placeholder="What do you need help with?"
-                    className="border-none shadow-none focus-visible:ring-0 text-lg h-12 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="border-none shadow-none focus-visible:ring-0 text-lg h-12 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Button size="lg" onClick={() => navigate("/explore")} className="h-12 px-8 rounded-xl bg-primary shadow-lg">
+                <Button size="lg" onClick={() => navigate("/explore")} className="h-12 px-8 rounded-xl bg-primary shadow-lg hover:scale-105 transition-all font-bold">
                   Search
                 </Button>
               </div>
 
-              <div className="flex flex-wrap gap-6 text-slate-500 dark:text-slate-300">
-                <div className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-500" /> Verified Pros</div>
-                <div className="flex items-center gap-2"><Globe className="w-5 h-5 text-blue-500" /> 24/7 Service</div>
+              {/* Verification Badges - Heavy font weight */}
+              <div className="flex flex-wrap gap-6 text-slate-900 dark:text-slate-100 font-extrabold">
+                <div className="flex items-center gap-2 bg-white/40 dark:bg-transparent px-3 py-1 rounded-full backdrop-blur-sm">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  Verified Pros
+                </div>
+                <div className="flex items-center gap-2 bg-white/40 dark:bg-transparent px-3 py-1 rounded-full backdrop-blur-sm">
+                  <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  24/7 Service
+                </div>
               </div>
             </div>
 
-            <div className="hidden lg:block">
-              <img src={heroImage} alt="Hero" className="rounded-[3rem] shadow-2xl border-8 border-white object-cover aspect-[4/5] w-full max-w-md ml-auto" />
+            {/* RUBIK'S CUBE COMPONENT */}
+            <div className="lg:block relative z-10">
+              <HeroCube />
             </div>
           </div>
         </div>
@@ -386,60 +434,82 @@ const Index = () => {
         </section>
       )}
       {/* CATEGORIES GRID */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white">Explore by Category</h2>
-            <div className="w-20 h-1 bg-primary mx-auto" />
+      <section className="py-24 bg-white dark:bg-slate-950 relative overflow-hidden">
+        {/* Decorative Background Elements for "Worthiness" */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 text-slate-900 dark:text-white tracking-tight">
+              Explore <span className="text-primary">Premium</span> Categories
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-6">
+              Every service is hand-picked and verified for excellence.
+            </p>
+            <div className="w-24 h-1.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20 mx-auto rounded-full" />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {categories.map((cat, index) => (
-              <Card
+              <div
                 key={cat.id}
-                onClick={() => {
-                  // IF USER NOT LOGGED IN
-                  if (!session) {
-                    navigate("/auth", {
-                      state: {
-                        message: "Join HommieGo to explore services",
-                      },
-                    });
-                    return;
-                  }
-
-                  // GO TO EXPLORE PAGE WITH CATEGORY
-                  navigate(`/explore?category=${cat.slug}`);
-                }}
-                className="border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-all cursor-pointer group rounded-3xl overflow-hidden py-8"
+                style={{ animationDelay: `${index * 100}ms` }}
+                className="animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-forwards"
               >
-                <CardContent className="flex flex-col items-center">
-                  <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4
-              group-hover:scale-110 transition-transform
-              ${categoryColors[index % categoryColors.length]}`}
-                  >
-                    {(() => {
-                      const IconComponent = iconMap[cat.icon || ""];
-
-                      return IconComponent ? (
-                        <IconComponent className="w-8 h-8 text-primary" />
-                      ) : (
-                        <div className="text-2xl"></div>
-                      );
-                    })()}
+                <Card
+                  onClick={() => {
+                    if (!session) {
+                      navigate("/auth", { state: { message: "Join HommieGo to explore services" } });
+                      return;
+                    }
+                    navigate(`/explore?category=${cat.slug}`);
+                  }}
+                  className="group relative border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-xl overflow-hidden py-10"
+                >
+                  {/* THE "SILVER SHINE" EFFECT (The 'Swaaaa' feeling) */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shimmer"
+                      style={{ width: '200%', height: '100%' }} />
                   </div>
 
-                  <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
-                    {cat.name}
-                  </p>
-                </CardContent>
-              </Card>
+                  {/* THE "SHOOTING STAR" ICON (Small sparkle that flies across) */}
+                  <div className="absolute bottom-0 left-0 text-primary opacity-0 group-hover:animate-shooting-star pointer-events-none">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+
+                  <CardContent className="flex flex-col items-center relative z-10">
+                    <div
+                      className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6
+                  transition-all duration-500 group-hover:rotate-[10deg] group-hover:scale-110
+                  shadow-inner ${categoryColors[index % categoryColors.length]}`}
+                    >
+                      {(() => {
+                        const IconComponent = iconMap[cat.icon || ""];
+                        return IconComponent ? (
+                          <IconComponent className="w-10 h-10 transition-transform duration-500" />
+                        ) : (
+                          <Star className="w-10 h-10" />
+                        );
+                      })()}
+                    </div>
+
+                    <p className="font-extrabold text-slate-800 dark:text-slate-200 text-base tracking-tight group-hover:text-primary transition-colors">
+                      {cat.name}
+                    </p>
+
+                    {/* Subtle bottom indicator */}
+                    <div className="mt-4 w-0 group-hover:w-8 h-1 bg-primary rounded-full transition-all duration-500" />
+                  </CardContent>
+
+                  {/* Premium Corner Glow */}
+                  <div className="absolute -top-12 -right-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />
+                </Card>
+              </div>
             ))}
           </div>
         </div>
       </section>
-
       {/* TRENDING SERVICES */}
       <section className="py-20 bg-slate-50 dark:bg-slate-900">
         <div className="container mx-auto px-4">

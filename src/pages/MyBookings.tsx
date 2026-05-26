@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/dialog";
 import {
   Loader2, Calendar, User, CreditCard, ChevronRight,
-  ShoppingBag, Star, Download, CheckCircle2, ArrowLeft
+  ShoppingBag, Star, Download, CheckCircle2, ArrowLeft,
+  Zap,
+  Clock
 } from "lucide-react";
 import { HommieLoader } from "@/components/HommieLoader";
 import { motion } from "framer-motion";
@@ -31,6 +33,7 @@ interface Booking {
   service_id: string;
   scheduled_at: string | null;
   status: string;
+  booking_type: string | null;
   total_amount: number | null;
   payment_status: string | null;
   created_at: string;
@@ -327,6 +330,18 @@ export default function MyBookings() {
                         <Badge className={`${getStatusColor(booking.status)} rounded-full px-4 py-1 text-[10px] font-bold uppercase tracking-wider`}>
                           {booking.status}
                         </Badge>
+                        {/* ADD THIS RIGHT BELOW IT: */}
+                        <div className="mt-2 flex gap-2">
+                          {booking.booking_type === 'priority' ? (
+                            <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400 border-orange-200 dark:border-orange-900 rounded-lg px-2 py-0.5 text-[10px] flex items-center gap-1">
+                              <Zap className="w-3 h-3 fill-orange-500" /> Priority Booking
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border-blue-100 dark:border-blue-900 rounded-lg px-2 py-0.5 text-[10px] flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Regular Booking
+                            </Badge>
+                          )}
+                        </div>
                         <h3 className="text-2xl font-black mt-3 text-slate-900 dark:text-white">{booking.services?.title}</h3>
                         <div className="flex items-center gap-2 mt-1 text-slate-500 dark:text-slate-400">
                           <User className="w-4 h-4" />

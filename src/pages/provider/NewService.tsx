@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, ImagePlus, ArrowLeft, Check, MapPin, DollarSign, Briefcase } from "lucide-react";
+import { Loader2, Upload, ImagePlus, ArrowLeft, Check, MapPin, DollarSign, Briefcase, Clock, Zap } from "lucide-react";
 
 interface Category {
     id: string;
@@ -17,7 +17,14 @@ interface Category {
 }
 
 export default function NewService() {
-    const BOOKING_FEE = "59";
+    // ADD THESE AT THE TOP (outside or inside the component)
+    const REGULAR_BOOKING_FEE = "100";
+    const PRIORITY_BOOKING_FEE = "300";
+
+    // INSIDE THE COMPONENT:
+    const [price, setPrice] = useState(""); // This stays empty for them to type
+    const [regularFee] = useState(REGULAR_BOOKING_FEE); // Locked
+    const [priorityFee] = useState(PRIORITY_BOOKING_FEE); // Locked
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -30,7 +37,7 @@ export default function NewService() {
     const [shortDescription, setShortDescription] = useState("");
     const [description, setDescription] = useState("");
     // Change this line:
-    const [price, setPrice] = useState(BOOKING_FEE);
+
     const [locationName, setLocationName] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("");
     const [images, setImages] = useState<File[]>([]);
@@ -98,8 +105,10 @@ export default function NewService() {
                 title,
                 short_description: shortDescription,
                 description,
-                price: Number(price),
-                pricing_type: pricingType, // ADD THIS LINE
+                price: Number(price), // This saves your main service price
+                regular_booking_fee: Number(regularFee), // ADD THIS
+                priority_booking_fee: Number(priorityFee), // ADD THIS
+                pricing_type: pricingType,
                 location_name: locationName,
                 cover_image: uploadedImages[0] || null,
                 is_active: true,
@@ -169,25 +178,55 @@ export default function NewService() {
                                 </div>
 
                                 {/* Price and Location - Vertical Stack */}
-
                                 <div className="space-y-6">
-                                    {/* Price Section */}
+                                    {/* 1. Main Service Price - Now Editable! */}
                                     <div className="space-y-3">
                                         <Label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4 text-primary" />
-                                            Standard Booking Fee (KES)
+                                            <DollarSign className="w-4 h-4 text-green-500" />
+                                            Total Service Price (KES)
                                         </Label>
                                         <div className="relative">
-                                            <DollarSign className="absolute left-3 top-3 w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                            <DollarSign className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
                                             <Input
                                                 type="number"
-                                                className="pl-10 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white cursor-not-allowed"
+                                                placeholder="How much do you charge for the job?"
+                                                className="pl-10 h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800"
                                                 value={price}
-                                                readOnly
+                                                onChange={(e) => setPrice(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 italic pl-1">This is your total fee for the service.</p>
+                                    </div>
+
+                                    {/* 2. The Two Booking Fee Columns */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Locked Regular Fee */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold flex items-center gap-1 text-slate-500">
+                                                <Clock className="w-3 h-3 text-blue-500" /> Regular Fee (Locked)
+                                            </Label>
+                                            <Input
+                                                type="number"
+                                                value={regularFee}
+                                                readOnly // THIS LOCKS IT
+                                                className="h-11 rounded-xl border-slate-200 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 cursor-not-allowed font-medium"
+                                            />
+                                        </div>
+
+                                        {/* Locked Priority Fee */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold flex items-center gap-1 text-slate-500">
+                                                <Zap className="w-3 h-3 text-orange-500" /> Priority Fee (Locked)
+                                            </Label>
+                                            <Input
+                                                type="number"
+                                                value={priorityFee}
+                                                readOnly // THIS LOCKS IT
+                                                className="h-11 rounded-xl border-slate-200 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 cursor-not-allowed font-medium"
                                             />
                                         </div>
                                     </div>
-
                                     {/* NEW: PRICING TYPE SELECTION */}
                                     <div className="space-y-3">
                                         <Label className="font-bold text-slate-700 dark:text-slate-300">How is your total service charged?</Label>

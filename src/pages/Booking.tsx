@@ -20,7 +20,8 @@ import {
 import {
   Loader2, MapPin, Star, Calendar, Clock,
   ArrowLeft, ShieldCheck, Smartphone, CheckCircle2,
-  MessageSquare, X // Added X icon for full-screen close
+  MessageSquare, X, // Added X icon for full-screen close
+  Zap
 } from "lucide-react";
 import { format } from "date-fns"; // To format review dates
 
@@ -39,6 +40,9 @@ interface Service {
   id: string;
   provider_id: string;
   title: string;
+  // ADD THESE TWO INSIDE THE Service interface
+  regular_booking_fee: number;
+  priority_booking_fee: number;
   short_description: string | null;
   description: string | null;      // ADDED
   price: number;
@@ -52,13 +56,17 @@ interface Service {
     total_reviews: number | null;
     business_name: string | null;
     is_available: boolean | null;
+    // ADD THESE TWO INSIDE THE Service interface
+    regular_booking_fee: number;
+    priority_booking_fee: number;
   };
 }
 export default function Booking() {
   const { serviceId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-
+  // ADD THIS LINE with your other states (like whatsapp, bookingDate, etc.)
+  const [bookingType, setBookingType] = useState<"regular" | "priority">("regular");
   const [loading, setLoading] = useState(true);
   const [creatingBooking, setCreatingBooking] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -116,7 +124,7 @@ export default function Booking() {
       // 1. Fetch Service Data
       const { data: serviceData, error: sError } = await supabase
         .from("services")
-        .select(`*, categories (id, name, icon), profiles!services_provider_id_fkey (id, full_name, avatar_url)`)
+        .select(`*, regular_booking_fee, priority_booking_fee, categories (id, name, icon), profiles!services_provider_id_fkey (id, full_name, avatar_url)`)
         .eq("id", serviceId)
         .single();
 
@@ -175,13 +183,15 @@ export default function Booking() {
       const { data, error } = await supabase.functions.invoke("mpesa-stk-push", {
         body: {
           phone: formattedPhone,
-          amount: service?.price,
+          amount: bookingType === "priority" ? service?.priority_booking_fee : service?.regular_booking_fee,
+
           customer_id: userId,
           provider_id: service?.provider_id,
           service_id: service?.id,
           scheduled_at: bookingDate,
           notes,
           whatsapp_number: whatsapp, // ADD THIS LINE
+          booking_type: bookingType,
         },
       });
 
@@ -329,12 +339,65 @@ export default function Booking() {
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
+                {/* NEW: BOOKING TYPE SELECTION */}
+                <div className="space-y-3">
+                  <Label className="text-base font-bold flex items-center gap-2 dark:text-slate-300">
+                    <Zap className="w-4 h-4 text-primary" /> Select Booking Priority
+                  </Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Regular Option */}
+                    <button
+                      type="button"
+                      onClick={() => setBookingType("regular")}
+                      className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col gap-1 ${bookingType === "regular"
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-slate-100 dark:border-slate-800"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className={`w-4 h-4 ${bookingType === "regular" ? "text-blue-500" : "text-slate-400"}`} />
+                        <span className={`font-bold text-sm ${bookingType === "regular" ? "text-blue-700 dark:text-blue-400" : "text-slate-500"}`}>Regular</span>
+                      </div>
+                      <span className="text-lg font-black dark:text-white">KES {service.regular_booking_fee}</span>
+                      <span className="text-[10px] text-slate-400 italic">Standard queue</span>
+                    </button>
 
+                    {/* Priority Option */}
+                    <button
+                      type="button"
+                      onClick={() => setBookingType("priority")}
+                      className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col gap-1 ${bookingType === "priority"
+                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                        : "border-slate-100 dark:border-slate-800"
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Zap className={`w-4 h-4 ${bookingType === "priority" ? "text-orange-500" : "text-slate-400"}`} />
+                        <span className={`font-bold text-sm ${bookingType === "priority" ? "text-orange-700 dark:text-orange-400" : "text-slate-500"}`}>Priority</span>
+                      </div>
+                      <span className="text-lg font-black dark:text-white">KES {service.priority_booking_fee}</span>
+                      <span className="text-[10px] text-slate-400 italic">Get service first!</span>
+                    </button>
+                  </div>
+                </div>
                 <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl space-y-3 border border-slate-100 dark:border-slate-700 transition-colors">
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400"><span>Booking Price</span><span>KES {service.price.toLocaleString()}</span></div>
-                  <div className="border-t dark:border-slate-700 pt-3 flex justify-between items-center">
-                    <span className="font-bold text-slate-900 dark:text-white">Total Amount</span>
-                    <span className="text-3xl font-black text-primary">KES {service.price.toLocaleString()}</span>
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Platform Booking Fee ({bookingType})</span>
+                    {/* CHANGE THIS LINE */}
+                    <span>KES {bookingType === "priority" ? service.priority_booking_fee.toLocaleString() : service.regular_booking_fee.toLocaleString()}</span>
+                  </div>
+
+                  <div className="border-t dark:border-slate-700 pt-3 flex justify-between items-end">
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-white block">Total Due Now</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                        Note: This is a {bookingType} fee to secure service.
+                      </span>
+                    </div>
+                    {/* CHANGE THIS LINE */}
+                    <span className="text-3xl font-black text-primary">
+                      KES {bookingType === "priority" ? service.priority_booking_fee.toLocaleString() : service.regular_booking_fee.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
