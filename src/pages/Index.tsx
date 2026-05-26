@@ -538,12 +538,13 @@ const Index = () => {
         </div>
       </section>
       {/* FOOTER SECTION */}
-      <footer className="bg-white border-t border-gray-200 pt-20 pb-10">
+      {/* FOOTER SECTION */}
+      <footer className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 pt-20 pb-10 transition-colors">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             {/* Branding */}
             <div>
-              <div className="flex items-center gap-2 text-gray-900 mb-6">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white mb-6">
                 <img
                   src="/pwa-192x192.png"
                   alt="HommieGo Logo"
@@ -553,30 +554,42 @@ const Index = () => {
                   HommieGo
                 </span>
               </div>
-              <p className="text-gray-600 leading-relaxed mb-6">
+              <p className="text-gray-600 dark:text-slate-400 leading-relaxed mb-6">
                 The leading platform for finding professional services at the click of a button. We verify, you relax.
               </p>
               <div className="flex gap-4">
-                <Facebook className="w-5 h-5 text-gray-500 hover:text-primary cursor-pointer transition-colors" />
-                <Twitter className="w-5 h-5 text-gray-500 hover:text-primary cursor-pointer transition-colors" />
-                <Instagram className="w-5 h-5 text-gray-500 hover:text-primary cursor-pointer transition-colors" />
-                <Linkedin className="w-5 h-5 text-gray-500 hover:text-primary cursor-pointer transition-colors" />
+                <Facebook className="w-5 h-5 text-gray-500 dark:text-slate-300 hover:text-primary dark:hover:text-primary cursor-pointer transition-colors" />
+                <Twitter className="w-5 h-5 text-gray-500 dark:text-slate-300 hover:text-primary dark:hover:text-primary cursor-pointer transition-colors" />
+                <Instagram className="w-5 h-5 text-gray-500 dark:text-slate-300 hover:text-primary dark:hover:text-primary cursor-pointer transition-colors" />
+                <Linkedin className="w-5 h-5 text-gray-500 dark:text-slate-300 hover:text-primary dark:hover:text-primary cursor-pointer transition-colors" />
               </div>
             </div>
 
             {/* Links */}
             <div>
-              <h4 className="text-gray-900 font-bold mb-6">Company</h4>
+              <h4 className="text-gray-900 dark:text-white font-bold mb-6">Company</h4>
               <ul className="space-y-4">
-                <li><Link to="/explore" className="text-gray-600 hover:text-primary transition-colors">Find Services</Link></li>
-                <li><Link to="/auth" className="text-gray-600 hover:text-primary transition-colors">Become a Provider</Link></li>
-                <li><Link to="/careers" className="text-gray-600 hover:text-primary transition-colors">Careers</Link></li>
+                <li>
+                  <Link to="/explore" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Find Services
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/auth" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Become a Provider
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/careers" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Careers
+                  </Link>
+                </li>
                 <li>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate("/about")}
-                    className="text-gray-600 hover:text-primary"
+                    className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary"
                   >
                     About Us
                   </Button>
@@ -586,53 +599,71 @@ const Index = () => {
 
             {/* Categories */}
             <div>
-              <h4 className="text-gray-900 font-bold mb-6">Popular Services</h4>
+              <h4 className="text-gray-900 dark:text-white font-bold mb-6">Popular Services</h4>
               <ul className="space-y-4">
-                <li><Link to="/explore" className="text-gray-600 hover:text-primary transition-colors">Home Cleaning</Link></li>
-                <li><Link to="/explore" className="text-gray-600 hover:text-primary transition-colors">Plumbing Repairs</Link></li>
-                <li><Link to="/explore" className="text-gray-600 hover:text-primary transition-colors">Beauty & Wellness</Link></li>
-                <li><Link to="/explore" className="text-gray-600 hover:text-primary transition-colors">Tech Support</Link></li>
+                <li>
+                  <Link to="/explore" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Home Cleaning
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/explore" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Plumbing Repairs
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/explore" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Beauty & Wellness
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/explore" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
+                    Tech Support
+                  </Link>
+                </li>
               </ul>
             </div>
 
             {/* Contact */}
             <div>
-              <h4 className="text-gray-900 font-bold mb-6">Contact Us</h4>
+              <h4 className="text-gray-900 dark:text-white font-bold mb-6">Contact Us</h4>
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-primary mt-0.5" />
-                  <span className="text-gray-600">hommiegocare@gmail.com</span>
+                  <span className="text-gray-600 dark:text-slate-300">hommiegocare@gmail.com</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary mt-0.5" />
-                  <span className="text-gray-600">Nairobi, Kenya</span>
+                  <span className="text-gray-600 dark:text-slate-300">Nairobi, Kenya</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-primary mt-0.5" />
-                  <span className="text-gray-600">+254 704 473 503</span>
+                  <span className="text-gray-600 dark:text-slate-300">+254 704 473 503</span>
                 </li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-gray-500">© {new Date().getFullYear()} HommieGo Inc. All rights reserved.</p>
+          <div className="border-t border-gray-200 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-gray-500 dark:text-slate-400">
+              © {new Date().getFullYear()} HommieGo Inc. All rights reserved.
+            </p>
             <div className="flex gap-8 text-sm">
               <Link
                 to="/privacy-policy"
-                className="text-sm text-gray-500 hover:text-primary transition-colors"
+                className="text-sm text-gray-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
               >
                 Privacy Policy
               </Link>
               <Link
                 to="/terms-of-service"
-                className="text-sm text-gray-500 hover:text-primary transition-colors"
+                className="text-sm text-gray-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
               >
                 Terms of Service
               </Link>
               <Link
                 to="/cookie-policy"
-                className="text-sm text-gray-500 hover:text-primary transition-colors"
+                className="text-sm text-gray-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
               >
                 Cookie Policy
               </Link>
