@@ -58,21 +58,39 @@ export default function EditProfile() {
             setDeleting(true);
             setDeleteStep("deleting");
 
-            const { data, error } = await supabase.functions.invoke("delete-user");
+            const response = await supabase.functions.invoke("delete-user");
 
-            // HANDLE FUNCTION ERRORS
+            console.log("Delete response:", response);
+
+            const { data, error } = response;
+
+            // updated: show REAL backend message
             if (error) {
-                throw new Error(error.message || "Failed to delete account.");
+                let customMessage = "Failed to delete account.";
+
+                try {
+                    // updated: read actual backend response
+                    const errorData = await error.context.json();
+
+                    customMessage =
+                        errorData?.error ||
+                        error.message ||
+                        customMessage;
+
+                } catch {
+                    customMessage = error.message || customMessage;
+                }
+
+                throw new Error(customMessage);
             }
 
-            // HANDLE CUSTOM SERVER ERRORS
+            // updated: handle backend custom errors
             if (!data?.success) {
                 throw new Error(
                     data?.error ||
                     "Your account could not be deleted."
                 );
             }
-
             // Show goodbye message briefly
             setDeleteStep("goodbye");
 

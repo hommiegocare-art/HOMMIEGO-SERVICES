@@ -441,7 +441,9 @@ export default function Booking() {
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" className="w-12" alt="Mpesa" />
             </div>
             <DialogTitle className="text-xl font-bold text-white">M-Pesa Express</DialogTitle>
-            <DialogDescription className="text-emerald-50 opacity-90">Secure Checkout via Safaricom</DialogDescription>
+            <DialogDescription className="text-emerald-50 opacity-90">
+              Secure Checkout via Safaricom • {bookingType === "priority" ? "Priority" : "Regular"} Booking
+            </DialogDescription>
           </div>
 
           <div className="p-8">
@@ -449,19 +451,28 @@ export default function Booking() {
               <div className="space-y-6">
                 <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl space-y-3 border border-slate-100 dark:border-slate-700 transition-colors">
                   <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Platform Booking Fee</span>
-                    <span>KES {service.price.toLocaleString()}</span>
+                    <span>Platform Booking Fee ({bookingType})</span>
+                    {/* UPDATED: Use booking type fees */}
+                    <span>
+                      KES {bookingType === "priority"
+                        ? service.priority_booking_fee.toLocaleString()
+                        : service.regular_booking_fee.toLocaleString()}
+                    </span>
                   </div>
 
                   <div className="border-t dark:border-slate-700 pt-3 flex justify-between items-end">
                     <div>
                       <span className="font-bold text-slate-900 dark:text-white block">Total Due Now</span>
-                      {/* PRICING TYPE NOTICE */}
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                        Note: This is a {service.pricing_type} platform fee to secure service.
+                        Note: This is a {bookingType} booking fee to secure service.
                       </span>
                     </div>
-                    <span className="text-3xl font-black text-primary">KES {service.price.toLocaleString()}</span>
+                    {/* UPDATED: Use booking type fees */}
+                    <span className="text-3xl font-black text-primary">
+                      KES {bookingType === "priority"
+                        ? service.priority_booking_fee.toLocaleString()
+                        : service.regular_booking_fee.toLocaleString()}
+                    </span>
                   </div>
                 </div>
 
@@ -483,7 +494,9 @@ export default function Booking() {
                   onClick={handleMpesaPayment}
                   className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-lg font-bold"
                 >
-                  Pay Now
+                  Pay KES {bookingType === "priority"
+                    ? service.priority_booking_fee.toLocaleString()
+                    : service.regular_booking_fee.toLocaleString()}
                 </Button>
               </div>
             )}
@@ -494,7 +507,11 @@ export default function Booking() {
                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" className="w-12 mx-auto" alt="Mpesa" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">Requesting Payment...</h3>
-                <p className="text-slate-500 dark:text-slate-400">Please check your phone and enter your <b>M-Pesa PIN</b>.</p>
+                <p className="text-slate-500 dark:text-slate-400">
+                  Please check your phone and enter your <b>M-Pesa PIN</b> for KES {bookingType === "priority"
+                    ? service.priority_booking_fee.toLocaleString()
+                    : service.regular_booking_fee.toLocaleString()}
+                </p>
               </div>
             )}
 
@@ -510,7 +527,6 @@ export default function Booking() {
           </div>
         </DialogContent>
       </Dialog>
-
 
       {/* NEW: REVIEWS DIALOG */}
       <Dialog open={showReviewsModal} onOpenChange={setShowReviewsModal}>
