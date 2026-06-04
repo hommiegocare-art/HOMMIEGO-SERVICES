@@ -6,77 +6,10 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams } from "react-router-dom";
 import {
-
-  // UI & Navigation
-  Search,
-  SlidersHorizontal,
-  MapPin,
-  X,
-  Bookmark,
-  // Education
-  GraduationCap,
-  FileText,
-  FileCheck,
-
-  // Medical & Health
-  Pill,
-  Stethoscope,
-  Heart,
-  HeartHandshake,
-
-  // Users & Communication
-  Users,
-  PhoneCall,
-  Mic,
-
-  // Shopping & Packages
-  ShoppingBag,
-  Package,
-
-  // Utilities
-  Calendar,
-  Sparkles,
-  Settings,
-  AlertCircle,
-
-  // Media
-  Camera,
-  Video,
-
-  // Home & Repairs
-  Wrench,
-  Hammer,
-  Key,
-  Building2,
-  Bug,
-  Droplets,
-  Flame,
-  Fan,
-
-  // Lifestyle
-  Shirt,
-  Dumbbell,
-  Paintbrush,
-  Brush,
-  PartyPopper,
-  Trees,
-  Dog,
-  Utensils,
-
-  // Transport
-  Car,
-  Truck,
-
-  // Tech
-  Wifi,
-  Zap,
-
-  // Work
-  Briefcase,
-
-  // Misc
-  Baby,
-  MessageSquare,
+  Search, SlidersHorizontal, MapPin, X, Bookmark, GraduationCap, FileText, FileCheck, Pill, Stethoscope,
+  Heart, HeartHandshake, Users, PhoneCall, Mic, ShoppingBag, Package, Calendar, Sparkles, Settings, AlertCircle,
+  Camera, Video, Wrench, Hammer, Key, Building2, Bug, Droplets, Flame, Fan, Shirt, Dumbbell, Paintbrush, Brush, PartyPopper, Trees, Dog,
+  Utensils, Car, Truck, Wifi, Zap, Briefcase, Baby, MessageSquare,
 
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -122,59 +55,10 @@ export default function Explore() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const iconMap: Record<string, any> = {
-    // Education
-    GraduationCap,
-    FileText,
-    FileCheck,
-    // Medical & Health
-    Pill,
-    Stethoscope,
-    Heart,
-    HeartHandshake,
-    // Users & Communication
-    Users,
-    PhoneCall,
-    Mic,
-    MessageSquare,
-    // Shopping & Packages
-    ShoppingBag,
-    Package,
-    // Utilities
-    Calendar,
-    Sparkles,
-    Settings,
-    AlertCircle,
-    // Media
-    Camera,
-    Video,
-    // Home & Repairs
-    Wrench,
-    Hammer,
-    Key,
-    Building2,
-    Bug,
-    Droplets,
-    Flame,
-    Fan,
-    // Lifestyle
-    Shirt,
-    Dumbbell,
-    Paintbrush,
-    Brush,
-    PartyPopper,
-    Trees,
-    Dog,
-    Utensils,
-    // Transport
-    Car,
-    Truck,
-    // Tech
-    Wifi,
-    Zap,
-    // Work
-    Briefcase,
-    // Misc
-    Baby,
+    GraduationCap, FileText, FileCheck, Pill, Stethoscope, Heart, HeartHandshake, Users, PhoneCall,
+    Mic, MessageSquare, ShoppingBag, Package, Calendar, Sparkles, Settings, AlertCircle, Camera, Video, Wrench,
+    Hammer, Key, Building2, Bug, Droplets, Flame, Fan, Shirt, Dumbbell, Paintbrush, Brush, PartyPopper, Trees, Dog, Utensils,
+    Car, Truck, Wifi, Zap, Briefcase, Baby,
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
