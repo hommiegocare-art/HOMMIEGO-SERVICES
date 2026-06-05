@@ -183,21 +183,24 @@ export default function Booking() {
       const { data, error } = await supabase.functions.invoke("mpesa-stk-push", {
         body: {
           phone: formattedPhone,
-          amount: bookingType === "priority" ? service?.priority_booking_fee : service?.regular_booking_fee,
-
+          amount: bookingType === "priority"
+            ? service?.priority_booking_fee
+            : service?.regular_booking_fee,
           customer_id: userId,
           provider_id: service?.provider_id,
           service_id: service?.id,
           scheduled_at: bookingDate,
           notes,
-          whatsapp_number: whatsapp, // ADD THIS LINE
+          whatsapp_number: whatsapp,
           booking_type: bookingType,
         },
       });
 
+      console.log("FUNCTION DATA:", data);
+      console.log("FUNCTION ERROR:", error);
       if (error) throw error;
 
-      if (data.ResponseCode === "0") {
+      if (data?.success && data?.data?.ResponseCode === "0") {
         setPaymentStep("success");
         toast({ title: "Request Sent", description: "Please check your phone to enter PIN" });
 
