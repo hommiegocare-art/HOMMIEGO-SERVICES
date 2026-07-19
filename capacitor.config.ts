@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.hommiego.app',
-  appName: 'HommieGo',
+  appId: 'com.HommieCare.app',
+  appName: 'HommieCare',
   webDir: 'dist',
   server: {
-    url: 'https://hommiego.vercel.app/',
+    url: 'https://HommieCare.vercel.app/',
     cleartext: true
   }
 };

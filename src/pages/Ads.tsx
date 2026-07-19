@@ -164,7 +164,7 @@ export default function CreateAd() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
             <div>
               <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Ad Manager</h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">Promote your business on the HommieGo homepage</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">Promote your business on the HommieCare homepage</p>
             </div>
             <Button
               size="lg"

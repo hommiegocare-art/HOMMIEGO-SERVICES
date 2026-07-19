@@ -98,7 +98,7 @@ const NotFound = () => {
         <div className="flex items-center gap-2 opacity-20">
           <div className="h-px w-8 bg-slate-900" />
           <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-900">
-            HommieGo
+            HommieCare
           </span>
           <div className="h-px w-8 bg-slate-900" />
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,8 +68,8 @@ export const ServiceCard = ({
     setCount(likeCount);
   }, [initialIsLiked, initialIsFavorited, likeCount]);
 
-  const handleToggleLike = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevents opening the viewer when clicking the button
+  const handleToggleLike = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isPending) return;
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -99,10 +99,10 @@ export const ServiceCard = ({
     } finally {
       setIsPending(false);
     }
-  };
+  }, [id, isLiked, isPending, initialIsLiked, likeCount, toast]);
 
-  const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevents opening the viewer when clicking the button
+  const handleToggleFavorite = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toast({ title: "Client Login Required", variant: "destructive" });
@@ -121,27 +121,28 @@ export const ServiceCard = ({
     } catch (error) {
       setIsFav(initialIsFavorited);
     }
-  };
+  }, [id, isFav, initialIsFavorited, toast]);
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-100 dark:border-slate-800">
+    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-zinc-900 border border-slate-100 dark:border-transparent rounded-2xl">
       <CardHeader className="p-0 relative group/card">
         {/* --- IMAGE VIEWER DIALOG --- */}
         <Dialog>
           <DialogTrigger asChild>
-            <div className="relative h-48 overflow-hidden cursor-zoom-in">
+            <div className="relative h-48 overflow-hidden cursor-zoom-in rounded-t-2xl">
               <img
                 src={image}
                 alt={title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+                loading="lazy"
               />
               {/* Hover Overlay Icon */}
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center">
                 <Maximize2 className="text-white w-8 h-8 drop-shadow-lg" />
               </div>
 
-              {/* Original Price Badge - Kept exactly the same */}
-              <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-xl shadow-lg flex flex-col items-center leading-none z-10">
+              {/* Price Badge */}
+              <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1 rounded-2xl shadow-lg flex flex-col items-center leading-none z-10">
                 <span className="text-[8px] uppercase font-black opacity-90 mb-0.5 tracking-tighter">
                   Service Fee
                 </span>
@@ -153,18 +154,13 @@ export const ServiceCard = ({
           </DialogTrigger>
 
           <DialogContent className="max-w-[100vw] w-screen h-screen p-0 m-0 border-none bg-black/95 backdrop-blur-xl flex items-center justify-center z-[100]">
-
-            {/* 1. This DialogClose acts as the "Background" button */}
             <DialogClose asChild>
-              <div className="absolute inset-0 w-full h-full cursor-zoom-out">
-                {/* This div is empty but fills the whole screen to catch clicks */}
-              </div>
+              <div className="absolute inset-0 w-full h-full cursor-zoom-out" />
             </DialogClose>
 
-            {/* 2. THE IMAGE */}
             <div
               className="relative z-10 p-4 md:p-10"
-              onClick={(e) => e.stopPropagation()} // This stops the "Close" command when clicking the image
+              onClick={(e) => e.stopPropagation()}
             >
               <img
                 src={image}
@@ -173,10 +169,9 @@ export const ServiceCard = ({
               />
             </div>
 
-            {/* 3. THE BOTTOM BAR */}
             <div
               className="absolute bottom-10 z-20 flex items-center gap-6 bg-white/10 backdrop-blur-2xl px-8 py-4 rounded-full border border-white/20 shadow-2xl"
-              onClick={(e) => e.stopPropagation()} // This stops the "Close" command when clicking the bar/button
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex flex-col border-r border-white/20 pr-6">
                 <span className="text-[10px] text-white/50 uppercase font-black tracking-widest leading-none mb-1">
@@ -196,19 +191,20 @@ export const ServiceCard = ({
               </Button>
             </div>
 
-            {/* Close Hint */}
             <p className="absolute bottom-4 text-white/30 text-[10px] uppercase tracking-[0.3em] font-bold">
               Tap outside to close
             </p>
           </DialogContent>
         </Dialog>
 
-        {/* --- INTERACTIVE BUTTONS OVERLAY (OUTSIDE DIALOG TRIGGER) --- */}
+        {/* --- INTERACTIVE BUTTONS OVERLAY --- */}
         <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
           <Button
             variant="secondary"
             size="icon"
-            className={`h-8 w-8 rounded-full backdrop-blur-md border-none transition-all shadow-sm ${isFav ? "bg-primary text-white" : "bg-white/70 text-slate-700 hover:bg-white"
+            className={`h-8 w-8 rounded-full backdrop-blur-md border-none transition-all shadow-sm ${isFav
+              ? "bg-primary text-white"
+              : "bg-white/70 dark:bg-zinc-800/70 text-slate-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700"
               }`}
             onClick={handleToggleFavorite}
           >
@@ -219,7 +215,9 @@ export const ServiceCard = ({
             variant="secondary"
             size="icon"
             disabled={isPending}
-            className={`h-8 w-8 rounded-full backdrop-blur-md border-none transition-all shadow-sm ${isLiked ? "bg-red-500 text-white" : "bg-white/70 text-slate-700 hover:bg-white"
+            className={`h-8 w-8 rounded-full backdrop-blur-md border-none transition-all shadow-sm ${isLiked
+              ? "bg-red-500 text-white"
+              : "bg-white/70 dark:bg-zinc-800/70 text-slate-700 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-700"
               }`}
             onClick={handleToggleLike}
           >
@@ -238,18 +236,18 @@ export const ServiceCard = ({
           <h3 className="font-semibold text-lg line-clamp-1 text-slate-800 dark:text-white">
             {title}
           </h3>
-          <div className="flex items-center gap-1 bg-white/50 px-1.5 py-0.5 rounded-md border border-slate-100">
-            <Heart className={`w-3 h-3 ${isLiked ? "text-red-500 fill-red-500" : "text-slate-400"}`} />
-            <span className="text-xs font-bold text-slate-600">{count}</span>
+          <div className="flex items-center gap-1 bg-white/50 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded-full border border-slate-100 dark:border-transparent">
+            <Heart className={`w-3 h-3 ${isLiked ? "text-red-500 fill-red-500" : "text-slate-400 dark:text-zinc-500"}`} />
+            <span className="text-xs font-bold text-slate-600 dark:text-zinc-400">{count}</span>
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+        <p className="text-sm text-slate-500 dark:text-zinc-400 mb-3 line-clamp-2">
           {description}
         </p>
 
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1 text-muted-foreground">
+          <div className="flex items-center gap-1 text-slate-500 dark:text-zinc-400">
             <MapPin className="w-4 h-4" />
             <span>{location}</span>
           </div>
@@ -257,20 +255,20 @@ export const ServiceCard = ({
           {rating > 0 && (
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-medium text-slate-700">{rating}</span>
-              <span className="text-muted-foreground">({reviews})</span>
+              <span className="font-medium text-slate-700 dark:text-zinc-300">{rating.toFixed(1)}</span>
+              <span className="text-slate-400 dark:text-zinc-500">({reviews})</span>
             </div>
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground mt-2 italic">
+        <p className="text-xs text-slate-400 dark:text-zinc-500 mt-2 italic">
           by {name}
         </p>
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
         <Button
-          className="w-full shadow-sm hover:shadow-md transition-shadow"
+          className="w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl"
           onClick={() => navigate(`/booking/${id}`)}
         >
           More Details

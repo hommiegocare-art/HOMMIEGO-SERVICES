@@ -1,4 +1,4 @@
-package com.hommiego.app;
+package com.HommieCare.app;
 
 import com.getcapacitor.BridgeActivity;
 

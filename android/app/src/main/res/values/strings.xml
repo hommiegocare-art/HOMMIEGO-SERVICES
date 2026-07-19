@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">HommieGo</string>
-    <string name="title_activity_main">HommieGo</string>
-    <string name="package_name">com.hommiego.app</string>
-    <string name="custom_url_scheme">com.hommiego.app</string>
+    <string name="app_name">HommieCare</string>
+    <string name="title_activity_main">HommieCare</string>
+    <string name="package_name">com.HommieCare.app</string>
+    <string name="custom_url_scheme">com.HommieCare.app</string>
 </resources>

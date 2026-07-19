@@ -108,7 +108,7 @@ export default function AuthCallback() {
                             {roleLabel} Portal
                         </div>
                         <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mb-2">
-                            Welcome to HommieGo
+                            Welcome to HommieCare
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 text-sm">
                             {role === "provider"
@@ -163,7 +163,7 @@ export default function AuthCallback() {
                 <div className="text-center mt-6">
                     <div className="flex items-center justify-center gap-1 text-xs text-slate-400 dark:text-slate-500">
                         <Heart className="w-3 h-3 text-rose-400" />
-                        <span>Secured by HommieGo</span>
+                        <span>Secured by HommieCare</span>
                         <ArrowRight className="w-3 h-3" />
                     </div>
                 </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ChevronRight, ImagePlus, LayoutDashboard, Smartphone, XCircle, Zap } from "lucide-react";
+import { CheckCircle, ImagePlus, LayoutDashboard, Smartphone, XCircle, Zap } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,14 +10,12 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-// Add 'User' to your lucide-react imports
 import {
-  Loader2, DollarSign, Briefcase, Star, MessageSquare,
+  Loader2, Briefcase, Star, MessageSquare,
   Calendar, Plus, MapPin, Trash2, Eye, LogOut, Settings,
-  Home, Search, Pencil, User, Menu // <--- Add User and Menu here
+  Home, Search, Pencil, User, Menu
 } from "lucide-react";
 
-// Add these Dropdown imports
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +29,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +37,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HommieLoader } from "@/components/HommieLoader";
-// --- TYPES TO FIX RED LINES ---
+
+// --- TYPES ---
 interface Profile {
   full_name: string | null;
   avatar_url: string | null;
@@ -70,18 +68,17 @@ interface Service {
   service_images: { image_url: string }[] | null;
 }
 
-// --- UPDATED TYPES ---
 interface Booking {
   id: string;
   status: string;
   total_amount: number;
   created_at: string;
-  scheduled_at: string | null; // Added
-  notes: string | null;        // Added
-  payment_status: string | null; // Added
+  scheduled_at: string | null;
+  notes: string | null;
+  payment_status: string | null;
   whatsapp_number: string;
   booking_type: string | null;
-  service_number: number; // ADD THIS
+  service_number: number;
   services: { title: string };
   customer: {
     id: string;
@@ -103,7 +100,6 @@ export default function ProviderDashboard() {
     location_name: ""
   });
 
-  // State with proper interfaces
   const [profile, setProfile] = useState<Profile | null>(null);
   const [providerProfile, setProviderProfile] = useState<ProviderProfile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -113,12 +109,13 @@ export default function ProviderDashboard() {
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
-  const [conversations, setConversations] = useState<any[]>([]);
   const [calculatedRating, setCalculatedRating] = useState(0);
   const [totalReviewCount, setTotalReviewCount] = useState(0);
+
   useEffect(() => {
     initializeDashboard();
   }, []);
+
   async function handleUpdateService() {
     try {
       setLoading(true);
@@ -126,9 +123,7 @@ export default function ProviderDashboard() {
 
       let finalImageUrl = viewingService.cover_image;
 
-      // 1. Check if a new image needs to be uploaded to Cloudinary
       if (newImageFile) {
-        // --- NEW CLOUDINARY UPLOAD LOGIC ---
         const formData = new FormData();
         formData.append("file", newImageFile);
         formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
@@ -146,12 +141,9 @@ export default function ProviderDashboard() {
         }
 
         const data = await response.json();
-        finalImageUrl = data.secure_url; // This is the new link
+        finalImageUrl = data.secure_url;
       }
 
-      // 2. Update the Database Row
-      // (We don't need to manually delete the old file from Cloudinary
-      // because we are just overwriting the link in the database)
       const { error: dbError } = await supabase
         .from("services")
         .update({
@@ -159,13 +151,12 @@ export default function ProviderDashboard() {
           price: editForm.price,
           short_description: editForm.short_description,
           location_name: editForm.location_name,
-          cover_image: finalImageUrl // Save the new Cloudinary link
+          cover_image: finalImageUrl
         })
         .eq("id", viewingService.id);
 
       if (dbError) throw dbError;
 
-      // 3. Sync the UI so the changes show up immediately
       setServices(prev => prev.map(s =>
         s.id === viewingService.id
           ? { ...s, ...editForm, cover_image: finalImageUrl }
@@ -174,7 +165,6 @@ export default function ProviderDashboard() {
 
       toast({ title: "Updated", description: "Service details and image updated successfully" });
 
-      // Reset the "Edit Mode"
       setIsEditing(false);
       setViewingService(null);
       setNewImageFile(null);
@@ -185,6 +175,7 @@ export default function ProviderDashboard() {
       setLoading(false);
     }
   }
+
   async function initializeDashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -192,26 +183,24 @@ export default function ProviderDashboard() {
 
       const userId = session.user.id;
 
-      // Fetch all data in parallel
       const [pRes, ppRes, subRes, servRes, bookRes, reviewRes] = await Promise.all([
         supabase.from("profiles").select("full_name, avatar_url").eq("id", userId).single(),
         supabase.from("provider_profiles").select("business_name, tagline, average_rating").eq("user_id", userId).single(),
         supabase.from("subscriptions").select("*").eq("provider_id", userId).single(),
         supabase.from("services").select(`id, title, short_description, price, cover_image, location_name, is_active, categories(name, icon), service_images(image_url)`).eq("provider_id", userId).order("created_at", { ascending: false }),
         supabase.from("bookings").select(`
-  id,
-  status,
-  total_amount,
-  booking_type,
-  service_number,
-  scheduled_at,
-  notes,
-  created_at,
-  services(title),
-  whatsapp_number,
-  customer:profiles!bookings_customer_id_fkey(full_name, avatar_url)
-`).eq("provider_id", userId).order("created_at", { ascending: false }),
-        // ADD THIS: Fetch all ratings for this provider
+          id,
+          status,
+          total_amount,
+          booking_type,
+          service_number,
+          scheduled_at,
+          notes,
+          created_at,
+          services(title),
+          whatsapp_number,
+          customer:profiles!bookings_customer_id_fkey(full_name, avatar_url)
+        `).eq("provider_id", userId).order("created_at", { ascending: false }),
         supabase.from("reviews").select("rating").eq("provider_id", userId)
       ]);
 
@@ -221,7 +210,6 @@ export default function ProviderDashboard() {
       setServices(servRes.data || []);
       setBookings(bookRes.data as unknown as Booking[] || []);
 
-      // CALCULATE LIVE RATING
       if (reviewRes.data && reviewRes.data.length > 0) {
         const total = reviewRes.data.length;
         const sum = reviewRes.data.reduce((acc, r) => acc + (r.rating || 0), 0);
@@ -240,23 +228,18 @@ export default function ProviderDashboard() {
     totalServices: services.length,
     totalBookings: bookings.length,
     totalRevenue: bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + Number(b.total_amount || 0), 0),
-    // UPDATE THIS LINE:
     rating: calculatedRating,
     reviewCount: totalReviewCount
   }), [services, bookings, calculatedRating, totalReviewCount]);
 
-  // This keeps VIP/Priority bookings at the very top of the list!
   const sortedBookings = useMemo(() => {
     return [...bookings].sort((a, b) => {
-      // 1. If 'a' is priority and 'b' is not, 'a' goes first
       if (a.booking_type === 'priority' && b.booking_type !== 'priority') return -1;
-      // 2. If 'b' is priority and 'a' is not, 'b' goes first
       if (b.booking_type === 'priority' && a.booking_type !== 'priority') return 1;
-      // 3. Otherwise, sort by the newest ones first
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [bookings]);
-  // Paste this inside your export default function ProviderDashboard() { ... }
+
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -267,13 +250,13 @@ export default function ProviderDashboard() {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
+
   const deleteService = async (id: string) => {
     if (!confirm("Are you sure? This will permanently remove this service.")) return;
 
     try {
       setDeletingId(id);
 
-      // 1. Delete the images from the 'service_images' table first
       const { error: imgError } = await supabase
         .from("service_images")
         .delete()
@@ -281,7 +264,6 @@ export default function ProviderDashboard() {
 
       if (imgError) throw imgError;
 
-      // 2. Now delete the service from the 'services' table
       const { error: srvError } = await supabase
         .from("services")
         .delete()
@@ -289,7 +271,6 @@ export default function ProviderDashboard() {
 
       if (srvError) throw srvError;
 
-      // 3. If we got here, it's actually deleted! Update the UI.
       setServices(prev => prev.filter(s => s.id !== id));
       toast({ title: "Deleted", description: "Service removed successfully" });
 
@@ -313,8 +294,6 @@ export default function ProviderDashboard() {
     }
   };
 
-
-  // When opening the modal, fill the form with the service data
   useEffect(() => {
     if (viewingService) {
       setEditForm({
@@ -325,172 +304,22 @@ export default function ProviderDashboard() {
       });
     }
   }, [viewingService]);
+
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 pb-20 transition-colors duration-300">
-      {/* Header */}
-      <nav className="bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b dark:border-slate-800 mb-8 sticky top-0 z-50 transition-colors duration-300">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 pb-20 transition-colors duration-300 pt-24 sm:pt-28">
+      {/* REMOVED: The entire header section with dashboard title and actions */}
+      {/* The main Navbar from App.tsx now handles all navigation */}
 
-          {/* Left: Branding */}
-          <div className="flex items-center gap-3">
-            {/* Professional Icon instead of just a letter */}
-            <div className="bg-slate-900 dark:bg-slate-700 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-slate-900">
-              <LayoutDashboard size={20} />
-            </div>
-
-            {/* Removed 'hidden sm:block' so it shows on mobile */}
-            <div className="flex flex-col">
-              <h1 className="font-black text-slate-900 dark:text-white leading-none tracking-tight text-sm md:text-base">
-                {providerProfile?.business_name || profile?.full_name || "Provider"}
-              </h1>
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Provider Dashboard
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-2">
-            {/* Primary Action - Always visible on desktop */}
-            <Button
-              size="sm"
-              onClick={() => navigate("/provider/services/new")}
-              className="rounded-full px-4 h-10 font-bold hidden md:flex gap-2"
-            >
-              <Plus className="w-4 h-4" /> New Service
-            </Button>
-
-            {/* The Unified Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="rounded-full h-12 gap-2 px-2 pr-4 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border dark:border-slate-700">
-                    {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
-                    ) : (
-                      <User className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    )}
-                  </div>
-                  <Menu className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-100 dark:border-slate-800 mt-2 bg-white dark:bg-gray-950">
-                <DropdownMenuLabel className="p-3">
-                  <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Navigation</p>
-                </DropdownMenuLabel>
-
-                <DropdownMenuItem onClick={() => navigate("/")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
-                  <Home className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">Public Home</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem onClick={() => navigate("/explore")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
-                  <Search className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">Explore Services</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-2 dark:bg-slate-800" />
-
-                <DropdownMenuLabel className="p-3 pt-1">
-                  <p className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Account</p>
-                </DropdownMenuLabel>
-
-                <DropdownMenuItem onClick={() => navigate("/edit-profile")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
-                  <Settings className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">Edit Profile</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem onClick={() => navigate("/about")} className="rounded-xl p-3 cursor-pointer dark:focus:bg-slate-800">
-                  <Briefcase className="w-4 h-4 mr-3 text-slate-500 dark:text-slate-400" /> <span className="font-medium">About HommieGo</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-2 dark:bg-slate-800" />
-
-                <DropdownMenuItem
-                  onClick={() => setShowLogoutPopup(true)}
-                  className="rounded-xl p-3 cursor-pointer text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-950 focus:text-red-600 dark:focus:text-red-400"
-                >
-                  <LogOut className="w-4 h-4 mr-3" /> <span className="font-bold">Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </nav>
-      {/* Custom Logout Popup */}
-      {showLogoutPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-950 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 transition-colors">
-
-            {/* Icon */}
-            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center mb-4">
-              <LogOut className="w-8 h-8 text-red-600 dark:text-red-400" />
-            </div>
-
-            {/* Title */}
-            <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">
-              Confirm Logout
-            </h2>
-
-            {/* Description */}
-            <p className="text-muted-foreground dark:text-slate-400 text-center mb-6">
-              Are you sure you want to logout from your account?
-            </p>
-
-            {/* Buttons */}
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-xl dark:border-slate-700 dark:text-slate-300"
-                onClick={() => setShowLogoutPopup(false)}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
-                onClick={() => {
-                  setShowLogoutPopup(false);
-                  handleLogout();
-                }}
-              >
-                Yes, Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="container mx-auto px-4">
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
           {[
-            {
-              label: "Total Reviews",
-              val: stats.reviewCount,
-              icon: MessageSquare,
-              color: "text-emerald-600 dark:text-emerald-400"
-            },
-            {
-              label: "Avg Rating",
-              val: stats.rating > 0 ? `${stats.rating} / 5` : "No ratings",
-              icon: Star,
-              color: "text-orange-500 dark:text-orange-400"
-            },
-            {
-              label: "My Services",
-              val: stats.totalServices,
-              icon: Briefcase,
-              color: "text-blue-600 dark:text-blue-400"
-            },
-            {
-              label: "Bookings",
-              val: stats.totalBookings,
-              icon: Calendar,
-              color: "text-purple-600 dark:text-purple-400"
-            },
+            { label: "Total Reviews", val: stats.reviewCount, icon: MessageSquare, color: "text-emerald-600 dark:text-emerald-400" },
+            { label: "Avg Rating", val: stats.rating > 0 ? `${stats.rating} / 5` : "No ratings", icon: Star, color: "text-orange-500 dark:text-orange-400" },
+            { label: "My Services", val: stats.totalServices, icon: Briefcase, color: "text-blue-600 dark:text-blue-400" },
+            { label: "Bookings", val: stats.totalBookings, icon: Calendar, color: "text-purple-600 dark:text-purple-400" },
           ].map((s, i) => (
             <Card key={i} className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-950 transition-colors">
               <CardContent className="p-4 flex items-center gap-2">
@@ -505,8 +334,19 @@ export default function ProviderDashboard() {
             </Card>
           ))}
         </div>
+
+        {/* Floating Action Button - New Service */}
+        <div className="fixed bottom-6 right-6 z-40">
+          <Button
+            onClick={() => navigate("/provider/services/new")}
+            className="rounded-full h-14 w-14 shadow-2xl shadow-primary/30 bg-primary hover:bg-primary/90"
+          >
+            <Plus className="w-6 h-6" />
+          </Button>
+        </div>
+
         <Tabs defaultValue="services" className="space-y-4">
-          <TabsList className="mx-auto flex w-fit items-center justify-center rounded-2xl border-0  bg-gray-100 dark:bg-gray-900 p-1 h-14 shadow-sm">
+          <TabsList className="mx-auto flex w-fit items-center justify-center rounded-2xl border-0 bg-gray-100 dark:bg-gray-900 p-1 h-14 shadow-sm">
             <TabsTrigger value="services" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">My Services</TabsTrigger>
             <TabsTrigger value="bookings" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">Bookings</TabsTrigger>
             <TabsTrigger value="subscription" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">Subscription</TabsTrigger>
@@ -565,6 +405,7 @@ export default function ProviderDashboard() {
               </div>
             )}
           </TabsContent>
+
           <TabsContent value="bookings" className="space-y-4">
             {bookings.length === 0 ? (
               <Card className="p-12 text-center border-0 text-muted-foreground dark:text-slate-400 dark:bg-zinc-950 transition-colors">
@@ -579,8 +420,6 @@ export default function ProviderDashboard() {
                   <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white dark:bg-gray-950 transition-colors">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
-
-                        {/* LEFT SIDE: CUSTOMER IDENTITY ONLY */}
                         <div className="p-8 bg-slate-50/50 dark:bg-slate-800/50 md:w-64 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center">
                           <div className="relative mb-4">
                             <div className="h-24 w-24 rounded-[2rem] bg-white dark:bg-slate-700 shadow-xl flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-700">
@@ -595,9 +434,6 @@ export default function ProviderDashboard() {
                             {booking.customer.full_name}
                           </h4>
                           <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Customer</p>
-
-
-                          {/* ADD THIS BADGE BLOCK HERE */}
                           <div className="mt-3 flex items-center gap-2">
                             <Badge variant="outline" className="bg-slate-900 text-white border-none font-mono">
                               #{booking.service_number}
@@ -614,7 +450,6 @@ export default function ProviderDashboard() {
                           </div>
                         </div>
 
-                        {/* RIGHT SIDE: BOOKING DETAILS */}
                         <div className="p-8 flex-1 flex flex-col justify-between">
                           <div>
                             <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
@@ -629,7 +464,6 @@ export default function ProviderDashboard() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                              {/* Time Detail */}
                               <div className="space-y-1">
                                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
                                   <Calendar className="w-3 h-3 text-primary" /> Appointment Date
@@ -641,7 +475,6 @@ export default function ProviderDashboard() {
                                 </p>
                               </div>
 
-                              {/* Notes Detail */}
                               <div className="space-y-1">
                                 <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
                                   <MessageSquare className="w-3 h-3 text-primary" /> Instructions
@@ -653,7 +486,6 @@ export default function ProviderDashboard() {
                             </div>
                           </div>
 
-                          {/* BOTTOM ACTION BAR */}
                           <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
                             <Badge className={`uppercase text-[10px] font-black px-4 py-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-blue-500' :
                               booking.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
@@ -661,7 +493,6 @@ export default function ProviderDashboard() {
                               {booking.status}
                             </Badge>
 
-                            {/* CHAT ACTION: ONLY SHOW IF CONFIRMED OR COMPLETED */}
                             {(booking.status === 'confirmed' || booking.status === 'completed') ? (
                               <Button
                                 onClick={() => {
@@ -681,11 +512,11 @@ export default function ProviderDashboard() {
                                     : "TBD";
 
                                   const message = encodeURIComponent(
-                                    `Hello! I am your HommieGo Service Provider regarding your booking for *${booking.services?.title}*.\n\n` +
+                                    `Hello! I am your HommieCare Service Provider regarding your booking for *${booking.services?.title}*.\n\n` +
                                     `🎫 *Service Number:* #${booking.service_number}\n` +
                                     `📅 *Scheduled For:* ${apptDate} at ${apptTime}\n` +
                                     `⚡ *Priority Type:* ${booking.booking_type?.toUpperCase()}\n\n` +
-                                    `Thank you for using HommieGo!`
+                                    `Thank you for using HommieCare!`
                                   );
 
                                   window.open(`https://wa.me/${cleanNum}?text=${message}`, '_blank');
@@ -702,10 +533,8 @@ export default function ProviderDashboard() {
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Awaiting Confirmation</span>
                               </div>
                             )}
-
                           </div>
                         </div>
-
                       </div>
                     </CardContent>
                   </Card>
@@ -713,7 +542,6 @@ export default function ProviderDashboard() {
               </div>
             )}
           </TabsContent>
-
 
           <TabsContent value="subscription">
             <Card className="max-w-md border-none shadow-sm dark:bg-gray-950 transition-colors">
@@ -736,13 +564,46 @@ export default function ProviderDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Custom Logout Popup */}
+      {showLogoutPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-950 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 transition-colors">
+            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center mb-4">
+              <LogOut className="w-8 h-8 text-red-600 dark:text-red-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">Confirm Logout</h2>
+            <p className="text-muted-foreground dark:text-slate-400 text-center mb-6">
+              Are you sure you want to logout from your account?
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl dark:border-slate-700 dark:text-slate-300"
+                onClick={() => setShowLogoutPopup(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
+                onClick={() => {
+                  setShowLogoutPopup(false);
+                  handleLogout();
+                }}
+              >
+                Yes, Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* FULL DETAILS MODAL */}
       <Dialog open={!!viewingService} onOpenChange={() => { setViewingService(null); setIsEditing(false); }}>
         <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-gray-950 transition-colors">
           {viewingService && (
             <>
               <div className="h-64 w-full relative group">
-                {/* Show image preview if chosen, otherwise show existing image */}
                 <img
                   src={imagePreview || viewingService.cover_image || undefined}
                   className="w-full h-full object-cover"

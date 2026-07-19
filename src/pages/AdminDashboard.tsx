@@ -67,7 +67,7 @@ export default function AdminDashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Admin Dashboard </h1>
-            <p className="text-muted-foreground">Manage HommieGo platform</p>
+            <p className="text-muted-foreground">Manage HommieCare platform</p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
             Logout

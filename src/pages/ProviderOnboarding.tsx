@@ -84,7 +84,7 @@ export default function ProviderOnboarding() {
 
       toast({
         title: "Profile submitted successfully!",
-        description: "Your provider profile has been approved. Welcome to HommieGo!",
+        description: "Your provider profile has been approved. Welcome to HommieCare!",
       });
 
       navigate("/dashboard");
@@ -106,7 +106,7 @@ export default function ProviderOnboarding() {
           <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">Become a Provider</h1>
             <p className="text-muted-foreground">
-              Fill in your details to start offering services on HommieGo
+              Fill in your details to start offering services on HommieCare
             </p>
           </div>
 

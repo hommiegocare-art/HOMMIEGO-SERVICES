@@ -17,6 +17,7 @@ import {
   Bookmark
 } from "lucide-react";
 import { HommieLoader } from "@/components/HommieLoader";
+
 const discoveryImages = [
   "/background1.png",
   "/background2.png",
@@ -25,6 +26,7 @@ const discoveryImages = [
   "/background5.png",
   "/background6.png",
 ];
+
 // Enhanced Profile interface based on your SQL schema
 interface Profile {
   full_name: string | null;
@@ -51,9 +53,10 @@ export default function ClientDashboard() {
   useEffect(() => {
     const interval = setInterval(() => {
       setBgIndex((prev) => (prev + 1) % discoveryImages.length);
-    }, 3000); // Changes image every 5 seconds
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
+
   useEffect(() => {
     loadDashboard();
   }, []);
@@ -68,11 +71,9 @@ export default function ClientDashboard() {
         return;
       }
 
-      // Fetch Profile and Stats (Messages section removed)
       const [profileRes, bookingsRes, favoritesRes, reviewsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", session.user.id).single(),
         supabase.from("bookings").select("*", { count: "exact", head: true }).eq("customer_id", session.user.id),
-        // Updated to use your new service_favorites table
         supabase.from("service_favorites").select("*", { count: "exact", head: true }).eq("user_id", session.user.id),
         supabase.from("reviews").select("*", { count: "exact", head: true }).eq("customer_id", session.user.id),
       ]);
@@ -106,7 +107,6 @@ export default function ClientDashboard() {
 
   if (loading) return <HommieLoader />;
 
-  // Adjusted cards to 3 items for a professional layout
   const statCards = [
     { label: "Bookings", value: stats.bookings, icon: Calendar, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950" },
     { label: "Reviews", value: stats.reviews, icon: Star, color: "text-amber-500 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950" },
@@ -114,36 +114,9 @@ export default function ClientDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-12 transition-colors duration-300">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white dark:bg-gray-950 border-b dark:border-slate-800 sticky top-0 z-10 shadow-sm transition-colors duration-300">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-            Client Portal
-          </span>
-
-          <div className="flex gap-1 md:gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="hidden sm:flex gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
-              <Home className="w-4 h-4" /> Home
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/explore")} className="gap-2 text-primary font-semibold dark:hover:bg-slate-800">
-              <Search className="w-4 h-4" /> Explore
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/edit-profile")} className="dark:text-slate-300 dark:hover:bg-slate-800">
-              Profile
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowLogoutPopup(true)}
-              className="text-slate-500 dark:text-slate-400 hover:text-destructive dark:hover:text-destructive"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-12 transition-colors duration-300 pt-24 sm:pt-28">
+      {/* REMOVED: The entire Top Navigation Bar */}
+      {/* The main Navbar from App.tsx now handles all navigation */}
 
       {/* Logout Popup */}
       {showLogoutPopup && (
@@ -200,10 +173,29 @@ export default function ClientDashboard() {
               </p>
             )}
           </div>
+
+          {/* Quick Action Button */}
+          <div className="md:ml-auto flex gap-3">
+            <Button
+              variant="outline"
+              className="rounded-xl dark:border-slate-700 dark:text-slate-300"
+              onClick={() => navigate("/edit-profile")}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Edit Profile
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
+              onClick={() => setShowLogoutPopup(true)}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </header>
 
         {/* Stats Grid - 3 Columns */}
-        {/* Stats Grid - Updated with Click Logic */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
           {statCards.map((stat) => (
             <Card
@@ -233,11 +225,11 @@ export default function ClientDashboard() {
             </Card>
           ))}
         </div>
-        {/* Discovery Section */}
+
         {/* Discovery Section with Smooth Slideshow */}
         <Card className="relative overflow-hidden border-none shadow-2xl min-h-[400px] flex flex-col justify-center dark:bg-gray-950 transition-colors">
 
-          {/* --- SLIDESHOW LAYER --- */}
+          {/* Slideshow Layer */}
           <div className="absolute inset-0 z-0">
             {discoveryImages.map((img, index) => (
               <div
@@ -254,7 +246,7 @@ export default function ClientDashboard() {
             <div className="absolute inset-0 bg-slate-900/60 dark:bg-zinc-950/70 backdrop-blur-[1px]" />
           </div>
 
-          {/* --- CONTENT LAYER --- */}
+          {/* Content Layer */}
           <CardHeader className="relative z-10 pt-12 px-8 md:px-12">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-1 w-8 bg-primary rounded-full" />

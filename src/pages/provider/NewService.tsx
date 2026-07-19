@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Upload, ImagePlus, ArrowLeft, Check, MapPin, DollarSign, Briefcase, Clock, Zap } from "lucide-react";
+import {
+    Loader2,
+    Upload,
+    ImagePlus,
+    ArrowLeft,
+    Check,
+    MapPin,
+    DollarSign,
+    Briefcase,
+    Clock,
+    Zap,
+    Stethoscope,
+    HeartHandshake,
+    ShieldCheck,
+    FileText,
+    Users,
+    Award,
+    Sparkles
+} from "lucide-react";
 
 interface Category {
     id: string;
@@ -17,27 +35,24 @@ interface Category {
 }
 
 export default function NewService() {
-    // ADD THESE AT THE TOP (outside or inside the component)
+    // Booking Fees
     const REGULAR_BOOKING_FEE = "100";
     const PRIORITY_BOOKING_FEE = "300";
 
-    // INSIDE THE COMPONENT:
-    const [price, setPrice] = useState(""); // This stays empty for them to type
-    const [regularFee] = useState(REGULAR_BOOKING_FEE); // Locked
-    const [priorityFee] = useState(PRIORITY_BOOKING_FEE); // Locked
+    const [price, setPrice] = useState("");
+    const [regularFee] = useState(REGULAR_BOOKING_FEE);
+    const [priorityFee] = useState(PRIORITY_BOOKING_FEE);
     const navigate = useNavigate();
     const { toast } = useToast();
 
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<Category[]>([]);
-    // Inside NewService component
-    const [pricingType, setPricingType] = useState("fixed"); // Default to fixed
+    const [pricingType, setPricingType] = useState("fixed");
+
     // Form State
     const [title, setTitle] = useState("");
     const [shortDescription, setShortDescription] = useState("");
     const [description, setDescription] = useState("");
-    // Change this line:
-
     const [locationName, setLocationName] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("");
     const [images, setImages] = useState<File[]>([]);
@@ -47,25 +62,24 @@ export default function NewService() {
         fetchCategories();
     }, []);
 
-    async function fetchCategories() {
+    const fetchCategories = useCallback(async () => {
         const { data, error } = await supabase.from("categories").select("id, name, icon").order("name");
         if (!error) setCategories(data || []);
-    }
+    }, []);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
         const newFiles = Array.from(files);
         setImages(newFiles);
         setPreviews(newFiles.map(file => URL.createObjectURL(file)));
-    };
-    const uploadImage = async (file: File) => {
-        // 1. Create a "Form" to send the image
+    }, []);
+
+    const uploadImage = useCallback(async (file: File) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-        // 2. Send it to Cloudinary
         const response = await fetch(
             `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
             {
@@ -78,14 +92,18 @@ export default function NewService() {
             throw new Error("Failed to upload image to Cloudinary");
         }
 
-        // 3. Get the web link (URL) of the uploaded image
         const data = await response.json();
-        return data.secure_url; // This is the link we save to Supabase
-    };
-    const handleCreateService = async (e: React.FormEvent) => {
+        return data.secure_url;
+    }, []);
+
+    const handleCreateService = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCategory) {
-            toast({ title: "Category required", description: "Please pick a category for your service.", variant: "destructive" });
+            toast({
+                title: "Category required",
+                description: "Please select a medical service category for your listing.",
+                variant: "destructive"
+            });
             return;
         }
 
@@ -105,9 +123,9 @@ export default function NewService() {
                 title,
                 short_description: shortDescription,
                 description,
-                price: Number(price), // This saves your main service price
-                regular_booking_fee: Number(regularFee), // ADD THIS
-                priority_booking_fee: Number(priorityFee), // ADD THIS
+                price: Number(price),
+                regular_booking_fee: Number(regularFee),
+                priority_booking_fee: Number(priorityFee),
                 pricing_type: pricingType,
                 location_name: locationName,
                 cover_image: uploadedImages[0] || null,
@@ -121,143 +139,204 @@ export default function NewService() {
                 await supabase.from("service_images").insert(imageRows);
             }
 
-            toast({ title: "Service Published!", description: "Your service is now live on the platform." });
+            toast({
+                title: "Healthcare Service Published!",
+                description: "Your medical service is now live and available for patients to book."
+            });
             navigate("/dashboard/provider");
         } catch (error: any) {
-            toast({ title: "Creation failed", description: error.message, variant: "destructive" });
+            toast({
+                title: "Creation failed",
+                description: error.message,
+                variant: "destructive"
+            });
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedCategory, images, title, shortDescription, description, price, regularFee, priorityFee, pricingType, locationName, navigate, toast, uploadImage]);
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-20 transition-colors duration-300">
-            <div className="container mx-auto px-4 pt-2">
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-24 transition-colors duration-300">
+            <div className="w-full px-0 pt-20 md:pt-24">
+                <div className="max-w-2xl mx-auto px-4 md:px-6">
 
-                {/* Navigation & Title Header */}
-                <div className="max-w-2xl mx-auto mb-2 flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full bg-white dark:bg-slate-800 shadow-sm border dark:border-slate-700">
-                        <ArrowLeft className="w-5 h-5 dark:text-slate-300" />
-                    </Button>
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">List New Service</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Share your expertise with the community.</p>
+                    {/* Navigation & Title Header */}
+                    <div className="mb-4 flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(-1)}
+                            className="rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border border-zinc-100 dark:border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-700/50"
+                        >
+                            <ArrowLeft className="w-5 h-5 dark:text-zinc-300" />
+                        </Button>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl md:text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                                    List Medical Service
+                                </h1>
+                                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                                    Healthcare
+                                </Badge>
+                            </div>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                Share your healthcare expertise with patients in need of professional care.
+                            </p>
+                        </div>
                     </div>
-                </div>
 
-                <div className="max-w-2xl mx-auto">
                     <form onSubmit={handleCreateService} className="space-y-4">
 
                         {/* BLOCK 1: General Info */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-gray-950 transition-colors">
-                            <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
-                                <Briefcase className="text-primary w-6 h-6" />
-                                <h2 className="text-white font-bold text-lg">Service Details</h2>
+                        <Card className="border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 p-4 flex items-center gap-3 border-b border-zinc-100 dark:border-transparent">
+                                <Stethoscope className="text-primary w-6 h-6" />
+                                <h2 className="text-zinc-900 dark:text-white font-bold text-lg">Medical Service Details</h2>
                             </div>
-                            <CardContent className="p-2 space-y-2">
+                            <CardContent className="p-4 md:p-6 space-y-5">
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-slate-700 dark:text-slate-300">Service Title</Label>
+                                    <Label className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                        <FileText className="w-4 h-4 text-primary" />
+                                        Service Title
+                                    </Label>
                                     <Input
-                                        placeholder="e.g. Professional Home Cleaning"
+                                        placeholder="e.g. Professional Home Nursing Care"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         required
-                                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                                        className="h-12 rounded-2xl border-zinc-200 dark:border-transparent dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500 focus:ring-2 focus:ring-primary"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label className="font-bold text-slate-700 dark:text-slate-300">Summary</Label>
+                                    <Label className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-primary" />
+                                        Short Summary
+                                    </Label>
                                     <Input
-                                        placeholder="One-liner that appears in search results"
+                                        placeholder="Brief description for patients browsing services"
                                         value={shortDescription}
                                         onChange={(e) => setShortDescription(e.target.value)}
                                         required
-                                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                                        className="h-12 rounded-2xl border-zinc-200 dark:border-transparent dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500 focus:ring-2 focus:ring-primary"
                                     />
+                                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 italic">
+                                        This appears in search results and service cards.
+                                    </p>
                                 </div>
 
-                                {/* Price and Location - Vertical Stack */}
-                                <div className="space-y-6">
-                                    {/* 1. Main Service Price - Now Editable! */}
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4 text-green-500" />
-                                            Total Service Price (KES)
+                                {/* Price and Location */}
+                                <div className="space-y-5 pt-2">
+                                    {/* 1. Main Service Price */}
+                                    <div className="space-y-2">
+                                        <Label className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                            <DollarSign className="w-4 h-4 text-emerald-500" />
+                                            Total Service Fee (KES)
                                         </Label>
                                         <div className="relative">
-                                            <DollarSign className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                                            <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" />
                                             <Input
                                                 type="number"
-                                                placeholder="How much do you charge for the job?"
-                                                className="pl-10 h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800"
+                                                placeholder="How much do you charge for the service?"
+                                                className="pl-12 h-12 rounded-2xl border-zinc-200 dark:border-transparent dark:bg-zinc-800 dark:text-white focus:ring-2 focus:ring-primary"
                                                 value={price}
                                                 onChange={(e) => setPrice(e.target.value)}
                                                 required
                                             />
                                         </div>
-                                        <p className="text-[10px] text-slate-400 italic pl-1">This is your total fee for the service.</p>
+                                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 italic pl-1">
+                                            This is your total fee for the healthcare service.
+                                        </p>
                                     </div>
 
-                                    {/* 2. The Two Booking Fee Columns */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {/* Locked Regular Fee */}
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold flex items-center gap-1 text-slate-500">
-                                                <Clock className="w-3 h-3 text-blue-500" /> Regular Fee (Locked)
-                                            </Label>
-                                            <Input
-                                                type="number"
-                                                value={regularFee}
-                                                readOnly // THIS LOCKS IT
-                                                className="h-11 rounded-xl border-slate-200 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 cursor-not-allowed font-medium"
-                                            />
+                                    {/* 2. Booking Fees - Locked */}
+                                    <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-2xl border border-primary/10 dark:border-primary/20">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <ShieldCheck className="w-4 h-4 text-primary" />
+                                            <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                                                Platform Booking Fees (Fixed)
+                                            </span>
                                         </div>
-
-                                        {/* Locked Priority Fee */}
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold flex items-center gap-1 text-slate-500">
-                                                <Zap className="w-3 h-3 text-orange-500" /> Priority Fee (Locked)
-                                            </Label>
-                                            <Input
-                                                type="number"
-                                                value={priorityFee}
-                                                readOnly // THIS LOCKS IT
-                                                className="h-11 rounded-xl border-slate-200 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 cursor-not-allowed font-medium"
-                                            />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-bold flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                                                    <Clock className="w-3 h-3 text-blue-500" /> Standard Booking
+                                                </Label>
+                                                <Input
+                                                    type="number"
+                                                    value={regularFee}
+                                                    readOnly
+                                                    className="h-10 rounded-2xl border-zinc-200 dark:border-transparent bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 cursor-not-allowed font-medium text-sm"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-bold flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                                                    <Zap className="w-3 h-3 text-orange-500" /> Priority Booking
+                                                </Label>
+                                                <Input
+                                                    type="number"
+                                                    value={priorityFee}
+                                                    readOnly
+                                                    className="h-10 rounded-2xl border-zinc-200 dark:border-transparent bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 cursor-not-allowed font-medium text-sm"
+                                                />
+                                            </div>
                                         </div>
+                                        <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-2 text-center">
+                                            These fees are set by HommieCare Kenya and are non-negotiable
+                                        </p>
                                     </div>
-                                    {/* NEW: PRICING TYPE SELECTION */}
-                                    <div className="space-y-3">
-                                        <Label className="font-bold text-slate-700 dark:text-slate-300">How is your total service charged?</Label>
+
+                                    {/* Pricing Type */}
+                                    <div className="space-y-2">
+                                        <Label className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                            <Award className="w-4 h-4 text-primary" />
+                                            Pricing Structure
+                                        </Label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <button
                                                 type="button"
                                                 onClick={() => setPricingType("fixed")}
-                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "fixed" ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "fixed"
+                                                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                                                    : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                                                     }`}
                                             >
-                                                <span className={`font-bold ${pricingType === "fixed" ? "text-primary" : "text-slate-600 dark:text-slate-300"}`}>Fixed</span>
-                                                <span className="text-[10px] text-slate-400 dark:text-slate-500">Set final price</span>
+                                                <span className={`font-bold ${pricingType === "fixed" ? "text-primary" : "text-zinc-600 dark:text-zinc-300"}`}>
+                                                    Fixed Price
+                                                </span>
+                                                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
+                                                    Set final price per service
+                                                </span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setPricingType("negotiable")}
-                                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "negotiable" ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800"
+                                                className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all ${pricingType === "negotiable"
+                                                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                                                    : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                                                     }`}
                                             >
-                                                <span className={`font-bold ${pricingType === "negotiable" ? "text-primary" : "text-slate-600 dark:text-slate-300"}`}>Negotiable</span>
-                                                <span className="text-[10px] text-slate-400 dark:text-slate-500">Price varies per job</span>
+                                                <span className={`font-bold ${pricingType === "negotiable" ? "text-primary" : "text-zinc-600 dark:text-zinc-300"}`}>
+                                                    Negotiable
+                                                </span>
+                                                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 text-center">
+                                                    Price varies per patient
+                                                </span>
                                             </button>
                                         </div>
                                     </div>
+
+                                    {/* Location */}
                                     <div className="space-y-2">
-                                        <Label className="font-bold text-slate-700 dark:text-slate-300">Service Location</Label>
+                                        <Label className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                            <MapPin className="w-4 h-4 text-primary" />
+                                            Service Location
+                                        </Label>
                                         <div className="relative">
-                                            <MapPin className="absolute left-3 top-3 w-5 h-5 text-slate-400 dark:text-slate-500" />
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-zinc-500" />
                                             <Input
-                                                placeholder="e.g. Westlands, Nairobi"
-                                                className="pl-10 h-12 rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                                                placeholder="e.g. Westlands, Nairobi (Areas you serve)"
+                                                className="pl-12 h-12 rounded-2xl border-zinc-200 dark:border-transparent dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500 focus:ring-2 focus:ring-primary"
                                                 value={locationName}
                                                 onChange={(e) => setLocationName(e.target.value)}
                                                 required
@@ -266,59 +345,72 @@ export default function NewService() {
                                     </div>
                                 </div>
 
-                                {/* SMART DESCRIPTION CHECKLIST */}
-                                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                {/* Detailed Description */}
+                                <div className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                                     <div className="flex justify-between items-center">
                                         <div className="flex flex-col">
-                                            <Label className="font-bold text-slate-700 dark:text-slate-300">Detailed Description</Label>
-                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium italic">Make sure to explain your total charges here.</span>
+                                            <Label className="font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
+                                                <FileText className="w-4 h-4 text-primary" />
+                                                Detailed Description
+                                            </Label>
+                                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium italic">
+                                                Explain your healthcare service in detail
+                                            </span>
                                         </div>
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${description.length > 100 ? 'bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'}`}>
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${description.length > 100
+                                            ? 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500'
+                                            }`}>
                                             {description.length} chars
                                         </span>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <Textarea
-                                            placeholder="Describe your service... e.g. 'My total fee is KES 2000. I bring my own vacuum. Transport to Westlands is free, but KES 300 elsewhere...'"
-                                            className="min-h-[250px] rounded-xl p-4 border-slate-200 dark:border-slate-700 focus:ring-primary md:col-span-1 shadow-inner bg-white dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
+                                            placeholder="Describe your healthcare service... e.g. 'I am a licensed nurse with 10 years of experience. I provide compassionate home nursing care including medication administration, wound care, and vital signs monitoring. My total fee is KES 2000 which includes travel within Nairobi...'"
+                                            className="min-h-[250px] rounded-2xl p-4 border-zinc-200 dark:border-transparent focus:ring-2 focus:ring-primary shadow-inner bg-white dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-500 md:col-span-1"
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             required
                                         />
 
-                                        {/* THE SMART CHECKLIST BOX */}
-                                        <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 space-y-4">
-                                            <h4 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                                <Check className="w-3 h-3" /> Booking Transparency Checklist
+                                        {/* Medical Service Checklist */}
+                                        <div className="bg-zinc-50 dark:bg-zinc-800/50 p-5 rounded-2xl border border-zinc-100 dark:border-transparent space-y-4">
+                                            <h4 className="text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                                                <Check className="w-3 h-3" /> Medical Service Checklist
                                             </h4>
 
                                             <ul className="space-y-3">
                                                 {[
                                                     {
-                                                        label: "Mention your Total Price/Rate",
-                                                        check: description.toLowerCase().match(/kes|price|cost|charge|total|amount/i),
-                                                        tip: "Remind customers the KES 200 is just a booking fee."
-                                                    },
-                                                    {
-                                                        label: "Transport/Fare details",
-                                                        check: description.toLowerCase().match(/transport|fare|travel|distance|km/i),
-                                                        tip: "Is transport included or extra?"
-                                                    },
-                                                    {
-                                                        label: "Tools/Materials provided",
-                                                        check: description.toLowerCase().match(/tool|equipment|material|machine|soap/i),
-                                                        tip: "Do you bring everything needed?"
-                                                    },
-                                                    {
-                                                        label: "Service Duration (Hours/Days)",
-                                                        check: description.toLowerCase().match(/hour|day|time|duration|mins/i),
-                                                        tip: "How long does the job take?"
+                                                        label: "Medical License/Certification",
+                                                        check: description.toLowerCase().match(/license|certified|registered|nurse|qualified|trained/i),
+                                                        tip: "Patients trust licensed professionals"
                                                     },
                                                     {
                                                         label: "Years of Experience",
-                                                        check: description.toLowerCase().match(/year|experience|expert|qualified/i),
-                                                        tip: "Build trust with your history."
+                                                        check: description.toLowerCase().match(/year|experience|expert|practicing|worked|served/i),
+                                                        tip: "Share your professional background"
+                                                    },
+                                                    {
+                                                        label: "Total Service Fee",
+                                                        check: description.toLowerCase().match(/kes|price|cost|charge|total|amount|fee/i),
+                                                        tip: "Be clear about the total cost"
+                                                    },
+                                                    {
+                                                        label: "Travel/Transport Details",
+                                                        check: description.toLowerCase().match(/transport|travel|distance|fare|location|area|deliver/i),
+                                                        tip: "Specify if travel is included"
+                                                    },
+                                                    {
+                                                        label: "Equipment & Materials",
+                                                        check: description.toLowerCase().match(/equipment|tool|supply|material|kit|device|monitor/i),
+                                                        tip: "What equipment do you provide?"
+                                                    },
+                                                    {
+                                                        label: "Service Duration",
+                                                        check: description.toLowerCase().match(/hour|minute|duration|time|visit|session|day/i),
+                                                        tip: "How long does each visit take?"
                                                     },
                                                     {
                                                         label: "Min. 100 characters",
@@ -329,30 +421,30 @@ export default function NewService() {
                                                     <li key={idx} className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-2 text-xs font-bold">
                                                             {item.check ? (
-                                                                <div className="bg-green-500 rounded-full p-0.5 text-white shadow-sm">
+                                                                <div className="bg-emerald-500 rounded-full p-0.5 text-white shadow-sm">
                                                                     <Check className="w-3 h-3" />
                                                                 </div>
                                                             ) : (
-                                                                <div className="bg-slate-200 dark:bg-slate-700 rounded-full w-4 h-4 flex-shrink-0" />
+                                                                <div className="bg-zinc-200 dark:bg-zinc-700 rounded-full w-4 h-4 flex-shrink-0" />
                                                             )}
-                                                            <span className={item.check ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-500"}>
+                                                            <span className={item.check ? "text-zinc-900 dark:text-white" : "text-zinc-400 dark:text-zinc-500"}>
                                                                 {item.label}
                                                             </span>
                                                         </div>
                                                         {!item.check && item.tip && (
-                                                            <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-6 italic">{item.tip}</span>
+                                                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 ml-6 italic">{item.tip}</span>
                                                         )}
                                                     </li>
                                                 ))}
                                             </ul>
 
-                                            <div className="bg-blue-600 dark:bg-blue-700 p-4 rounded-xl text-white shadow-md shadow-blue-100 dark:shadow-blue-900/30">
+                                            <div className="bg-primary/5 dark:bg-primary/10 p-4 rounded-2xl border border-primary/10 dark:border-primary/20">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <DollarSign className="w-3 h-3" />
-                                                    <span className="text-[10px] font-black uppercase">Provider Tip</span>
+                                                    <HeartHandshake className="w-3 h-3 text-primary" />
+                                                    <span className="text-[10px] font-black text-primary uppercase">Provider Tip</span>
                                                 </div>
-                                                <p className="text-[11px] leading-relaxed font-medium">
-                                                    "Customers are <span className="underline">more likely</span> to pay the KES 200 booking fee if they know exactly what the final balance will be."
+                                                <p className="text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-300 font-medium">
+                                                    "Patients are more likely to book when they understand your qualifications, experience, and total cost clearly."
                                                 </p>
                                             </div>
                                         </div>
@@ -362,29 +454,31 @@ export default function NewService() {
                         </Card>
 
                         {/* BLOCK 2: Images Gallery */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-gray-950 transition-colors">
-                            <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
+                        <Card className="border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 p-4 flex items-center gap-3 border-b border-zinc-100 dark:border-transparent">
                                 <ImagePlus className="text-primary w-6 h-6" />
-                                <h2 className="text-white font-bold text-lg">Service Gallery</h2>
+                                <h2 className="text-zinc-900 dark:text-white font-bold text-lg">Service Images</h2>
                             </div>
-                            <CardContent className="p-2">
-                                <label className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-2 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-all hover:border-primary group">
+                            <CardContent className="p-4 md:p-6">
+                                <label className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all hover:border-primary group">
                                     <div className="bg-primary/10 dark:bg-primary/20 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform">
                                         <Upload className="w-8 h-8 text-primary" />
                                     </div>
-                                    <p className="font-bold text-slate-700 dark:text-slate-300">Add Photos</p>
-                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 text-center">Click to browse your gallery</p>
+                                    <p className="font-bold text-zinc-700 dark:text-zinc-300">Upload Service Photos</p>
+                                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 text-center">
+                                        Showcase your healthcare service (max 5 images)
+                                    </p>
                                     <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
                                 </label>
 
                                 {previews.length > 0 && (
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
                                         {previews.map((src, i) => (
-                                            <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm">
+                                            <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-zinc-100 dark:border-zinc-700 shadow-sm">
                                                 <img src={src} className="w-full h-full object-cover" alt={`Preview ${i + 1}`} />
                                                 {i === 0 && (
-                                                    <Badge className="absolute top-1 left-1 text-[10px] bg-primary text-white border-none shadow-md">
-                                                        Main
+                                                    <Badge className="absolute top-2 left-2 text-[10px] bg-primary text-white border-none shadow-md rounded-full">
+                                                        Cover
                                                     </Badge>
                                                 )}
                                             </div>
@@ -395,17 +489,21 @@ export default function NewService() {
                         </Card>
 
                         {/* BLOCK 3: Category Selection */}
-                        <Card className="border-none shadow-sm rounded-xl overflow-hidden dark:bg-gray-950 transition-colors">
-                            <div className="bg-slate-900 dark:bg-slate-800 p-2 flex items-center gap-3">
-                                <Check className="text-primary w-6 h-6" />
-                                <h2 className="text-white font-bold text-lg">Category</h2>
+                        <Card className="border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
+                            <div className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 p-4 flex items-center gap-3 border-b border-zinc-100 dark:border-transparent">
+                                <Stethoscope className="text-primary w-6 h-6" />
+                                <h2 className="text-zinc-900 dark:text-white font-bold text-lg">Medical Category</h2>
                             </div>
-                            <CardContent className="p-2">
+                            <CardContent className="p-4 md:p-6">
                                 <div className="mb-4">
-                                    <Label className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select One</Label>
+                                    <Label className="text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+                                        Select Your Healthcare Specialty
+                                    </Label>
+                                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                                        Choose the category that best describes your medical service
+                                    </p>
                                 </div>
 
-                                {/* Categories list - Single Column List */}
                                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
                                     {categories.map((cat) => (
                                         <button
@@ -414,24 +512,24 @@ export default function NewService() {
                                             onClick={() => setSelectedCategory(cat.id)}
                                             className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all group ${selectedCategory === cat.id
                                                 ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-inner'
-                                                : 'border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-700'
+                                                : 'border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 hover:border-zinc-200 dark:hover:border-zinc-700'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
                                                 <div
-                                                    className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl flex items-center justify-center text-sm shadow-sm overflow-hidden flex-shrink-0 ${selectedCategory === cat.id
+                                                    className={`w-10 h-10 min-w-[40px] min-h-[40px] rounded-2xl flex items-center justify-center text-sm shadow-sm overflow-hidden flex-shrink-0 ${selectedCategory === cat.id
                                                         ? "bg-primary text-white"
-                                                        : "bg-white dark:bg-slate-700"
+                                                        : "bg-white dark:bg-zinc-700"
                                                         }`}
                                                 >
                                                     <span className="truncate">
-                                                        {cat.icon || "🛠️"}
+                                                        {cat.icon || "🏥"}
                                                     </span>
                                                 </div>
                                                 <span
                                                     className={`font-bold text-base break-words text-left leading-tight ${selectedCategory === cat.id
                                                         ? "text-primary"
-                                                        : "text-slate-600 dark:text-slate-300"
+                                                        : "text-zinc-600 dark:text-zinc-300"
                                                         }`}
                                                 >
                                                     {cat.name}
@@ -453,13 +551,18 @@ export default function NewService() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-16 rounded-[2rem] text-xl font-bold shadow-xl shadow-primary/20 transition-all active:scale-95"
+                                className="w-full h-16 rounded-3xl text-xl font-bold shadow-xl shadow-primary/20 transition-all active:scale-95 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90"
                             >
-                                {loading ? <Loader2 className="animate-spin mr-2 w-6 h-6" /> : <Upload className="mr-2 w-6 h-6" />}
-                                Publish Live Now
+                                {loading ?
+                                    <Loader2 className="animate-spin mr-2 w-6 h-6" /> :
+                                    <HeartHandshake className="mr-2 w-6 h-6" />
+                                }
+                                Publish Medical Service
                             </Button>
-                            <p className="text-xs text-center text-slate-400 dark:text-slate-500 px-6 leading-relaxed">
-                                By publishing, you confirm that your service details are accurate and comply with HommieGo's Professional Guidelines.
+                            <p className="text-xs text-center text-zinc-400 dark:text-zinc-500 px-6 leading-relaxed">
+                                By publishing, you confirm that your medical credentials are valid and your service details are accurate.
+                                <br className="hidden sm:block" />
+                                <span className="font-bold text-primary">HommieCare Kenya</span> is committed to connecting patients with trusted healthcare professionals.
                             </p>
                         </div>
                     </form>
