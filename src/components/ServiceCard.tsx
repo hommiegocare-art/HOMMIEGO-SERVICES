@@ -33,6 +33,7 @@ interface ServiceCardProps {
   reviews?: number;
   image: string;
   name: string;
+  providerId: string;
   initialIsLiked?: boolean;
   initialIsFavorited?: boolean;
   likeCount?: number;
@@ -48,6 +49,7 @@ export const ServiceCard = ({
   reviews = 0,
   image,
   name,
+  providerId,
   initialIsLiked = false,
   initialIsFavorited = false,
   likeCount = 0,
@@ -75,7 +77,7 @@ export const ServiceCard = ({
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toast({
-        title: "Client Login Required",
+        title: "Login Required",
         description: "Please sign in to like this service.",
         variant: "destructive",
       });
@@ -85,17 +87,61 @@ export const ServiceCard = ({
     setIsPending(true);
     try {
       if (isLiked) {
+        const { error } = await supabase
+          .from("service_likes")
+          .delete()
+          .eq("service_id", id)
+          .eq("user_id", session.user.id);
+
+        if (error) throw error;
+
         setIsLiked(false);
         setCount((prev) => Math.max(0, prev - 1));
-        await supabase.from("service_likes").delete().eq("service_id", id).eq("user_id", session.user.id);
+        toast({
+          title: "Unliked",
+          description: "You've removed your like from this service.",
+        });
       } else {
+        const { error } = await supabase
+          .from("service_likes")
+          .insert({ service_id: id, user_id: session.user.id });
+
+        if (error) {
+          if (error.code === '23505') {
+            const { data: existingLike } = await supabase
+              .from("service_likes")
+              .select("id")
+              .eq("service_id", id)
+              .eq("user_id", session.user.id)
+              .single();
+
+            if (existingLike) {
+              setIsLiked(true);
+              toast({ title: "Already liked!" });
+              return;
+            }
+          }
+          throw error;
+        }
+
         setIsLiked(true);
         setCount((prev) => prev + 1);
-        await supabase.from("service_likes").insert({ service_id: id, user_id: session.user.id });
+        toast({
+          title: "Liked!",
+          description: "You've liked this service.",
+        });
       }
-    } catch (error) {
-      setIsLiked(initialIsLiked);
-      setCount(likeCount);
+    } catch (error: any) {
+      // Silent error handling for duplicate key
+      if (error.code !== '23505') {
+        setIsLiked(initialIsLiked);
+        setCount(likeCount);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update like",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsPending(false);
     }
@@ -103,25 +149,77 @@ export const ServiceCard = ({
 
   const handleToggleFavorite = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      toast({ title: "Client Login Required", variant: "destructive" });
+      toast({
+        title: "Login Required",
+        description: "Please sign in to favorite this service.",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
       if (isFav) {
+        const { error } = await supabase
+          .from("service_favorites")
+          .delete()
+          .eq("service_id", id)
+          .eq("user_id", session.user.id);
+
+        if (error) throw error;
+
         setIsFav(false);
-        await supabase.from("service_favorites").delete().eq("service_id", id).eq("user_id", session.user.id);
+        toast({
+          title: "Removed from favorites",
+          description: "This service has been removed from your favorites.",
+        });
       } else {
+        const { error } = await supabase
+          .from("service_favorites")
+          .insert({ service_id: id, user_id: session.user.id });
+
+        if (error) {
+          if (error.code === '23505') {
+            const { data: existingFav } = await supabase
+              .from("service_favorites")
+              .select("id")
+              .eq("service_id", id)
+              .eq("user_id", session.user.id)
+              .single();
+
+            if (existingFav) {
+              setIsFav(true);
+              toast({ title: "Already in favorites!" });
+              return;
+            }
+          }
+          throw error;
+        }
+
         setIsFav(true);
-        await supabase.from("service_favorites").insert({ service_id: id, user_id: session.user.id });
-        toast({ title: "Saved!", description: "Added to your favorites." });
+        toast({
+          title: "Saved!",
+          description: "Added to your favorites.",
+        });
       }
-    } catch (error) {
-      setIsFav(initialIsFavorited);
+    } catch (error: any) {
+      if (error.code !== '23505') {
+        setIsFav(initialIsFavorited);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update favorite",
+          variant: "destructive"
+        });
+      }
     }
   }, [id, isFav, initialIsFavorited, toast]);
+
+  const handleProfileClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/profile/${providerId}`);
+  }, [providerId, navigate]);
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-zinc-900 border border-slate-100 dark:border-transparent rounded-2xl">
@@ -136,12 +234,10 @@ export const ServiceCard = ({
                 className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
                 loading="lazy"
               />
-              {/* Hover Overlay Icon */}
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center">
                 <Maximize2 className="text-white w-8 h-8 drop-shadow-lg" />
               </div>
 
-              {/* Price Badge */}
               <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1 rounded-2xl shadow-lg flex flex-col items-center leading-none z-10">
                 <span className="text-[8px] uppercase font-black opacity-90 mb-0.5 tracking-tighter">
                   Service Fee
@@ -231,7 +327,6 @@ export const ServiceCard = ({
       </CardHeader>
 
       <CardContent className="p-4">
-        {/* Title and Total Likes count */}
         <div className="flex justify-between items-start mb-2 gap-2">
           <h3 className="font-semibold text-lg line-clamp-1 text-slate-800 dark:text-white">
             {title}
@@ -262,7 +357,13 @@ export const ServiceCard = ({
         </div>
 
         <p className="text-xs text-slate-400 dark:text-zinc-500 mt-2 italic">
-          by {name}
+          by{" "}
+          <button
+            onClick={handleProfileClick}
+            className="text-primary hover:underline font-medium hover:text-primary/80 transition-colors focus:outline-none"
+          >
+            {name}
+          </button>
         </p>
       </CardContent>
 

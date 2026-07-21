@@ -528,6 +528,7 @@ const Index = () => {
                 reviews={service.provider_profiles?.total_reviews || 0}
                 image={service.cover_image || ""}
                 name={service.provider_profiles?.business_name || service.profiles?.full_name || "Provider"}
+                providerId={service.provider_id}
               />
             ))}
           </div>

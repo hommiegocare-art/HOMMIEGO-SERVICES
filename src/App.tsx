@@ -37,6 +37,7 @@ import AuthCallback from "./pages/AuthCallback";
 import Emergency from "./pages/Emergency";
 import HelpCenter from "./pages/HelpCenter";
 import MedicalProfile from "./pages/MedicalProfile";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -151,6 +152,11 @@ const App = () => {
               <Route path="/medical-profile/:patientId?" element={<MedicalProfile />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="*" element={<NotFound />} />
+              {/* View profile by userId */}
+              <Route path="/profile/:userId" element={<Profile />} />
+
+              {/* View own profile (redirects to current user) */}
+              <Route path="/profile" element={<Profile />} />
             </Routes>
             <BottomNav />
           </BrowserRouter>

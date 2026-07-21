@@ -26,7 +26,8 @@ import {
   Star,
   Mail,
   HeartPulse,
-  Sparkles
+  Sparkles,
+  UserCircle
 } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,7 +133,7 @@ export const Navbar = () => {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url, role, username, email")
+      .select("full_name, avatar_url, role, username, email, id")
       .eq("id", session.user.id)
       .single();
 
@@ -160,11 +161,12 @@ export const Navbar = () => {
   ], []);
 
   const userNavItems = useMemo(() => [
+    { icon: UserCircle, label: "My Profile", path: `/profile/${profile?.id || ''}` },
     { icon: LayoutDashboard, label: "Dashboard", path: `/dashboard/${profile?.role || 'customer'}` },
     { icon: CalendarCheck, label: "My Bookings", path: "/my-bookings" },
     { icon: UserPen, label: "Edit Profile", path: "/edit-profile" },
     { icon: HeartPulse, label: "Medical Profile", path: `/medical-profile` },
-  ], [profile?.role]);
+  ], [profile?.id, profile?.role]);
 
   const supportItems = useMemo(() => [
     { icon: HelpCircle, label: "Help Center", path: "/help" },

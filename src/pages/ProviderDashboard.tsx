@@ -308,27 +308,24 @@ export default function ProviderDashboard() {
   if (loading) return <HommieLoader />;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 pb-20 transition-colors duration-300 pt-24 sm:pt-28">
-      {/* REMOVED: The entire header section with dashboard title and actions */}
-      {/* The main Navbar from App.tsx now handles all navigation */}
-
-      <div className="container mx-auto px-4">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20 transition-colors duration-300 pt-24 sm:pt-28">
+      <div className="w-full px-4 md:px-6 max-w-7xl mx-auto">
+        {/* Stats Grid - Edge to Edge */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
             { label: "Total Reviews", val: stats.reviewCount, icon: MessageSquare, color: "text-emerald-600 dark:text-emerald-400" },
             { label: "Avg Rating", val: stats.rating > 0 ? `${stats.rating} / 5` : "No ratings", icon: Star, color: "text-orange-500 dark:text-orange-400" },
             { label: "My Services", val: stats.totalServices, icon: Briefcase, color: "text-blue-600 dark:text-blue-400" },
             { label: "Bookings", val: stats.totalBookings, icon: Calendar, color: "text-purple-600 dark:text-purple-400" },
           ].map((s, i) => (
-            <Card key={i} className="border-none shadow-sm rounded-xl overflow-hidden bg-white dark:bg-gray-950 transition-colors">
-              <CardContent className="p-4 flex items-center gap-2">
-                <div className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800 ${s.color}`}>
+            <Card key={i} className="border border-zinc-100 dark:border-transparent shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={`p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800 ${s.color}`}>
                   <s.icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-black tracking-wider">{s.label}</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-white">{s.val}</p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-black tracking-wider">{s.label}</p>
+                  <p className="text-xl font-black text-zinc-900 dark:text-white">{s.val}</p>
                 </div>
               </CardContent>
             </Card>
@@ -346,56 +343,56 @@ export default function ProviderDashboard() {
         </div>
 
         <Tabs defaultValue="services" className="space-y-4">
-          <TabsList className="mx-auto flex w-fit items-center justify-center rounded-2xl border-0 bg-gray-100 dark:bg-gray-900 p-1 h-14 shadow-sm">
-            <TabsTrigger value="services" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">My Services</TabsTrigger>
-            <TabsTrigger value="bookings" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">Bookings</TabsTrigger>
-            <TabsTrigger value="subscription" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-slate-400 dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white">Subscription</TabsTrigger>
+          <TabsList className="mx-auto flex w-fit items-center justify-center rounded-2xl border-0 bg-zinc-100 dark:bg-zinc-800/50 p-1 h-14 shadow-sm">
+            <TabsTrigger value="services" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-zinc-400 dark:data-[state=active]:bg-zinc-900 dark:data-[state=active]:text-white">My Services</TabsTrigger>
+            <TabsTrigger value="bookings" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-zinc-400 dark:data-[state=active]:bg-zinc-900 dark:data-[state=active]:text-white">Bookings</TabsTrigger>
+            <TabsTrigger value="subscription" className="px-6 py-2 rounded-xl text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:shadow dark:text-zinc-400 dark:data-[state=active]:bg-zinc-900 dark:data-[state=active]:text-white">Subscription</TabsTrigger>
           </TabsList>
 
           <TabsContent value="services" className="space-y-4">
             {services.length === 0 ? (
-              <Card className="p-12 text-center border-dashed dark:border-slate-800 dark:bg-gray-950 transition-colors">
-                <Briefcase className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+              <Card className="p-12 text-center border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl bg-white dark:bg-zinc-900 transition-colors">
+                <Briefcase className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-600 mb-4" />
                 <h3 className="text-lg font-medium dark:text-white">No services listed</h3>
-                <Button className="mt-4" onClick={() => navigate("/provider/services/new")}>Create Service</Button>
+                <Button className="mt-4 rounded-2xl" onClick={() => navigate("/provider/services/new")}>Create Service</Button>
               </Card>
             ) : (
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto">
                 {services.map((service) => (
-                  <Card key={service.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow dark:bg-gray-950">
+                  <Card key={service.id} className="overflow-hidden border border-zinc-100 dark:border-transparent shadow-sm hover:shadow-md transition-shadow rounded-2xl bg-white dark:bg-zinc-900">
                     <div className="relative h-48">
                       <img
                         src={service.cover_image || service.service_images?.[0]?.image_url}
                         className="w-full h-full object-cover"
                         alt={service.title}
                       />
-                      <Badge className={`absolute top-3 right-3 ${service.is_active ? 'bg-green-500' : 'bg-slate-500'}`}>
+                      <Badge className={`absolute top-3 right-3 rounded-full ${service.is_active ? 'bg-emerald-500' : 'bg-zinc-500'}`}>
                         {service.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>
                     <CardContent className="p-5">
-                      <h3 className="font-bold text-lg mb-1 line-clamp-1 dark:text-white">{service.title}</h3>
-                      <div className="flex items-center text-xs text-muted-foreground dark:text-slate-400 mb-4">
+                      <h3 className="font-bold text-lg mb-1 line-clamp-1 text-zinc-900 dark:text-white">{service.title}</h3>
+                      <div className="flex items-center text-xs text-zinc-500 dark:text-zinc-400 mb-4">
                         <MapPin className="w-3 h-3 mr-1" /> {service.location_name}
                       </div>
                       <div className="flex justify-between items-end mb-6">
                         <div>
-                          <p className="text-[10px] uppercase text-muted-foreground dark:text-slate-400 font-bold">Booking Price</p>
+                          <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">Booking Price</p>
                           <p className="text-lg font-bold text-primary">KES {Number(service.price).toLocaleString()}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] uppercase text-muted-foreground dark:text-slate-400 font-bold">Category</p>
-                          <p className="text-sm font-medium dark:text-slate-300">{service.categories?.name}</p>
+                          <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">Category</p>
+                          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{service.categories?.name}</p>
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 dark:border-slate-700 dark:text-slate-300" onClick={() => setViewingService(service)}>
+                        <Button variant="outline" size="sm" className="flex-1 rounded-xl border-zinc-200 dark:border-transparent dark:text-zinc-300 dark:hover:bg-zinc-800/50" onClick={() => setViewingService(service)}>
                           <Eye className="w-4 h-4 mr-2" /> View
                         </Button>
-                        <Button variant="outline" size="sm" className="dark:border-slate-700 dark:text-slate-300" onClick={() => toggleService(service.id, !!service.is_active)}>
+                        <Button variant="outline" size="sm" className="rounded-xl border-zinc-200 dark:border-transparent dark:text-zinc-300 dark:hover:bg-zinc-800/50" onClick={() => toggleService(service.id, !!service.is_active)}>
                           {service.is_active ? 'Disable' : 'Enable'}
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20" disabled={deletingId === service.id} onClick={() => deleteService(service.id)}>
+                        <Button variant="ghost" size="sm" className="rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" disabled={deletingId === service.id} onClick={() => deleteService(service.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -408,21 +405,21 @@ export default function ProviderDashboard() {
 
           <TabsContent value="bookings" className="space-y-4">
             {bookings.length === 0 ? (
-              <Card className="p-12 text-center border-0 text-muted-foreground dark:text-slate-400 dark:bg-zinc-950 transition-colors">
+              <Card className="p-12 text-center border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl bg-white dark:bg-zinc-900 transition-colors">
                 <div className="flex flex-col items-center gap-2">
-                  <Calendar className="w-10 h-10 opacity-20" />
-                  <p>No bookings found yet.</p>
+                  <Calendar className="w-10 h-10 opacity-20 text-zinc-400 dark:text-zinc-500" />
+                  <p className="text-zinc-500 dark:text-zinc-400">No bookings found yet.</p>
                 </div>
               </Card>
             ) : (
-              <div className="grid gap-6 max-w-6xl mx-auto">
+              <div className="grid gap-4 md:gap-6 max-w-6xl mx-auto">
                 {sortedBookings.map((booking) => (
-                  <Card key={booking.id} className="border-none shadow-md rounded-[2.5rem] overflow-hidden bg-white dark:bg-gray-950 transition-colors">
+                  <Card key={booking.id} className="border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
-                        <div className="p-8 bg-slate-50/50 dark:bg-slate-800/50 md:w-64 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center">
+                        <div className="p-6 md:p-8 bg-zinc-50/50 dark:bg-zinc-800/30 md:w-64 border-b md:border-b-0 md:border-r border-zinc-100 dark:border-transparent flex flex-col items-center justify-center">
                           <div className="relative mb-4">
-                            <div className="h-24 w-24 rounded-[2rem] bg-white dark:bg-slate-700 shadow-xl flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-700">
+                            <div className="h-24 w-24 rounded-2xl bg-white dark:bg-zinc-700 shadow-xl flex items-center justify-center overflow-hidden border-4 border-white dark:border-zinc-700">
                               {booking.customer.avatar_url ? (
                                 <img src={booking.customer.avatar_url} className="w-full h-full object-cover" alt={booking.customer.full_name} />
                               ) : (
@@ -430,45 +427,45 @@ export default function ProviderDashboard() {
                               )}
                             </div>
                           </div>
-                          <h4 className="font-black text-slate-900 dark:text-white text-center text-lg leading-tight">
+                          <h4 className="font-black text-zinc-900 dark:text-white text-center text-lg leading-tight">
                             {booking.customer.full_name}
                           </h4>
-                          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Customer</p>
+                          <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-1">Customer</p>
                           <div className="mt-3 flex items-center gap-2">
-                            <Badge variant="outline" className="bg-slate-900 text-white border-none font-mono">
+                            <Badge variant="outline" className="bg-zinc-900 text-white border-none font-mono rounded-full">
                               #{booking.service_number}
                             </Badge>
                             {booking.booking_type === 'priority' ? (
-                              <Badge className="bg-orange-500 text-white border-none rounded-lg px-3 py-1 text-[10px] font-black animate-bounce shadow-lg shadow-orange-200">
-                                <Zap className="w-3 h-3 mr-1 fill-white" /> PRIORITY VIP
+                              <Badge className="bg-orange-500 text-white border-none rounded-full px-3 py-1 text-[10px] font-black shadow-lg">
+                                <Zap className="w-3 h-3 mr-1 fill-white" /> Priority
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-slate-400 border-slate-200 text-[10px] font-bold">
-                                Regular Order
+                              <Badge variant="outline" className="text-zinc-400 border-zinc-200 dark:border-zinc-700 text-[10px] font-bold rounded-full">
+                                Regular
                               </Badge>
                             )}
                           </div>
                         </div>
 
-                        <div className="p-8 flex-1 flex flex-col justify-between">
+                        <div className="p-6 md:p-8 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                               <div>
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Service Requested</p>
-                                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{booking.services?.title}</h3>
+                                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-1">Service Requested</p>
+                                <h3 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight">{booking.services?.title}</h3>
                               </div>
                               <div className="sm:text-right">
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-1">Revenue</p>
-                                <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">KES {booking.total_amount.toLocaleString()}</p>
+                                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-1">Revenue</p>
+                                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">KES {booking.total_amount.toLocaleString()}</p>
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
-                                  <Calendar className="w-3 h-3 text-primary" /> Appointment Date
+                                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase flex items-center gap-2">
+                                  <Calendar className="w-3 h-3 text-primary" /> Appointment
                                 </p>
-                                <p className="font-bold text-slate-700 dark:text-slate-300">
+                                <p className="font-bold text-zinc-700 dark:text-zinc-300">
                                   {booking.scheduled_at ? new Date(booking.scheduled_at).toLocaleString('en-GB', {
                                     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
                                   }) : "Not Scheduled"}
@@ -476,19 +473,19 @@ export default function ProviderDashboard() {
                               </div>
 
                               <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
+                                <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase flex items-center gap-2">
                                   <MessageSquare className="w-3 h-3 text-primary" /> Instructions
                                 </p>
-                                <p className="text-slate-600 dark:text-slate-400 italic text-sm line-clamp-2">
+                                <p className="text-zinc-600 dark:text-zinc-400 italic text-sm line-clamp-2">
                                   {booking.notes ? `"${booking.notes}"` : "No specific notes provided."}
                                 </p>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between pt-6 border-t border-slate-100 dark:border-slate-800">
-                            <Badge className={`uppercase text-[10px] font-black px-4 py-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-blue-500' :
-                              booking.status === 'completed' ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+                            <Badge className={`uppercase text-[10px] font-black px-4 py-1.5 rounded-full ${booking.status === 'confirmed' ? 'bg-blue-500 text-white' :
+                              booking.status === 'completed' ? 'bg-emerald-500 text-white' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
                               }`}>
                               {booking.status}
                             </Badge>
@@ -521,14 +518,13 @@ export default function ProviderDashboard() {
 
                                   window.open(`https://wa.me/${cleanNum}?text=${message}`, '_blank');
                                 }}
-                                className="rounded-xl font-bold gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg"
+                                className="rounded-2xl font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
                               >
                                 <Smartphone className="w-4 h-4" />
                                 WhatsApp Customer
                               </Button>
-
                             ) : (
-                              <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 italic">
+                              <div className="flex items-center gap-2 text-zinc-400 dark:text-zinc-500 italic">
                                 <Loader2 className="w-3 h-3 animate-spin" />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Awaiting Confirmation</span>
                               </div>
@@ -544,21 +540,21 @@ export default function ProviderDashboard() {
           </TabsContent>
 
           <TabsContent value="subscription">
-            <Card className="max-w-md border-none shadow-sm dark:bg-gray-950 transition-colors">
+            <Card className="max-w-md border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl bg-white dark:bg-zinc-900 transition-colors">
               <CardHeader>
-                <CardTitle className="dark:text-white">Plan Details</CardTitle>
-                <CardDescription className="dark:text-slate-400">Manage your provider subscription and billing</CardDescription>
+                <CardTitle className="text-zinc-900 dark:text-white">Plan Details</CardTitle>
+                <CardDescription className="text-zinc-500 dark:text-zinc-400">Manage your provider subscription and billing</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors">
-                  <span className="font-medium dark:text-slate-300">Status</span>
-                  <Badge className="bg-green-500 capitalize">{subscription?.status || 'Inactive'}</Badge>
+                <div className="flex justify-between items-center p-4 bg-zinc-50 dark:bg-zinc-800 rounded-2xl transition-colors">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Status</span>
+                  <Badge className="bg-emerald-500 capitalize rounded-full">{subscription?.status || 'Inactive'}</Badge>
                 </div>
-                <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-lg transition-colors">
-                  <span className="font-medium dark:text-slate-300">Current Plan</span>
+                <div className="flex justify-between items-center p-4 bg-zinc-50 dark:bg-zinc-800 rounded-2xl transition-colors">
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">Current Plan</span>
                   <span className="font-bold uppercase text-primary">{subscription?.plan || 'None'}</span>
                 </div>
-                <Button className="w-full">Upgrade Plan</Button>
+                <Button className="w-full rounded-2xl">Upgrade Plan</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -568,24 +564,24 @@ export default function ProviderDashboard() {
       {/* Custom Logout Popup */}
       {showLogoutPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-950 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 transition-colors">
-            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-950 flex items-center justify-center mb-4">
+          <div className="bg-white dark:bg-zinc-900 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 border border-zinc-100 dark:border-transparent transition-colors">
+            <div className="w-16 h-16 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
               <LogOut className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
-            <h2 className="text-2xl font-bold text-center mb-2 dark:text-white">Confirm Logout</h2>
-            <p className="text-muted-foreground dark:text-slate-400 text-center mb-6">
+            <h2 className="text-2xl font-bold text-center mb-2 text-zinc-900 dark:text-white">Confirm Logout</h2>
+            <p className="text-zinc-500 dark:text-zinc-400 text-center mb-6">
               Are you sure you want to logout from your account?
             </p>
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl dark:border-slate-700 dark:text-slate-300"
+                className="flex-1 rounded-2xl border-zinc-200 dark:border-transparent dark:text-zinc-300 dark:hover:bg-zinc-800/50"
                 onClick={() => setShowLogoutPopup(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
+                className="flex-1 rounded-2xl bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
                 onClick={() => {
                   setShowLogoutPopup(false);
                   handleLogout();
@@ -600,7 +596,7 @@ export default function ProviderDashboard() {
 
       {/* FULL DETAILS MODAL */}
       <Dialog open={!!viewingService} onOpenChange={() => { setViewingService(null); setIsEditing(false); }}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl bg-white dark:bg-gray-950 transition-colors">
+        <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden border-0 shadow-2xl bg-white dark:bg-zinc-900 transition-colors">
           {viewingService && (
             <>
               <div className="h-64 w-full relative group">
@@ -630,36 +626,36 @@ export default function ProviderDashboard() {
                 )}
 
                 {!isEditing && (
-                  <Badge className="absolute top-4 right-4 bg-primary">{viewingService.categories?.name}</Badge>
+                  <Badge className="absolute top-4 right-4 rounded-full bg-primary">{viewingService.categories?.name}</Badge>
                 )}
               </div>
 
-              <div className="p-8">
+              <div className="p-6 md:p-8">
                 <DialogHeader className="mb-6">
                   <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                     <div className="space-y-2 flex-1 w-full">
                       {isEditing ? (
                         <div className="space-y-1">
-                          <Label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase">Service Title</Label>
+                          <Label className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase">Service Title</Label>
                           <Input
                             value={editForm.title}
                             onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                            className="h-12 text-xl font-bold rounded-xl border-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                            className="h-12 text-xl font-bold rounded-2xl border-primary/20 focus:border-primary dark:bg-zinc-800 dark:border-transparent dark:text-white"
                           />
                         </div>
                       ) : (
-                        <DialogTitle className="text-3xl font-black text-slate-900 dark:text-white leading-tight">
+                        <DialogTitle className="text-3xl font-black text-zinc-900 dark:text-white leading-tight">
                           {viewingService.title}
                         </DialogTitle>
                       )}
 
-                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+                      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 font-medium">
                         <MapPin className="w-4 h-4 text-primary" />
                         {isEditing ? (
                           <Input
                             value={editForm.location_name}
                             onChange={(e) => setEditForm({ ...editForm, location_name: e.target.value })}
-                            className="h-9 rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                            className="h-9 rounded-xl border-zinc-200 dark:border-transparent dark:bg-zinc-800 dark:text-white"
                             placeholder="Location"
                           />
                         ) : (
@@ -668,14 +664,14 @@ export default function ProviderDashboard() {
                       </div>
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 min-w-[150px] text-center transition-colors">
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Price (KES)</p>
+                    <div className="bg-zinc-50 dark:bg-zinc-800 p-3 rounded-2xl border border-zinc-100 dark:border-transparent min-w-[150px] text-center transition-colors">
+                      <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Price (KES)</p>
                       {isEditing ? (
                         <Input
                           type="number"
                           value={editForm.price}
                           onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
-                          className="h-10 text-center font-bold text-primary rounded-xl border-primary/20 dark:bg-slate-800 dark:border-slate-700"
+                          className="h-10 text-center font-bold text-primary rounded-xl border-primary/20 dark:bg-zinc-800 dark:border-transparent"
                         />
                       ) : (
                         <p className="text-2xl font-black text-primary">KES {viewingService.price?.toLocaleString()}</p>
@@ -685,26 +681,26 @@ export default function ProviderDashboard() {
                 </DialogHeader>
 
                 <div className="space-y-4">
-                  <h4 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h4 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-primary" /> Service Description
                   </h4>
                   {isEditing ? (
                     <Textarea
                       value={editForm.short_description}
                       onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })}
-                      className="rounded-2xl min-h-[120px] p-4 bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 focus:border-primary dark:text-white dark:placeholder:text-slate-500"
+                      className="rounded-2xl min-h-[120px] p-4 bg-zinc-50/50 dark:bg-zinc-800/50 border-zinc-200 dark:border-transparent focus:border-primary dark:text-white dark:placeholder:text-zinc-500"
                       placeholder="Describe what you offer..."
                     />
                   ) : (
-                    <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 transition-colors">
-                      <p className="text-slate-600 dark:text-slate-400 leading-relaxed italic">
+                    <div className="bg-zinc-50/50 dark:bg-zinc-800/50 rounded-2xl p-4 border border-zinc-100 dark:border-transparent transition-colors">
+                      <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
                         "{viewingService.short_description || "No description provided."}"
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-10 flex gap-3">
+                <div className="mt-8 flex gap-3">
                   {isEditing ? (
                     <>
                       <Button
@@ -717,7 +713,7 @@ export default function ProviderDashboard() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex-1 rounded-2xl h-14 font-bold border-slate-200 dark:border-slate-700 dark:text-slate-300"
+                        className="flex-1 rounded-2xl h-14 font-bold border-zinc-200 dark:border-transparent dark:text-zinc-300 dark:hover:bg-zinc-800/50"
                         onClick={() => setIsEditing(false)}
                       >
                         <XCircle className="w-5 h-5 mr-2" /> Cancel
@@ -733,7 +729,7 @@ export default function ProviderDashboard() {
                       </Button>
                       <Button
                         variant="outline"
-                        className="flex-1 rounded-2xl h-14 font-bold border-slate-200 dark:border-slate-700 dark:text-slate-300"
+                        className="flex-1 rounded-2xl h-14 font-bold border-zinc-200 dark:border-transparent dark:text-zinc-300 dark:hover:bg-zinc-800/50"
                         onClick={() => setViewingService(null)}
                       >
                         Close Preview

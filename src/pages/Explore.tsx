@@ -94,57 +94,87 @@ export default function Explore() {
   const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
-      // Check cache first
-      const cacheKey = 'explore_services';
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Date.now() - parsed.timestamp < 30000) {
-          setServices(parsed.data);
-          setLoading(false);
-          return;
-        }
-      }
-
       const { data: { user } } = await supabase.auth.getUser();
 
+      // 1️⃣ Get all services with basic data
       const { data: servicesData, error: sError } = await supabase
         .from("services")
         .select(`
-        *,
-        categories(id, name, slug, icon),
-        profiles:profiles!services_provider_id_fkey(full_name, city, country),
-        service_ratings:reviews(rating),
-        likes:service_likes(user_id),
-        favorites:service_favorites(user_id)
-      `)
+          *,
+          categories(id, name, slug, icon),
+          profiles:profiles!services_provider_id_fkey(full_name, city, country)
+        `)
         .eq("is_active", true);
 
       if (sError) throw sError;
 
+      // 2️⃣ Get ALL reviews to calculate ratings
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select("service_id, rating");
+
+      // 3️⃣ Get ALL likes to count them
+      const { data: allLikes } = await supabase
+        .from("service_likes")
+        .select("service_id");
+
+      // 4️⃣ If user is logged in, get THEIR likes and favorites
+      let userLikes: string[] = [];
+      let userFavorites: string[] = [];
+
+      if (user) {
+        const [{ data: likesData }, { data: favData }] = await Promise.all([
+          supabase.from("service_likes").select("service_id").eq("user_id", user.id),
+          supabase.from("service_favorites").select("service_id").eq("user_id", user.id)
+        ]);
+
+        userLikes = likesData?.map(l => l.service_id) || [];
+        userFavorites = favData?.map(f => f.service_id) || [];
+      }
+
+      // 5️⃣ Build maps for quick lookup
+      const likeCountMap: Record<string, number> = {};
+      if (allLikes) {
+        allLikes.forEach((like: any) => {
+          likeCountMap[like.service_id] = (likeCountMap[like.service_id] || 0) + 1;
+        });
+      }
+
+      const reviewMap: Record<string, { avg: number; count: number }> = {};
+      if (reviewsData) {
+        reviewsData.forEach((review: any) => {
+          if (!reviewMap[review.service_id]) {
+            reviewMap[review.service_id] = { avg: 0, count: 0 };
+          }
+          reviewMap[review.service_id].avg += review.rating;
+          reviewMap[review.service_id].count += 1;
+        });
+        // Calculate averages
+        Object.keys(reviewMap).forEach((key) => {
+          reviewMap[key].avg = reviewMap[key].avg / reviewMap[key].count;
+        });
+      }
+
+      // 6️⃣ Merge all data
       const merged = servicesData?.map((service: any) => {
-        const revs = service.service_ratings || [];
-        const avg = revs.length > 0 ? revs.reduce((acc: any, r: any) => acc + r.rating, 0) / revs.length : 0;
+        const rating = reviewMap[service.id] || { avg: 0, count: 0 };
+        const isLiked = userLikes.includes(service.id);
+        const isFavorited = userFavorites.includes(service.id);
 
         return {
           ...service,
-          calculated_rating: avg,
-          calculated_count: revs.length,
-          like_count: service.likes?.length || 0,
-          is_liked_by_user: service.likes?.some((l: any) => l.user_id === user?.id),
-          is_favorited_by_user: service.favorites?.some((f: any) => f.user_id === user?.id)
+          calculated_rating: rating.avg,
+          calculated_count: rating.count,
+          like_count: likeCountMap[service.id] || 0,
+          is_liked_by_user: isLiked,
+          is_favorited_by_user: isFavorited
         };
       });
 
       const servicesDataFinal = merged || [];
-      sessionStorage.setItem(cacheKey, JSON.stringify({
-        data: servicesDataFinal,
-        timestamp: Date.now()
-      }));
-
       setServices(servicesDataFinal);
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching services:', err);
     } finally {
       setLoading(false);
     }
@@ -373,11 +403,12 @@ export default function Explore() {
                 location={service.location_name || service.profiles?.city || "Service at your location"}
                 rating={service.calculated_rating || 0}
                 reviews={service.calculated_count || 0}
-                initialIsLiked={service.is_liked_by_user}
-                initialIsFavorited={service.is_favorited_by_user}
-                likeCount={service.like_count}
+                initialIsLiked={service.is_liked_by_user === true}
+                initialIsFavorited={service.is_favorited_by_user === true}
+                likeCount={service.like_count || 0}
                 image={service.cover_image || "https://images.unsplash.com/photo-1584515933487-779824d29309?w=800"}
                 name={service.provider_profiles?.business_name || service.profiles?.full_name || "Healthcare Provider"}
+                providerId={service.provider_id}
               />
             ))}
           </div>
