@@ -27,10 +27,17 @@ import {
   Mail,
   HeartPulse,
   Sparkles,
-  UserCircle
+  UserCircle,
+  Building2,
+  Users,
+  Briefcase,
+  CheckCircle,
+  Clock,
+  AlertCircle
 } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +51,7 @@ import { ThemeToggle } from "./theme-toggle";
 
 export const Navbar = () => {
   const navigate = useNavigate();
+  const { currentWorkspace, workspaces, switchWorkspace, isLoading } = useWorkspace();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -68,7 +76,6 @@ export const Navbar = () => {
 
   // Control navbar visibility - only when menu is closed
   useEffect(() => {
-    // Don't auto-hide when menu is open
     if (isMenuOpen) {
       setIsVisible(true);
       return;
@@ -93,7 +100,6 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', controlNavbar);
   }, [lastScrollY, isMenuOpen]);
 
-  // Close menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isMenuOpen) {
@@ -104,12 +110,9 @@ export const Navbar = () => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMenuOpen]);
 
-  // Prevent body scroll when menu is open, but allow menu to scroll
   useEffect(() => {
     if (isMenuOpen) {
-      // Only prevent scroll on body, not on the menu itself
       document.body.style.overflow = 'hidden';
-      // Allow touch events on the menu
       if (menuRef.current) {
         menuRef.current.style.overflowY = 'auto';
         menuRef.current.style.webkitOverflowScrolling = 'touch';
@@ -133,7 +136,7 @@ export const Navbar = () => {
 
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, avatar_url, role, username, email, id")
+      .select("full_name, avatar_url, role, username, email, id, current_workspace_id")
       .eq("id", session.user.id)
       .single();
 
@@ -152,6 +155,66 @@ export const Navbar = () => {
     return name ? name.split(" ").map(n => n[0]).join("").toUpperCase() : "U";
   }, []);
 
+  // Get workspace icon based on type
+  const getWorkspaceIcon = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return <User className="w-4 h-4" />;
+      case 'family':
+        return <Users className="w-4 h-4" />;
+      case 'organization':
+        return <Building2 className="w-4 h-4" />;
+      case 'agency':
+        return <Briefcase className="w-4 h-4" />;
+      default:
+        return <Building2 className="w-4 h-4" />;
+    }
+  };
+
+  // Get workspace display name with type
+  const getWorkspaceDisplayName = (workspace: any) => {
+    if (!workspace) return '';
+    const typeMap: Record<string, string> = {
+      individual: 'Individual Provider',
+      family: 'Family Workspace',
+      organization: 'Organization',
+      agency: 'Agency'
+    };
+    return `${workspace.name} (${typeMap[workspace.type] || workspace.type})`;
+  };
+
+  // Get dashboard path based on workspace type
+  const getDashboardPath = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return '/dashboard/provider';
+      case 'family':
+        return '/dashboard/family';
+      case 'organization':
+        return '/dashboard/organization';
+      case 'agency':
+        return '/dashboard/agency';
+      default:
+        return '/dashboard/client';
+    }
+  };
+
+  // Get dashboard label
+  const getDashboardLabel = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return 'Provider Dashboard';
+      case 'family':
+        return 'Family Dashboard';
+      case 'organization':
+        return 'Organization Dashboard';
+      case 'agency':
+        return 'Agency Dashboard';
+      default:
+        return 'Dashboard';
+    }
+  };
+
   // Navigation items - memoized
   const navItems = useMemo(() => [
     { icon: Home, label: "Home", path: "/" },
@@ -160,13 +223,29 @@ export const Navbar = () => {
     { icon: Megaphone, label: "Ads", path: "/ads" },
   ], []);
 
-  const userNavItems = useMemo(() => [
-    { icon: UserCircle, label: "My Profile", path: `/profile/${profile?.id || ''}` },
-    { icon: LayoutDashboard, label: "Dashboard", path: `/dashboard/${profile?.role || 'customer'}` },
-    { icon: CalendarCheck, label: "My Bookings", path: "/my-bookings" },
-    { icon: UserPen, label: "Edit Profile", path: "/edit-profile" },
-    { icon: HeartPulse, label: "Medical Profile", path: `/medical-profile` },
-  ], [profile?.id, profile?.role]);
+  // User dashboard items based on workspace
+  const userNavItems = useMemo(() => {
+    const items = [
+      { icon: UserCircle, label: "My Profile", path: `/profile/${profile?.id || ''}` },
+    ];
+
+    // Add dashboard if workspace exists
+    if (currentWorkspace) {
+      items.push({
+        icon: LayoutDashboard,
+        label: getDashboardLabel(currentWorkspace.type),
+        path: getDashboardPath(currentWorkspace.type)
+      });
+    }
+
+    items.push(
+      { icon: CalendarCheck, label: "My Bookings", path: "/my-bookings" },
+      { icon: UserPen, label: "Edit Profile", path: "/edit-profile" },
+      { icon: HeartPulse, label: "Medical Profile", path: "/medical-profile" }
+    );
+
+    return items;
+  }, [profile?.id, currentWorkspace]);
 
   const supportItems = useMemo(() => [
     { icon: HelpCircle, label: "Help Center", path: "/help" },
@@ -174,9 +253,33 @@ export const Navbar = () => {
     { icon: Mail, label: "Contact Us", path: "/contact" },
   ], []);
 
+  // Get verification status badge
+  const getVerificationBadge = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return {
+          icon: <CheckCircle className="w-3 h-3" />,
+          label: 'Verified',
+          className: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400'
+        };
+      case 'pending':
+        return {
+          icon: <Clock className="w-3 h-3" />,
+          label: 'Pending',
+          className: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400'
+        };
+      default:
+        return {
+          icon: <AlertCircle className="w-3 h-3" />,
+          label: 'Unverified',
+          className: 'text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400'
+        };
+    }
+  };
+
   return (
     <>
-      {/* Overlay - Only for mobile menu, below dropdowns */}
+      {/* Overlay */}
       {isMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
@@ -215,7 +318,8 @@ export const Navbar = () => {
 
             {/* DESKTOP NAV */}
             <div className="hidden md:flex items-center gap-1">
-              {/* Emergency Button - Always visible */}
+              {/* Emergency Button */}
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -284,7 +388,7 @@ export const Navbar = () => {
                       </button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent className="w-64 mt-2 p-2 rounded-2xl shadow-xl border-zinc-100 dark:border-transparent bg-white dark:bg-zinc-900 z-[60]" align="end">
+                    <DropdownMenuContent className="w-72 mt-2 p-2 rounded-2xl shadow-xl border-zinc-100 dark:border-transparent bg-white dark:bg-zinc-900 z-[60]" align="end">
                       <DropdownMenuLabel className="p-3">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-bold leading-none text-zinc-900 dark:text-white">{profile?.full_name}</p>
@@ -294,6 +398,68 @@ export const Navbar = () => {
                           </span>
                         </div>
                       </DropdownMenuLabel>
+
+                      {/* Workspace Switcher - Show if user has multiple workspaces */}
+                      {workspaces.length > 1 && (
+                        <>
+                          <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
+                          <DropdownMenuLabel className="text-xs font-semibold text-zinc-400 uppercase tracking-wider px-3">
+                            Switch Workspace
+                          </DropdownMenuLabel>
+                          {workspaces.map((workspace) => {
+                            const verification = getVerificationBadge(workspace.verification_status);
+                            const isActive = currentWorkspace?.id === workspace.id;
+                            return (
+                              <DropdownMenuItem
+                                key={workspace.id}
+                                onClick={() => {
+                                  switchWorkspace(workspace.id);
+                                  navigate(getDashboardPath(workspace.type));
+                                }}
+                                className={`cursor-pointer rounded-lg p-3 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 ${isActive ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                              >
+                                <div className="flex items-center gap-3 w-full">
+                                  {getWorkspaceIcon(workspace.type)}
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                      {workspace.name}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 capitalize">
+                                        {workspace.type}
+                                      </span>
+                                      <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${verification.className}`}>
+                                        {verification.icon}
+                                        {verification.label}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {isActive && (
+                                    <span className="text-xs text-primary font-bold">Active</span>
+                                  )}
+                                </div>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </>
+                      )}
+
+                      {/* Current Workspace Info */}
+                      {currentWorkspace && workspaces.length === 1 && (
+                        <>
+                          <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
+                          <div className="px-3 py-2">
+                            <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                              {getWorkspaceIcon(currentWorkspace.type)}
+                              <span>Current Workspace:</span>
+                              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                                {currentWorkspace.name}
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
                       <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
 
                       {/* User Dashboard Items */}
@@ -350,14 +516,7 @@ export const Navbar = () => {
 
             {/* MOBILE CONTROLS */}
             <div className="flex items-center gap-2 md:hidden">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/emergency")}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full"
-              >
-                <Ambulance className="w-5 h-5" />
-              </Button>
+
 
               <ThemeToggle />
 
@@ -379,7 +538,7 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* MOBILE DRAWER - Native Android Style */}
+          {/* MOBILE DRAWER */}
           {isMenuOpen && (
             <div
               ref={menuRef}
@@ -434,6 +593,66 @@ export const Navbar = () => {
                 </div>
               )}
 
+              {/* Current Workspace Info - Mobile */}
+              {currentWorkspace && (
+                <div className="mx-2 mb-3 p-3 bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/10">
+                  <div className="flex items-center gap-2">
+                    {getWorkspaceIcon(currentWorkspace.type)}
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Current Workspace</p>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">{currentWorkspace.name}</p>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full capitalize ${currentWorkspace.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                      currentWorkspace.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                      }`}>
+                      {currentWorkspace.verification_status || 'unverified'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Workspace Switcher - Mobile */}
+              {workspaces.length > 1 && (
+                <div className="mx-2 mb-3">
+                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider px-3 mb-2">Switch Workspace</p>
+                  {workspaces.map((workspace) => {
+                    const verification = getVerificationBadge(workspace.verification_status);
+                    const isActive = currentWorkspace?.id === workspace.id;
+                    return (
+                      <button
+                        key={workspace.id}
+                        onClick={() => {
+                          switchWorkspace(workspace.id);
+                          navigate(getDashboardPath(workspace.type));
+                          setIsMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${isActive ? 'bg-primary/10 dark:bg-primary/20' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}
+                      >
+                        {getWorkspaceIcon(workspace.type)}
+                        <div className="flex-1 text-left">
+                          <p className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                            {workspace.name}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 capitalize">
+                              {workspace.type}
+                            </span>
+                            <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${verification.className}`}>
+                              {verification.icon}
+                              {verification.label}
+                            </span>
+                          </div>
+                        </div>
+                        {isActive && (
+                          <span className="text-xs text-primary font-bold">Active</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Emergency Banner */}
               <div className="mx-2 mb-3">
                 <Button
@@ -465,7 +684,7 @@ export const Navbar = () => {
                 ))}
               </div>
 
-              {/* User Navigation (if logged in) */}
+              {/* User Navigation */}
               {user && (
                 <div className="px-2 mt-2">
                   <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider px-3 mb-2">Account</p>
@@ -499,7 +718,7 @@ export const Navbar = () => {
                 ))}
               </div>
 
-              {/* Notifications - if logged in */}
+              {/* Notifications */}
               {user && (
                 <Link
                   to="/notifications"
@@ -546,7 +765,7 @@ export const Navbar = () => {
         </nav>
       </div>
 
-      {/* Logout Popup - Native Android Style */}
+      {/* Logout Popup */}
       {showLogoutPopup && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-zinc-900 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 border border-zinc-100 dark:border-transparent">

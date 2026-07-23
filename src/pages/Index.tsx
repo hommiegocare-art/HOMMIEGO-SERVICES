@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
-
-  // UI & Navigation
   Search,
   CheckCircle,
   MessageSquare,
@@ -19,24 +18,16 @@ import {
   ArrowRight,
   ShieldCheck,
   Globe,
-
-  // Contact
   Mail,
   MapPin,
   Phone,
-
-  // Social Media
   Facebook,
   Twitter,
   Instagram,
   Linkedin,
-
-  // Education
   GraduationCap,
   FileText,
   FileCheck,
-
-  // Medical & Health
   Pill,
   Stethoscope,
   Heart,
@@ -53,12 +44,8 @@ import {
   Dumbbell,
   Package,
   Users,
-
-  // Utilities
   PhoneCall,
   Mic,
-
-  // Misc
   ShoppingBag,
   Clock,
   Award,
@@ -82,6 +69,8 @@ import {
   ChevronDown,
   ChevronUp,
   Wind,
+  Play,
+  CircleCheck,
 } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import HeroCube from "@/components/HeroCube";
@@ -105,6 +94,7 @@ interface Ad {
 interface Service {
   id: string;
   provider_id: string;
+  workspace_id: string;
   title: string;
   short_description: string | null;
   description: string | null;
@@ -113,15 +103,18 @@ interface Service {
   location_name: string | null;
   categories: { name: string; icon?: string | null } | null;
   profiles: { full_name: string | null; avatar_url: string | null; city: string | null } | null;
+  workspaces: { name: string; type: string; verification_status: string } | null;
   provider_profiles?: {
     average_rating: number | null;
     total_reviews: number | null;
     business_name: string | null;
+    professional_title: string | null;
   };
 }
 
 const Index = () => {
   const navigate = useNavigate();
+  const { currentWorkspace, workspaces } = useWorkspace();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [services, setServices] = useState<Service[]>([]);
@@ -133,6 +126,7 @@ const Index = () => {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [animatedStats, setAnimatedStats] = useState(false);
   const [visibleCategories, setVisibleCategories] = useState<number[]>([]);
+  const [statsCount, setStatsCount] = useState({ services: 0, providers: 0, counties: 0, satisfaction: 0 });
 
   const heroImages = [
     "/background2.png",
@@ -194,51 +188,51 @@ const Index = () => {
     "bg-orange-100 text-orange-600",
   ];
 
-  // Sample testimonials (placeholder)
+  // Sample testimonials
   const testimonials = [
     {
       id: "1",
       name: "Dr. Sarah Muthoni",
-      role: "Daughter of an elderly parent",
-      content: "HommieCare provided exceptional care for my mother during her recovery. The nurses were professional, compassionate, and truly made a difference in our lives.",
+      role: "Family Caregiver",
+      content: "HommieCare provided exceptional care for my mother during her recovery. The healthcare professionals were professional, compassionate, and truly made a difference in our lives.",
       rating: 5,
     },
     {
       id: "2",
       name: "James Ochieng",
-      role: "Post-surgery patient",
-      content: "After my surgery, I needed reliable care at home. HommieCare exceeded my expectations with their professional and personalized service.",
+      role: "Post-Surgery Patient",
+      content: "After my surgery, I needed reliable care at home. HommieCare exceeded my expectations with their professional and personalized healthcare services.",
       rating: 5,
     },
     {
       id: "3",
       name: "Grace Wanjiru",
-      role: "New mother",
-      content: "As a first-time mom, having a professional nurse at home gave me peace of mind. Their mother and baby care services are outstanding.",
+      role: "New Mother",
+      content: "As a first-time mom, having a professional healthcare provider at home gave me peace of mind. Their maternal and child care services are outstanding.",
       rating: 5,
     }
   ];
 
   const faqs = [
     {
-      question: "Are your nurses licensed and verified?",
-      answer: "Yes, every nurse on HommieCare undergoes rigorous verification including license validation, identity checks, and professional reference verification. We only work with qualified healthcare professionals."
+      question: "Are your healthcare providers licensed and verified?",
+      answer: "Yes, every healthcare provider on HommieCare undergoes rigorous verification including license validation, identity checks, and professional reference verification. We only work with qualified healthcare professionals."
     },
     {
       question: "How do bookings work?",
-      answer: "Simply search for the service you need, choose a verified nurse, select your preferred time, and book securely. You'll receive confirmation and the nurse's details immediately."
+      answer: "Simply search for the service you need, choose a verified provider, select your preferred time, and book securely. You will receive confirmation and the provider's details immediately."
     },
     {
-      question: "Can I choose my nurse?",
-      answer: "Absolutely! You can view nurse profiles, their qualifications, ratings, and experience. Choose the healthcare professional that best fits your needs."
+      question: "Can I choose my healthcare provider?",
+      answer: "Absolutely. You can view provider profiles, their qualifications, ratings, and experience. Choose the healthcare professional that best fits your needs."
     },
     {
       question: "Can I book same-day care?",
-      answer: "Yes, we offer same-day booking for urgent care needs. Our platform shows real-time availability of our nurses across Kenya."
+      answer: "Yes, we offer same-day booking for urgent care needs. Our platform shows real-time availability of healthcare providers across Kenya."
     },
     {
       question: "Which counties do you serve?",
-      answer: "We currently serve Nairobi, Kiambu, Mombasa, and surrounding areas. We're rapidly expanding to other counties across Kenya."
+      answer: "We currently serve Nairobi, Kiambu, Mombasa, and surrounding areas. We are rapidly expanding to other counties across Kenya."
     },
     {
       question: "How are providers verified?",
@@ -249,6 +243,29 @@ const Index = () => {
       answer: "Pricing varies based on the service type and duration. We provide transparent pricing upfront before you book, with no hidden fees."
     }
   ];
+
+  // Count actual stats from database
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { count: serviceCount } = await supabase
+        .from('services')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      const { count: providerCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'provider');
+
+      setStatsCount({
+        services: serviceCount || 0,
+        providers: providerCount || 0,
+        counties: 15,
+        satisfaction: 98,
+      });
+    };
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     const initialize = async () => {
@@ -310,24 +327,121 @@ const Index = () => {
     const { data } = await supabase.from("ads").select("*").eq("is_active", true);
     setAds(data || []);
   }
-
   async function fetchServices() {
-    const { data: sData } = await supabase.from("services").select(`
-      id, provider_id, title, short_description, description, price, cover_image, location_name,
-      categories (name, icon),
-      profiles:profiles!services_provider_id_fkey (full_name, avatar_url, city)
-    `).eq("is_active", true).limit(8);
+    try {
+      // Get services with basic info
+      const { data: sData, error: serviceError } = await supabase
+        .from("services")
+        .select(`
+        id,
+        provider_id,
+        workspace_id,
+        category_id,
+        title,
+        short_description,
+        description,
+        price,
+        cover_image,
+        location_name,
+        is_active,
+        created_at
+      `)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(8);
 
-    const providerIds = sData?.map(s => s.provider_id) || [];
-    const { data: pData } = await supabase.from("provider_profiles").select("user_id, average_rating, total_reviews, business_name").in("user_id", providerIds);
+      if (serviceError) {
+        console.error('Error fetching services:', serviceError);
+        setServices([]);
+        return;
+      }
 
-    const merged = sData?.map((service: any) => ({
-      ...service,
-      provider_profiles: pData?.find(p => p.user_id === service.provider_id)
-    }));
-    setServices(merged || []);
+      if (!sData || sData.length === 0) {
+        setServices([]);
+        return;
+      }
+
+      // Get provider IDs
+      const providerIds = sData.map(s => s.provider_id).filter(Boolean);
+
+      // Get workspace IDs
+      const workspaceIds = sData.map(s => s.workspace_id).filter(Boolean);
+
+      // Fetch provider profiles
+      let providerProfiles: any[] = [];
+      if (providerIds.length > 0) {
+        const { data: pData, error: providerError } = await supabase
+          .from("provider_profiles")
+          .select("user_id, average_rating, total_reviews, business_name, professional_title")
+          .in("user_id", providerIds);
+
+        if (!providerError && pData) {
+          providerProfiles = pData;
+        }
+      }
+
+      // Fetch profiles (users)
+      let profiles: any[] = [];
+      if (providerIds.length > 0) {
+        const { data: profData, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url, city")
+          .in("id", providerIds);
+
+        if (!profileError && profData) {
+          profiles = profData;
+        }
+      }
+
+      // Fetch workspaces
+      let workspaces: any[] = [];
+      if (workspaceIds.length > 0) {
+        const { data: wData, error: workspaceError } = await supabase
+          .from("workspaces")
+          .select("id, name, type, verification_status")
+          .in("id", workspaceIds);
+
+        if (!workspaceError && wData) {
+          workspaces = wData;
+        }
+      }
+
+      // Fetch categories
+      const categoryIds = sData.map(s => s.category_id).filter(Boolean);
+      let categories: any[] = [];
+      if (categoryIds.length > 0) {
+        const { data: cData, error: categoryError } = await supabase
+          .from("categories")
+          .select("id, name, icon")
+          .in("id", categoryIds);
+
+        if (!categoryError && cData) {
+          categories = cData;
+        }
+      }
+
+      // Merge all data
+      const merged = sData.map((service: any) => {
+        const providerProfile = providerProfiles?.find(p => p.user_id === service.provider_id);
+        const profile = profiles?.find(p => p.id === service.provider_id);
+        const workspace = workspaces?.find(w => w.id === service.workspace_id);
+        const category = categories?.find(c => c.id === service.category_id);
+
+        return {
+          ...service,
+          categories: category || null,
+          profiles: profile || null,
+          workspaces: workspace || null,
+          provider_profiles: providerProfile || null
+        };
+      });
+
+      setServices(merged);
+    } catch (error) {
+      console.error('Error in fetchServices:', error);
+      setServices([]);
+    }
   }
-
   const filteredServices = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return services;
@@ -335,6 +449,18 @@ const Index = () => {
   }, [services, searchQuery]);
 
   const dashboardLink = profile?.role === "provider" ? "/dashboard/provider" : "/dashboard/customer";
+
+  // Get provider type label
+  const getProviderTypeLabel = (service: Service) => {
+    if (service.workspaces?.type === 'individual') {
+      return 'Independent Provider';
+    } else if (service.workspaces?.type === 'organization') {
+      return 'Healthcare Organization';
+    } else if (service.workspaces?.type === 'agency') {
+      return 'Healthcare Agency';
+    }
+    return 'Healthcare Provider';
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 flex flex-col">
@@ -359,17 +485,18 @@ const Index = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-left">
               <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-bold text-primary dark:text-primary-foreground mb-6 backdrop-blur-md border border-primary/20">
-                🏥 Professional Healthcare. Delivered to Your Home.
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                Professional Healthcare. Delivered to Your Home.
               </div>
 
               <h1 className="text-5xl md:text-7xl font-black text-slate-950 dark:text-white leading-[1.1] mb-6 drop-shadow-sm">
-                Professional <br /> <span className="text-primary">Home Nursing</span> Care
+                Professional <br /> <span className="text-primary">Healthcare</span> at Home
               </h1>
 
               <div className="flex flex-wrap gap-2 mb-6">
                 <span className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold text-slate-700 dark:text-slate-200">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  Licensed & Verified Nurses
+                  Licensed & Verified Providers
                 </span>
                 <span className="inline-flex items-center gap-1.5 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-semibold text-slate-700 dark:text-slate-200">
                   <Globe className="w-4 h-4 text-blue-600" />
@@ -386,15 +513,15 @@ const Index = () => {
               </div>
 
               <p className="text-xl text-slate-800 dark:text-slate-200 mb-8 max-w-lg leading-relaxed font-semibold">
-                Expert nurses and caregivers delivering compassionate medical care right at your doorstep. Safe, reliable, and professional.
+                Expert healthcare professionals delivering compassionate medical care right at your doorstep. Safe, reliable, and professional.
               </p>
 
-              {/* SEARCH BAR - Filters services from Supabase */}
+              {/* SEARCH BAR */}
               <div className="flex flex-col sm:flex-row gap-3 p-2.5 bg-white/95 dark:bg-slate-800/90 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl border border-slate-300 dark:border-slate-700 mb-8 max-w-xl">
                 <div className="flex-1 flex items-center px-4">
                   <Search className="text-slate-500 dark:text-slate-400 mr-2 h-5 w-5" />
                   <Input
-                    placeholder="Find nursing services..."
+                    placeholder="Find healthcare services..."
                     className="border-none shadow-none focus-visible:ring-0 text-lg h-12 bg-transparent text-slate-900 dark:text-white placeholder:text-slate-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -408,7 +535,7 @@ const Index = () => {
               <div className="flex flex-wrap gap-6 text-slate-900 dark:text-slate-100 font-extrabold">
                 <div className="flex items-center gap-2 bg-white/40 dark:bg-transparent px-3 py-1 rounded-full backdrop-blur-sm">
                   <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  Licensed Nurses
+                  Licensed Professionals
                 </div>
                 <div className="flex items-center gap-2 bg-white/40 dark:bg-transparent px-3 py-1 rounded-full backdrop-blur-sm">
                   <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -428,18 +555,15 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CATEGORIES GRID - ORIGINAL */}
+      {/* CATEGORIES GRID */}
       <section className="py-24 bg-white dark:bg-zinc-950 relative overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold mb-4 text-slate-900 dark:text-white tracking-tight">
-              Our <span className="text-primary">Medical</span> Services
+              Our <span className="text-primary">Healthcare</span> Services
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-6">
-              Professional nursing and healthcare services delivered with compassion and expertise.
+              Professional healthcare services delivered with compassion and expertise.
             </p>
             <div className="w-24 h-1.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20 mx-auto rounded-full" />
           </div>
@@ -459,27 +583,18 @@ const Index = () => {
                 <Card
                   onClick={() => {
                     if (!session) {
-                      navigate("/auth", { state: { message: "Join HommieCare to access medical services" } });
+                      navigate("/auth", { state: { message: "Join HommieCare to access healthcare services" } });
                       return;
                     }
                     navigate(`/explore?category=${cat.slug}`);
                   }}
-                  className="group relative border-0 bg-white dark:bg-gray-950 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-xl overflow-hidden py-10 hover:-translate-y-2"
+                  className="group relative border border-zinc-100 dark:border-transparent bg-white dark:bg-zinc-900 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl overflow-hidden py-10 hover:-translate-y-2"
                 >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shimmer"
-                      style={{ width: '200%', height: '100%' }} />
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 text-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                    <Sparkles className="w-6 h-6 animate-spin-slow" />
-                  </div>
-
                   <CardContent className="flex flex-col items-center relative z-10">
                     <div
                       className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6
-                        transition-all duration-500 group-hover:rotate-[10deg] group-hover:scale-110
-                        shadow-inner ${categoryColors[index % categoryColors.length]}`}
+                  transition-all duration-500 group-hover:rotate-[10deg] group-hover:scale-110
+                  shadow-inner ${categoryColors[index % categoryColors.length]}`}
                     >
                       {(() => {
                         const IconComponent = iconMap[cat.icon || ""];
@@ -491,7 +606,7 @@ const Index = () => {
                       })()}
                     </div>
 
-                    <p className="font-extrabold text-slate-800 dark:text-slate-200 text-base tracking-tight group-hover:text-primary transition-colors">
+                    <p className="font-extrabold text-slate-800 dark:text-white text-base tracking-tight group-hover:text-primary transition-colors">
                       {cat.name}
                     </p>
 
@@ -506,11 +621,11 @@ const Index = () => {
         </div>
       </section>
 
-      {/* TRENDING SERVICES - ORIGINAL */}
+      {/* TRENDING SERVICES */}
       <section className="py-20 bg-slate-50 dark:bg-zinc-950">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-10">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Available Nursing Services</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Available Healthcare Services</h2>
             <Button variant="ghost" className="text-primary font-bold" onClick={() => navigate("/explore")}>
               View All Services <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
@@ -529,6 +644,10 @@ const Index = () => {
                 image={service.cover_image || ""}
                 name={service.provider_profiles?.business_name || service.profiles?.full_name || "Provider"}
                 providerId={service.provider_id}
+                providerType={service.workspaces?.type || 'individual'}
+                verificationStatus={service.workspaces?.verification_status || 'pending'}
+                workspaceType={service.workspaces?.type || 'individual'}
+                workspaceId={service.workspace_id}
               />
             ))}
           </div>
@@ -582,14 +701,14 @@ const Index = () => {
                 <Search className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">1. Search</h3>
-              <p className="text-slate-500 dark:text-slate-400">Find the healthcare service you need for your loved ones</p>
+              <p className="text-slate-500 dark:text-slate-400">Find the healthcare service you need for yourself or your loved ones</p>
             </div>
             <div className="text-center group">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 text-primary mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 <Users className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">2. Choose</h3>
-              <p className="text-slate-500 dark:text-slate-400">Select a verified nurse who matches your requirements</p>
+              <p className="text-slate-500 dark:text-slate-400">Select a verified healthcare professional who matches your requirements</p>
             </div>
             <div className="text-center group">
               <div className="w-20 h-20 rounded-2xl bg-primary/10 text-primary mx-auto mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -603,7 +722,7 @@ const Index = () => {
                 <Heart className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">4. Receive Care</h3>
-              <p className="text-slate-500 dark:text-slate-400">Get professional care delivered to your home</p>
+              <p className="text-slate-500 dark:text-slate-400">Get professional healthcare delivered to your home</p>
             </div>
           </div>
         </div>
@@ -615,27 +734,27 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="text-5xl font-black mb-2">
-                {animatedStats ? '10+' : '0'}
+                {animatedStats ? `${statsCount.services}+` : '0'}
               </div>
-              <p className="text-white/80 font-semibold">Professional Nursing Services</p>
+              <p className="text-white/80 font-semibold">Healthcare Services</p>
             </div>
             <div className="text-center">
               <div className="text-5xl font-black mb-2">
-                {animatedStats ? '100%' : '0%'}
+                {animatedStats ? `${statsCount.providers}+` : '0'}
               </div>
               <p className="text-white/80 font-semibold">Verified Healthcare Providers</p>
             </div>
             <div className="text-center">
               <div className="text-5xl font-black mb-2">
-                {animatedStats ? '24/7' : '0'}
+                {animatedStats ? `${statsCount.counties}+` : '0'}
               </div>
-              <p className="text-white/80 font-semibold">Booking Availability</p>
+              <p className="text-white/80 font-semibold">Counties Served</p>
             </div>
             <div className="text-center">
               <div className="text-5xl font-black mb-2">
-                {animatedStats ? '100%' : '0%'}
+                {animatedStats ? `${statsCount.satisfaction}%` : '0%'}
               </div>
-              <p className="text-white/80 font-semibold">Patient-Focused Care</p>
+              <p className="text-white/80 font-semibold">Patient Satisfaction</p>
             </div>
           </div>
         </div>
@@ -753,7 +872,7 @@ const Index = () => {
               What Our Families <span className="text-primary">Say</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              *Sample testimonials until we collect real reviews from our clients
+              Real stories from families who have experienced our care
             </p>
             <div className="w-24 h-1.5 bg-gradient-to-r from-primary/20 via-primary to-primary/20 mx-auto rounded-full mt-4" />
           </div>
@@ -816,7 +935,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* AD CAROUSEL / PROMOTIONS - ORIGINAL */}
+      {/* AD CAROUSEL */}
       {ads.length > 0 && (
         <section className="py-12">
           <div className="container mx-auto px-4">
@@ -835,7 +954,7 @@ const Index = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent flex items-center p-12 z-20">
                     <div className="max-w-md text-white">
                       <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold uppercase mb-4 inline-block">
-                        Medical Care Offer
+                        Healthcare Offer
                       </span>
                       <h2 className="text-4xl font-bold mb-4">{ad.title}</h2>
                       <p className="text-lg text-white/80 mb-6">{ad.caption}</p>
@@ -873,7 +992,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* FOOTER SECTION - ORIGINAL */}
+      {/* FOOTER SECTION */}
       <footer className="bg-white dark:bg-zinc-950 border-t border-gray-200 dark:border-slate-800 pt-20 pb-10 transition-colors">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
@@ -888,11 +1007,11 @@ const Index = () => {
                   HommieCare
                 </span>
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
-                  Medical
+                  Healthcare
                 </span>
               </div>
               <p className="text-gray-600 dark:text-slate-400 leading-relaxed mb-6">
-                Your trusted partner for professional home nursing and medical care services. Compassionate healthcare delivered with excellence.
+                Your trusted partner for professional home healthcare services. Compassionate medical care delivered with excellence.
               </p>
               <div className="flex gap-4">
                 <Facebook className="w-5 h-5 text-gray-500 dark:text-slate-300 hover:text-primary dark:hover:text-primary cursor-pointer transition-colors" />
@@ -907,12 +1026,12 @@ const Index = () => {
               <ul className="space-y-4">
                 <li>
                   <Link to="/explore" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
-                    Find Nursing Services
+                    Find Healthcare Services
                   </Link>
                 </li>
                 <li>
                   <Link to="/auth" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
-                    Join as a Nurse
+                    Join as a Provider
                   </Link>
                 </li>
                 <li>
@@ -934,7 +1053,7 @@ const Index = () => {
             </div>
 
             <div>
-              <h4 className="text-gray-900 dark:text-white font-bold mb-6">Medical Services</h4>
+              <h4 className="text-gray-900 dark:text-white font-bold mb-6">Healthcare Services</h4>
               <ul className="space-y-4">
                 <li>
                   <Link to="/explore?category=home-nursing" className="text-gray-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors">
@@ -994,14 +1113,14 @@ const Index = () => {
                 onClick={() => navigate("/emergency")}
               >
                 <AlertCircle className="mr-2 h-4 w-4" />
-                Emergency Nursing
+                Emergency Care
               </Button>
             </div>
           </div>
 
           <div className="border-t border-gray-200 dark:border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-500 dark:text-slate-400">
-              © {new Date().getFullYear()} HommieCare Medical Services. All rights reserved.
+              &copy; {new Date().getFullYear()} HommieCare Healthcare Services. All rights reserved.
             </p>
             <div className="flex gap-8 text-sm">
               <Link

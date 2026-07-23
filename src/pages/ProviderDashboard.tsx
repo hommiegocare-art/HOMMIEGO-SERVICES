@@ -13,7 +13,9 @@ import {
 import {
   Loader2, Briefcase, Star, MessageSquare,
   Calendar, Plus, MapPin, Trash2, Eye, LogOut, Settings,
-  Home, Search, Pencil, User, Menu
+  Home, Search, Pencil, User, Menu, Building2, Users,
+  ShieldCheck, Clock, Award, Target, TrendingUp, BarChart3,
+  UserCheck, Verified, Building, BriefcaseBusiness
 } from "lucide-react";
 
 import {
@@ -37,6 +39,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HommieLoader } from "@/components/HommieLoader";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 // --- TYPES ---
 interface Profile {
@@ -46,8 +49,21 @@ interface Profile {
 
 interface ProviderProfile {
   business_name: string | null;
-  tagline: string | null;
+  professional_title: string | null;
+  license_number: string | null;
+  specialties: string[];
+  years_experience: number | null;
   average_rating: number | null;
+  total_reviews: number | null;
+  verification_status: string;
+  bio: string | null;
+}
+
+interface WorkspaceInfo {
+  id: string;
+  name: string;
+  type: string;
+  verification_status: string;
 }
 
 interface Subscription {
@@ -64,8 +80,14 @@ interface Service {
   cover_image: string | null;
   location_name: string | null;
   is_active: boolean | null;
+  workspace_id: string;
   categories: { name: string; icon?: string | null } | null;
   service_images: { image_url: string }[] | null;
+  workspaces?: {
+    name: string;
+    type: string;
+    verification_status: string;
+  };
 }
 
 interface Booking {
@@ -85,11 +107,16 @@ interface Booking {
     full_name: string;
     avatar_url: string | null
   };
+  client_workspace?: {
+    name: string;
+    type: string;
+  };
 }
 
 export default function ProviderDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentWorkspace, workspaces, switchWorkspace } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -102,6 +129,7 @@ export default function ProviderDashboard() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [providerProfile, setProviderProfile] = useState<ProviderProfile | null>(null);
+  const [userWorkspaces, setUserWorkspaces] = useState<WorkspaceInfo[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -111,10 +139,11 @@ export default function ProviderDashboard() {
   const [showLogoutPopup, setShowLogoutPopup] = useState(false);
   const [calculatedRating, setCalculatedRating] = useState(0);
   const [totalReviewCount, setTotalReviewCount] = useState(0);
+  const [selectedWorkspaceFilter, setSelectedWorkspaceFilter] = useState<string | null>(null);
 
   useEffect(() => {
     initializeDashboard();
-  }, []);
+  }, [currentWorkspace, selectedWorkspaceFilter]);
 
   async function handleUpdateService() {
     try {
@@ -178,17 +207,88 @@ export default function ProviderDashboard() {
 
   async function initializeDashboard() {
     try {
+      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
 
       const userId = session.user.id;
 
-      const [pRes, ppRes, subRes, servRes, bookRes, reviewRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url").eq("id", userId).single(),
-        supabase.from("provider_profiles").select("business_name, tagline, average_rating").eq("user_id", userId).single(),
-        supabase.from("subscriptions").select("*").eq("provider_id", userId).single(),
-        supabase.from("services").select(`id, title, short_description, price, cover_image, location_name, is_active, categories(name, icon), service_images(image_url)`).eq("provider_id", userId).order("created_at", { ascending: false }),
-        supabase.from("bookings").select(`
+      // 1. Fetch profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", userId)
+        .single();
+      setProfile(profileData);
+
+      // 2. Fetch provider profile
+      const { data: providerData } = await supabase
+        .from("provider_profiles")
+        .select("business_name, professional_title, license_number, specialties, years_experience, average_rating, total_reviews, verification_status, bio")
+        .eq("user_id", userId)
+        .single();
+      setProviderProfile(providerData);
+
+      // 3. Fetch user's workspaces
+      const { data: workspaceMembers } = await supabase
+        .from("workspace_members")
+        .select(`
+          workspace_id,
+          role,
+          workspaces:workspace_id (
+            id,
+            name,
+            type,
+            verification_status
+          )
+        `)
+        .eq("user_id", userId)
+        .eq("status", "active");
+
+      if (workspaceMembers) {
+        const wsData = workspaceMembers
+          .map(wm => wm.workspaces)
+          .filter(Boolean) as WorkspaceInfo[];
+        setUserWorkspaces(wsData);
+      }
+
+      // 4. Fetch services with workspace data
+      let servicesQuery = supabase
+        .from("services")
+        .select(`
+          id,
+          title,
+          short_description,
+          price,
+          cover_image,
+          location_name,
+          is_active,
+          workspace_id,
+          categories(name, icon),
+          service_images(image_url),
+          workspaces:workspace_id (
+            name,
+            type,
+            verification_status
+          )
+        `)
+        .eq("provider_id", userId)
+        .order("created_at", { ascending: false });
+
+      // Apply workspace filter if selected
+      if (selectedWorkspaceFilter) {
+        servicesQuery = servicesQuery.eq("workspace_id", selectedWorkspaceFilter);
+      } else if (currentWorkspace) {
+        servicesQuery = servicesQuery.eq("workspace_id", currentWorkspace.id);
+      }
+
+      const { data: servicesData } = await servicesQuery;
+      setServices(servicesData || []);
+
+      // 5. Fetch bookings with workspace data
+      let bookingsQuery = supabase
+        .from("bookings")
+        .select(`
           id,
           status,
           total_amount,
@@ -199,20 +299,38 @@ export default function ProviderDashboard() {
           created_at,
           services(title),
           whatsapp_number,
-          customer:profiles!bookings_customer_id_fkey(full_name, avatar_url)
-        `).eq("provider_id", userId).order("created_at", { ascending: false }),
-        supabase.from("reviews").select("rating").eq("provider_id", userId)
-      ]);
+          customer:profiles!bookings_customer_id_fkey(full_name, avatar_url),
+          client_workspace:workspaces!bookings_client_workspace_id_fkey(name, type)
+        `)
+        .eq("provider_id", userId)
+        .order("created_at", { ascending: false });
 
-      setProfile(pRes.data);
-      setProviderProfile(ppRes.data);
-      setSubscription(subRes.data);
-      setServices(servRes.data || []);
-      setBookings(bookRes.data as unknown as Booking[] || []);
+      if (selectedWorkspaceFilter) {
+        bookingsQuery = bookingsQuery.eq("provider_workspace_id", selectedWorkspaceFilter);
+      } else if (currentWorkspace) {
+        bookingsQuery = bookingsQuery.eq("provider_workspace_id", currentWorkspace.id);
+      }
 
-      if (reviewRes.data && reviewRes.data.length > 0) {
-        const total = reviewRes.data.length;
-        const sum = reviewRes.data.reduce((acc, r) => acc + (r.rating || 0), 0);
+      const { data: bookingsData } = await bookingsQuery;
+      setBookings(bookingsData as unknown as Booking[] || []);
+
+      // 6. Fetch subscription
+      const { data: subData } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("provider_id", userId)
+        .single();
+      setSubscription(subData);
+
+      // 7. Fetch reviews for rating
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("provider_id", userId);
+
+      if (reviewsData && reviewsData.length > 0) {
+        const total = reviewsData.length;
+        const sum = reviewsData.reduce((acc, r) => acc + (r.rating || 0), 0);
         setCalculatedRating(Number((sum / total).toFixed(1)));
         setTotalReviewCount(total);
       }
@@ -224,13 +342,46 @@ export default function ProviderDashboard() {
     }
   }
 
+  // Get workspace icon
+  const getWorkspaceIcon = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return <User className="w-3 h-3" />;
+      case 'family':
+        return <Users className="w-3 h-3" />;
+      case 'organization':
+        return <Building className="w-3 h-3" />;
+      case 'agency':
+        return <Briefcase className="w-3 h-3" />;
+      default:
+        return <Building className="w-3 h-3" />;
+    }
+  };
+
+  // Get workspace type label
+  const getWorkspaceTypeLabel = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return 'Independent Provider';
+      case 'family':
+        return 'Family Workspace';
+      case 'organization':
+        return 'Healthcare Organization';
+      case 'agency':
+        return 'Healthcare Agency';
+      default:
+        return 'Healthcare Provider';
+    }
+  };
+
   const stats = useMemo(() => ({
     totalServices: services.length,
     totalBookings: bookings.length,
     totalRevenue: bookings.filter(b => b.status === "completed").reduce((sum, b) => sum + Number(b.total_amount || 0), 0),
     rating: calculatedRating,
-    reviewCount: totalReviewCount
-  }), [services, bookings, calculatedRating, totalReviewCount]);
+    reviewCount: totalReviewCount,
+    activeWorkspace: currentWorkspace?.name || 'No Workspace'
+  }), [services, bookings, calculatedRating, totalReviewCount, currentWorkspace]);
 
   const sortedBookings = useMemo(() => {
     return [...bookings].sort((a, b) => {
@@ -310,12 +461,115 @@ export default function ProviderDashboard() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-20 transition-colors duration-300 pt-24 sm:pt-28">
       <div className="w-full px-4 md:px-6 max-w-7xl mx-auto">
-        {/* Stats Grid - Edge to Edge */}
+
+        {/* Workspace Header */}
+        <div className="mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                {currentWorkspace?.name || 'Provider Dashboard'}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2 mt-1">
+                <Badge className="bg-primary/10 text-primary border-0 flex items-center gap-1.5 rounded-full px-3 py-1">
+                  {currentWorkspace && getWorkspaceIcon(currentWorkspace.type)}
+                  <span className="text-xs font-bold uppercase">
+                    {currentWorkspace ? getWorkspaceTypeLabel(currentWorkspace.type) : 'Provider'}
+                  </span>
+                </Badge>
+                {currentWorkspace?.verification_status === 'verified' && (
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-0 flex items-center gap-1 rounded-full">
+                    <Verified className="w-3 h-3" />
+                    Verified
+                  </Badge>
+                )}
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                  {stats.totalServices} services • {stats.totalBookings} bookings
+                </span>
+              </div>
+            </div>
+
+            {/* Workspace Selector Dropdown */}
+            {userWorkspaces.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="rounded-2xl gap-2 border-zinc-200 dark:border-transparent">
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Switch Workspace</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 rounded-2xl p-2">
+                  <DropdownMenuLabel className="text-xs font-semibold text-zinc-400 uppercase tracking-wider px-3">
+                    Your Workspaces
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {userWorkspaces.map((ws) => (
+                    <DropdownMenuItem
+                      key={ws.id}
+                      className={`cursor-pointer rounded-xl p-3 ${currentWorkspace?.id === ws.id ? 'bg-primary/10 dark:bg-primary/20' : ''}`}
+                      onClick={() => {
+                        switchWorkspace(ws.id);
+                        setSelectedWorkspaceFilter(ws.id);
+                      }}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        {getWorkspaceIcon(ws.type)}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{ws.name}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400">{getWorkspaceTypeLabel(ws.type)}</p>
+                        </div>
+                        {currentWorkspace?.id === ws.id && (
+                          <CheckCircle className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+
+          {/* Workspace Filter Chips */}
+          {userWorkspaces.length > 1 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {userWorkspaces.map((ws) => (
+                <Badge
+                  key={ws.id}
+                  className={`cursor-pointer px-3 py-1.5 rounded-full text-xs transition-all ${selectedWorkspaceFilter === ws.id || (!selectedWorkspaceFilter && currentWorkspace?.id === ws.id)
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                    }`}
+                  onClick={() => {
+                    if (selectedWorkspaceFilter === ws.id) {
+                      setSelectedWorkspaceFilter(null);
+                    } else {
+                      setSelectedWorkspaceFilter(ws.id);
+                    }
+                  }}
+                >
+                  {getWorkspaceIcon(ws.type)}
+                  <span className="ml-1">{ws.name}</span>
+                </Badge>
+              ))}
+              {selectedWorkspaceFilter && (
+                <Badge
+                  className="cursor-pointer px-3 py-1.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  onClick={() => setSelectedWorkspaceFilter(null)}
+                >
+                  <XCircle className="w-3 h-3 mr-1" />
+                  Clear Filter
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
           {[
-            { label: "Total Reviews", val: stats.reviewCount, icon: MessageSquare, color: "text-emerald-600 dark:text-emerald-400" },
-            { label: "Avg Rating", val: stats.rating > 0 ? `${stats.rating} / 5` : "No ratings", icon: Star, color: "text-orange-500 dark:text-orange-400" },
-            { label: "My Services", val: stats.totalServices, icon: Briefcase, color: "text-blue-600 dark:text-blue-400" },
+            { label: "Reviews", val: stats.reviewCount, icon: MessageSquare, color: "text-emerald-600 dark:text-emerald-400" },
+            { label: "Rating", val: stats.rating > 0 ? `${stats.rating} / 5` : "No ratings", icon: Star, color: "text-orange-500 dark:text-orange-400" },
+            { label: "Services", val: stats.totalServices, icon: Briefcase, color: "text-blue-600 dark:text-blue-400" },
             { label: "Bookings", val: stats.totalBookings, icon: Calendar, color: "text-purple-600 dark:text-purple-400" },
           ].map((s, i) => (
             <Card key={i} className="border border-zinc-100 dark:border-transparent shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-colors">
@@ -332,7 +586,7 @@ export default function ProviderDashboard() {
           ))}
         </div>
 
-        {/* Floating Action Button - New Service */}
+        {/* Floating Action Button */}
         <div className="fixed bottom-6 right-6 z-40">
           <Button
             onClick={() => navigate("/provider/services/new")}
@@ -354,6 +608,9 @@ export default function ProviderDashboard() {
               <Card className="p-12 text-center border border-zinc-100 dark:border-transparent shadow-sm rounded-3xl bg-white dark:bg-zinc-900 transition-colors">
                 <Briefcase className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-600 mb-4" />
                 <h3 className="text-lg font-medium dark:text-white">No services listed</h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+                  {selectedWorkspaceFilter ? 'Try clearing the workspace filter' : 'Create your first service'}
+                </p>
                 <Button className="mt-4 rounded-2xl" onClick={() => navigate("/provider/services/new")}>Create Service</Button>
               </Card>
             ) : (
@@ -369,6 +626,12 @@ export default function ProviderDashboard() {
                       <Badge className={`absolute top-3 right-3 rounded-full ${service.is_active ? 'bg-emerald-500' : 'bg-zinc-500'}`}>
                         {service.is_active ? 'Active' : 'Inactive'}
                       </Badge>
+                      {service.workspaces && (
+                        <Badge className="absolute bottom-3 left-3 bg-black/60 text-white border-0 flex items-center gap-1 text-[10px]">
+                          {getWorkspaceIcon(service.workspaces.type)}
+                          {service.workspaces.name}
+                        </Badge>
+                      )}
                     </div>
                     <CardContent className="p-5">
                       <h3 className="font-bold text-lg mb-1 line-clamp-1 text-zinc-900 dark:text-white">{service.title}</h3>
@@ -377,7 +640,7 @@ export default function ProviderDashboard() {
                       </div>
                       <div className="flex justify-between items-end mb-6">
                         <div>
-                          <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">Booking Price</p>
+                          <p className="text-[10px] uppercase text-zinc-400 dark:text-zinc-500 font-bold">Price</p>
                           <p className="text-lg font-bold text-primary">KES {Number(service.price).toLocaleString()}</p>
                         </div>
                         <div className="text-right">
@@ -409,6 +672,9 @@ export default function ProviderDashboard() {
                 <div className="flex flex-col items-center gap-2">
                   <Calendar className="w-10 h-10 opacity-20 text-zinc-400 dark:text-zinc-500" />
                   <p className="text-zinc-500 dark:text-zinc-400">No bookings found yet.</p>
+                  {selectedWorkspaceFilter && (
+                    <p className="text-sm text-zinc-400 dark:text-zinc-500">Try clearing the workspace filter</p>
+                  )}
                 </div>
               </Card>
             ) : (
@@ -445,6 +711,12 @@ export default function ProviderDashboard() {
                               </Badge>
                             )}
                           </div>
+                          {booking.client_workspace && (
+                            <div className="mt-2 flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
+                              {getWorkspaceIcon(booking.client_workspace.type)}
+                              {booking.client_workspace.name}
+                            </div>
+                          )}
                         </div>
 
                         <div className="p-6 md:p-8 flex-1 flex flex-col justify-between">
@@ -554,6 +826,15 @@ export default function ProviderDashboard() {
                   <span className="font-medium text-zinc-700 dark:text-zinc-300">Current Plan</span>
                   <span className="font-bold uppercase text-primary">{subscription?.plan || 'None'}</span>
                 </div>
+                {currentWorkspace && (
+                  <div className="flex justify-between items-center p-4 bg-zinc-50 dark:bg-zinc-800 rounded-2xl transition-colors">
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">Workspace</span>
+                    <span className="font-bold text-zinc-900 dark:text-white flex items-center gap-1">
+                      {getWorkspaceIcon(currentWorkspace.type)}
+                      {currentWorkspace.name}
+                    </span>
+                  </div>
+                )}
                 <Button className="w-full rounded-2xl">Upgrade Plan</Button>
               </CardContent>
             </Card>
@@ -561,7 +842,7 @@ export default function ProviderDashboard() {
         </Tabs>
       </div>
 
-      {/* Custom Logout Popup */}
+      {/* Logout Popup */}
       {showLogoutPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm">
           <div className="bg-white dark:bg-zinc-900 w-[90%] max-w-md rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 border border-zinc-100 dark:border-transparent transition-colors">
@@ -594,7 +875,7 @@ export default function ProviderDashboard() {
         </div>
       )}
 
-      {/* FULL DETAILS MODAL */}
+      {/* Service Detail Modal */}
       <Dialog open={!!viewingService} onOpenChange={() => { setViewingService(null); setIsEditing(false); }}>
         <DialogContent className="max-w-2xl rounded-3xl p-0 overflow-hidden border-0 shadow-2xl bg-white dark:bg-zinc-900 transition-colors">
           {viewingService && (
@@ -627,6 +908,12 @@ export default function ProviderDashboard() {
 
                 {!isEditing && (
                   <Badge className="absolute top-4 right-4 rounded-full bg-primary">{viewingService.categories?.name}</Badge>
+                )}
+                {viewingService.workspaces && (
+                  <Badge className="absolute bottom-4 left-4 bg-black/60 text-white border-0 flex items-center gap-1">
+                    {getWorkspaceIcon(viewingService.workspaces.type)}
+                    {viewingService.workspaces.name}
+                  </Badge>
                 )}
               </div>
 

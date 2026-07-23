@@ -1,6 +1,7 @@
 "use client";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
     Cookie,
     ShieldCheck,
@@ -20,41 +21,71 @@ import {
     Heart,
     Stethoscope,
     Pill,
-    UserCheck
+    UserCheck,
+    Building2,
+    Briefcase,
+    CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CookiePolicy() {
     const navigate = useNavigate();
+    const { currentWorkspace, workspaces } = useWorkspace();
+
+    // Get workspace type label
+    const getWorkspaceTypeLabel = (type: string) => {
+        switch (type) {
+            case 'individual':
+                return 'Independent Provider';
+            case 'family':
+                return 'Family Workspace';
+            case 'organization':
+                return 'Healthcare Organization';
+            case 'agency':
+                return 'Healthcare Agency';
+            default:
+                return 'Healthcare Provider';
+        }
+    };
 
     return (
         <div
             className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative transition-colors duration-300"
             style={{ backgroundImage: "url('/background4.png')" }}
         >
-            {/* Dark overlay for better readability */}
+            {/* Dark overlay */}
             <div className="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-[1px]" />
 
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20 relative z-10">
-                <div className="bg-white dark:bg-gray-950 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm rounded-3xl overflow-hidden border-0 transition-colors">
+
                     <div className="p-4 md:p-6">
-                        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate(-1)}
+                            className="mb-4 gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                        >
                             <ArrowLeft className="w-4 h-4" /> Back
                         </Button>
                     </div>
 
-                    {/* Header Banner - Updated for Medical Focus */}
-                    <div className="bg-white dark:bg-gray-950 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
-                        <div className="flex items-center gap-3 mb-6 text-primary">
-                            <Cookie className="w-8 h-8" />
-                            <span className="font-bold tracking-widest uppercase text-sm">Medical Data Privacy & Compliance</span>
+                    {/* Header Banner */}
+                    <div className="bg-white dark:bg-zinc-950 p-6 md:p-16 text-black dark:text-white border-b border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Cookie className="w-8 h-8 text-primary" />
+                            <span className="font-bold tracking-widest uppercase text-sm text-primary">Medical Data Privacy & Compliance</span>
+                            {currentWorkspace && (
+                                <span className="ml-auto text-xs bg-primary/10 text-primary px-3 py-1 rounded-full">
+                                    {getWorkspaceTypeLabel(currentWorkspace.type)}
+                                </span>
+                            )}
                         </div>
                         <h1 className="text-3xl md:text-4xl font-black mb-4 tracking-tight text-slate-900 dark:text-white">
                             Cookie Policy
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl leading-relaxed">
+                        <p className="text-slate-600 dark:text-slate-300 font-medium max-w-2xl leading-relaxed">
                             This policy explains how HommieCare Medical uses cookies and similar tracking technologies to provide secure, compliant, and efficient healthcare services. We are committed to protecting patient data in accordance with the Data Protection Act, 2019 (Kenya) and the Kenya Health Act.
                         </p>
                         <p className="text-slate-400 dark:text-slate-500 text-sm mt-6">
@@ -64,7 +95,7 @@ export default function CookiePolicy() {
 
                     <div className="p-4 md:p-16 space-y-12 text-slate-600 dark:text-slate-300 leading-relaxed text-base md:text-lg">
 
-                        {/* Section 1: What Are Cookies */}
+                        {/* Section 1 */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Info className="text-primary w-6 h-6 flex-shrink-0" />
@@ -74,18 +105,18 @@ export default function CookiePolicy() {
                                 Cookies are small data files that are placed on your computer or mobile device when you visit a website. They are widely used to make websites work more efficiently and provide information to the website owners.
                             </p>
                             <p className="mb-4">
-                                For our <strong>Medical Progressive Web App (PWA)</strong>, we use additional browser storage technologies to ensure secure and efficient healthcare delivery:
+                                For our <strong className="text-slate-800 dark:text-white">Medical Progressive Web App (PWA)</strong>, we use additional browser storage technologies to ensure secure and efficient healthcare delivery:
                             </p>
                             <ul className="list-disc pl-6 space-y-2">
-                                <li><strong>Local Storage:</strong> Securely stores patient preferences and session data persistently on your device for faster access to medical information.</li>
-                                <li><strong>Session Storage:</strong> Temporarily stores sensitive medical session data during your consultation and is cleared when you close the app.</li>
-                                <li><strong>IndexedDB:</strong> A powerful database system that caches medical service listings, healthcare provider profiles, and appointment details for offline access.</li>
-                                <li><strong>Service Workers:</strong> Enable offline functionality and secure push notifications for appointment reminders and medication alerts.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Local Storage:</strong> Securely stores patient preferences and session data persistently on your device for faster access to medical information.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Session Storage:</strong> Temporarily stores sensitive medical session data during your consultation and is cleared when you close the app.</li>
+                                <li><strong className="text-slate-800 dark:text-white">IndexedDB:</strong> A powerful database system that caches medical service listings, healthcare provider profiles, and appointment details for offline access.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Service Workers:</strong> Enable offline functionality and secure push notifications for appointment reminders and medication alerts.</li>
                             </ul>
                         </section>
 
-                        {/* Section 2: How We Use Them - Medical Focus */}
-                        <section className="bg-slate-50 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 transition-colors">
+                        {/* Section 2 */}
+                        <section className="bg-slate-100 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border-0 transition-colors">
                             <div className="flex items-center gap-3 mb-6">
                                 <Activity className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">2. How We Use Cookies & Storage</h2>
@@ -123,7 +154,7 @@ export default function CookiePolicy() {
                                         icon: Database
                                     }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-gray-950 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="bg-white dark:bg-zinc-950 p-5 rounded-2xl border-0 transition-colors">
                                         <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center mb-4 text-primary">
                                             <item.icon className="w-5 h-5" />
                                         </div>
@@ -134,7 +165,7 @@ export default function CookiePolicy() {
                             </div>
                         </section>
 
-                        {/* Section 3: Types of Cookies - Medical Focus */}
+                        {/* Section 3 */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Cookie className="text-primary w-6 h-6 flex-shrink-0" />
@@ -171,7 +202,7 @@ export default function CookiePolicy() {
                             </div>
                         </section>
 
-                        {/* Section 4: Third-Party Cookies - Medical Focus */}
+                        {/* Section 4 */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Globe className="text-primary w-6 h-6 flex-shrink-0" />
@@ -203,7 +234,7 @@ export default function CookiePolicy() {
                                         type: "Analytics (Optional)"
                                     }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl border-0 transition-colors">
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="font-bold text-slate-900 dark:text-white">{item.name}</h3>
                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{item.type}</span>
@@ -214,29 +245,29 @@ export default function CookiePolicy() {
                             </div>
                         </section>
 
-                        {/* Section 5: Your Rights & Choices - Medical Focus */}
-                        <section className="border-l-4 border-primary pl-6 py-2 bg-slate-50 dark:bg-slate-800 transition-colors">
+                        {/* Section 5 */}
+                        <section className="border-l-4 border-primary pl-6 py-2">
                             <div className="flex items-center gap-3 mb-4">
                                 <Eye className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">5. Your Rights & Choices</h2>
                             </div>
                             <p className="mb-4">
-                                You have the right to decide whether to accept or reject cookies. Under the <strong>Data Protection Act, 2019 (Kenya)</strong> and <strong>Kenya Health Act</strong>, you have the following rights regarding your medical data:
+                                You have the right to decide whether to accept or reject cookies. Under the <strong className="text-slate-800 dark:text-white">Data Protection Act, 2019 (Kenya)</strong> and <strong className="text-slate-800 dark:text-white">Kenya Health Act</strong>, you have the following rights regarding your medical data:
                             </p>
                             <ul className="list-disc pl-6 space-y-2 mb-4">
-                                <li><strong>Right to be informed:</strong> You have the right to know what medical data is being collected and how it is used.</li>
-                                <li><strong>Right to access:</strong> You can request information about the personal and medical data we hold about you.</li>
-                                <li><strong>Right to object:</strong> You can object to the processing of your medical data for non-treatment purposes.</li>
-                                <li><strong>Right to erasure:</strong> You can request deletion of your personal data where applicable, subject to medical record retention requirements.</li>
-                                <li><strong>Right to data portability:</strong> You can request your medical data in a portable format.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Right to be informed:</strong> You have the right to know what medical data is being collected and how it is used.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Right to access:</strong> You can request information about the personal and medical data we hold about you.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Right to object:</strong> You can object to the processing of your medical data for non-treatment purposes.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Right to erasure:</strong> You can request deletion of your personal data where applicable, subject to medical record retention requirements.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Right to data portability:</strong> You can request your medical data in a portable format.</li>
                             </ul>
-                            <div className="bg-white dark:bg-gray-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                            <div className="bg-white dark:bg-zinc-950 p-4 rounded-2xl border-0 transition-colors">
                                 <h4 className="font-bold text-slate-900 dark:text-white mb-2">How to Manage Medical Data Cookies:</h4>
                                 <ul className="list-disc pl-6 space-y-1 text-sm">
-                                    <li><strong>Browser Settings:</strong> You can set or amend your web browser controls to accept or refuse cookies through your browser's settings menu.</li>
-                                    <li><strong>PWA Storage:</strong> You can clear Local Storage and IndexedDB through your browser's developer tools or by clearing site data in your browser settings.</li>
-                                    <li><strong>Mobile Devices:</strong> On Android, go to Settings → Apps → HommieCare Medical → Storage → Clear Data. On iOS, go to Settings → Safari → Advanced → Website Data.</li>
-                                    <li><strong>Medical Data Request:</strong> Contact our Data Protection Officer to request access to or deletion of your medical data.</li>
+                                    <li><strong className="text-slate-800 dark:text-white">Browser Settings:</strong> You can set or amend your web browser controls to accept or refuse cookies through your browser's settings menu.</li>
+                                    <li><strong className="text-slate-800 dark:text-white">PWA Storage:</strong> You can clear Local Storage and IndexedDB through your browser's developer tools or by clearing site data in your browser settings.</li>
+                                    <li><strong className="text-slate-800 dark:text-white">Mobile Devices:</strong> On Android, go to Settings → Apps → HommieCare Medical → Storage → Clear Data. On iOS, go to Settings → Safari → Advanced → Website Data.</li>
+                                    <li><strong className="text-slate-800 dark:text-white">Medical Data Request:</strong> Contact our Data Protection Officer to request access to or deletion of your medical data.</li>
                                 </ul>
                                 <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
                                     <AlertCircle className="w-4 h-4 inline mr-1" />
@@ -245,25 +276,25 @@ export default function CookiePolicy() {
                             </div>
                         </section>
 
-                        {/* Section 6: Cookie Duration */}
+                        {/* Section 6 */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Clock className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">6. Cookie Duration</h2>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                <div className="bg-slate-100 dark:bg-slate-800 p-5 rounded-2xl border-0 transition-colors">
                                     <h3 className="font-bold text-slate-900 dark:text-white mb-2">Session Cookies</h3>
                                     <p className="text-sm text-slate-600 dark:text-slate-400">These are temporary and expire when you close your browser or app. Used for maintaining your secure medical session during a single visit.</p>
                                 </div>
-                                <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                <div className="bg-slate-100 dark:bg-slate-800 p-5 rounded-2xl border-0 transition-colors">
                                     <h3 className="font-bold text-slate-900 dark:text-white mb-2">Persistent Medical Cookies</h3>
                                     <p className="text-sm text-slate-600 dark:text-slate-400">These remain on your device for a set period (typically 30-90 days). Used for remembering your healthcare preferences and keeping your medical session secure.</p>
                                 </div>
                             </div>
                         </section>
 
-                        {/* Section 7: Data Protection & Medical Compliance */}
+                        {/* Section 7 */}
                         <section className="bg-primary/5 dark:bg-primary/10 rounded-3xl p-6 md:p-8 border border-primary/20">
                             <div className="flex items-center gap-3 mb-4">
                                 <ShieldCheck className="text-primary w-6 h-6 flex-shrink-0" />
@@ -273,17 +304,17 @@ export default function CookiePolicy() {
                                 HommieCare Medical is committed to compliance with:
                             </p>
                             <ul className="list-disc pl-6 space-y-2 mb-4">
-                                <li><strong>Data Protection Act, 2019</strong> - Protecting patient personal data with appropriate technical and organizational measures.</li>
-                                <li><strong>Kenya Health Act</strong> - Ensuring all medical data handling complies with healthcare regulations and standards.</li>
-                                <li><strong>Health Information Privacy Guidelines</strong> - Maintaining strict confidentiality of patient medical records.</li>
-                                <li><strong>Nursing Council of Kenya Act</strong> - Adhering to professional standards for nursing and healthcare delivery.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Data Protection Act, 2019</strong> - Protecting patient personal data with appropriate technical and organizational measures.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Kenya Health Act</strong> - Ensuring all medical data handling complies with healthcare regulations and standards.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Health Information Privacy Guidelines</strong> - Maintaining strict confidentiality of patient medical records.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Nursing Council of Kenya Act</strong> - Adhering to professional standards for nursing and healthcare delivery.</li>
                             </ul>
                             <p>
                                 Our Data Protection Officer can be contacted at the email below for any concerns regarding how your medical data is processed or stored.
                             </p>
                         </section>
 
-                        {/* Section 8: Updates to This Policy */}
+                        {/* Section 8 */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <AlertCircle className="text-primary w-6 h-6 flex-shrink-0" />
@@ -294,14 +325,14 @@ export default function CookiePolicy() {
                             </p>
                         </section>
 
-                        {/* Section 9: Contact - Medical Focus */}
-                        <section className="bg-white dark:bg-gray-950 rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
+                        {/* Section 9 */}
+                        <section className="bg-white dark:bg-zinc-950 rounded-3xl p-6 md:p-10 text-center border border-slate-200 dark:border-slate-800">
                             <Stethoscope className="w-12 h-12 mx-auto mb-6 text-primary" />
                             <h2 className="text-2xl font-black uppercase tracking-tighter mb-4 text-slate-900 dark:text-white">9. Questions or Medical Data Concerns?</h2>
                             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
                                 If you have any questions about our use of cookies, medical data storage, or this policy, please contact our Data Protection team:
                             </p>
-                            <div className="inline-block bg-slate-50 dark:bg-slate-800 px-8 py-6 rounded-2xl border border-slate-100 dark:border-slate-700">
+                            <div className="inline-block bg-slate-100 dark:bg-slate-800 px-8 py-6 rounded-2xl border-0">
                                 <div className="flex items-center gap-2 justify-center mb-2">
                                     <Mail className="w-4 h-4 text-primary" />
                                     <p className="font-bold text-slate-900 dark:text-white text-lg">hommiegocare@gmail.com</p>
@@ -312,10 +343,15 @@ export default function CookiePolicy() {
                         </section>
 
                         {/* Footer */}
-                        <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500 text-sm">
+                        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500 text-sm">
                             <div className="flex items-center justify-center gap-2 mb-3">
                                 <Heart className="w-4 h-4 text-rose-400" />
                                 <p>© {new Date().getFullYear()} HommieCare Medical. Registered in the Republic of Kenya. All Rights Reserved.</p>
+                                {currentWorkspace && (
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-2">
+                                        {currentWorkspace.type}
+                                    </span>
+                                )}
                             </div>
                             <p className="text-xs mt-2 text-slate-400 dark:text-slate-500">
                                 This policy is governed by the Laws of Kenya, including the Data Protection Act, 2019, and the Kenya Health Act.

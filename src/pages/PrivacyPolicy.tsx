@@ -2,6 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
     Shield,
     Lock,
@@ -23,40 +24,77 @@ import {
     Stethoscope,
     Pill,
     ClipboardCheck,
-    Syringe
+    Syringe,
+    Building2,
+    Users,
+    Briefcase,
+    CheckCircle,
+    Clock,
+    Award,
+    Target,
+    Sparkles
 } from "lucide-react";
 
 export default function PrivacyPolicy() {
     const navigate = useNavigate();
+    const { currentWorkspace, workspaces } = useWorkspace();
+
+    // Get workspace type label
+    const getWorkspaceTypeLabel = (type: string) => {
+        switch (type) {
+            case 'individual':
+                return 'Independent Provider';
+            case 'family':
+                return 'Family Workspace';
+            case 'organization':
+                return 'Healthcare Organization';
+            case 'agency':
+                return 'Healthcare Agency';
+            default:
+                return 'Healthcare Provider';
+        }
+    };
+
     return (
         <div
             className="min-h-screen bg-cover bg-center bg-no-repeat bg-fixed relative transition-colors duration-300"
             style={{ backgroundImage: "url('/background11.png')" }}
         >
-            {/* Dark overlay for better readability */}
+            {/* Dark overlay */}
             <div className="absolute inset-0 bg-black/30 dark:bg-black/50 backdrop-blur-[1px]" />
 
             <Navbar />
 
             <div className="max-w-4xl mx-auto px-4 pt-32 pb-20 relative z-10">
-                <div className="bg-white dark:bg-gray-950 rounded-xl shadow-xl shadow-slate-200/60 dark:shadow-slate-800/60 overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
+                <div className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm rounded-3xl overflow-hidden border-0 transition-colors">
+
+                    {/* Header */}
                     <div className="p-4 md:p-6">
-                        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 gap-2 dark:text-slate-300 dark:hover:bg-slate-800">
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate(-1)}
+                            className="mb-4 gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                        >
                             <ArrowLeft className="w-4 h-4" /> Back
                         </Button>
                     </div>
 
-                    {/* Header Banner - Updated for Medical Focus */}
-                    <div className="bg-white dark:bg-gray-950 p-4 md:p-16 text-black dark:text-white border-b dark:border-slate-800">
-                        <div className="flex items-center gap-3 mb-6 text-primary">
-                            <Shield className="w-8 h-8" />
-                            <span className="font-bold tracking-widest uppercase text-sm">Medical Data Protection & Compliance</span>
+                    {/* Header Banner */}
+                    <div className="bg-white dark:bg-zinc-950 p-6 md:p-16 text-black dark:text-white border-b border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Shield className="w-8 h-8 text-primary" />
+                            <span className="font-bold tracking-widest uppercase text-sm text-primary">Medical Data Protection & Compliance</span>
+                            {currentWorkspace && (
+                                <span className="ml-auto text-xs bg-primary/10 text-primary px-3 py-1 rounded-full">
+                                    {getWorkspaceTypeLabel(currentWorkspace.type)}
+                                </span>
+                            )}
                         </div>
                         <h1 className="text-3xl md:text-4xl font-black mb-4 tracking-tight text-slate-900 dark:text-white">
                             Privacy Policy
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium max-w-2xl leading-relaxed">
-                            In compliance with the <strong>Data Protection Act, 2019 (Republic of Kenya)</strong>, the <strong>Kenya Health Act</strong>, and the <strong>Health Information Privacy Guidelines</strong>. We are committed to protecting your medical and personal data with the highest standards of privacy and security.
+                        <p className="text-slate-600 dark:text-slate-300 font-medium max-w-2xl leading-relaxed">
+                            In compliance with the <strong className="text-slate-800 dark:text-white">Data Protection Act, 2019</strong> (Republic of Kenya), the <strong className="text-slate-800 dark:text-white">Kenya Health Act</strong>, and the <strong className="text-slate-800 dark:text-white">Health Information Privacy Guidelines</strong>. We are committed to protecting your medical and personal data with the highest standards of privacy and security.
                         </p>
                         <p className="text-slate-400 dark:text-slate-500 text-sm mt-4">
                             Last updated: July 17, 2026
@@ -72,17 +110,17 @@ export default function PrivacyPolicy() {
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">1. Introduction & Legal Framework</h2>
                             </div>
                             <p className="mb-4">
-                                HommieCare Medical ("we," "us," or "our") operates as a <strong>Data Controller</strong> and <strong>Data Processor</strong> under the laws of the Republic of Kenya. We are registered with the <strong>Office of the Data Protection Commissioner (ODPC)</strong> and comply with healthcare data protection standards. This Privacy Policy outlines our practices regarding the collection, use, storage, and disclosure of your personal and medical information.
+                                HommieCare Medical ("we," "us," or "our") operates as a <strong className="text-slate-800 dark:text-white">Data Controller</strong> and <strong className="text-slate-800 dark:text-white">Data Processor</strong> under the laws of the Republic of Kenya. We are registered with the <strong className="text-slate-800 dark:text-white">Office of the Data Protection Commissioner (ODPC)</strong> and comply with healthcare data protection standards. This Privacy Policy outlines our practices regarding the collection, use, storage, and disclosure of your personal and medical information.
                             </p>
-                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                            <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl border-0 transition-colors">
                                 <p className="text-sm">
-                                    <strong className="text-slate-900 dark:text-white">Governing Legislation:</strong> This policy is governed by the Data Protection Act, 2019 (Act No. 24 of 2019), the Kenya Health Act, the Health Information Privacy Guidelines, the Nursing Council of Kenya Act, the Medical Practitioners and Dentists Act (Cap 253), and the Constitution of Kenya, 2010 (Article 31 - Right to Privacy).
+                                    <strong className="text-slate-800 dark:text-white">Governing Legislation:</strong> This policy is governed by the Data Protection Act, 2019 (Act No. 24 of 2019), the Kenya Health Act, the Health Information Privacy Guidelines, the Nursing Council of Kenya Act, the Medical Practitioners and Dentists Act (Cap 253), and the Constitution of Kenya, 2010 (Article 31 - Right to Privacy).
                                 </p>
                             </div>
                         </section>
 
-                        {/* Section 2: Data We Collect - Medical Focus */}
-                        <section className="bg-slate-50 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 transition-colors">
+                        {/* Section 2: Data We Collect */}
+                        <section className="bg-slate-100 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border-0 transition-colors">
                             <div className="flex items-center gap-3 mb-6">
                                 <Eye className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">2. Medical & Personal Data We Collect</h2>
@@ -131,7 +169,7 @@ export default function PrivacyPolicy() {
                                         icon: AlertTriangle
                                     }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-gray-950 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="bg-white dark:bg-zinc-950 p-4 rounded-2xl border-0 transition-colors">
                                         <div className="flex items-center gap-2 mb-2">
                                             <item.icon className="w-4 h-4 text-primary flex-shrink-0" />
                                             <span className="font-bold text-slate-900 dark:text-white text-sm">{item.title}</span>
@@ -142,7 +180,7 @@ export default function PrivacyPolicy() {
                             </div>
                         </section>
 
-                        {/* Section 3: Purpose & Lawful Basis - Medical Focus */}
+                        {/* Section 3: Purpose & Lawful Basis */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Lock className="text-primary w-6 h-6 flex-shrink-0" />
@@ -176,7 +214,7 @@ export default function PrivacyPolicy() {
                                         description: "To ensure quality of care, prevent medical errors, improve healthcare delivery, and conduct medical research (anonymized).",
                                     }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl border-0 transition-colors">
                                         <h3 className="font-bold text-slate-900 dark:text-white mb-1">{item.basis}</h3>
                                         <p className="text-sm text-slate-600 dark:text-slate-400">{item.description}</p>
                                     </div>
@@ -184,21 +222,21 @@ export default function PrivacyPolicy() {
                             </div>
                         </section>
 
-                        {/* Section 4: Data Sharing & Disclosure - Medical Focus */}
-                        <section>
+                        {/* Section 4: Data Sharing */}
+                        <section className="bg-slate-100 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border-0 transition-colors">
                             <div className="flex items-center gap-3 mb-4">
                                 <Globe className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">4. Medical Data Sharing & Disclosure</h2>
                             </div>
                             <p className="mb-4">We may share your medical data with the following categories of recipients under strict confidentiality agreements:</p>
                             <ul className="list-disc pl-6 space-y-3 mb-4">
-                                <li><strong>Healthcare Providers:</strong> Your medical information is shared with nurses and healthcare professionals directly involved in your care, as necessary for treatment.</li>
-                                <li><strong>Payment Processors:</strong> M-Pesa (Safaricom PLC) receives your phone number and transaction amount for medical service payment processing.</li>
-                                <li><strong>Cloud Infrastructure:</strong> Supabase (our database provider) stores your medical data on secure cloud servers with encryption at rest and in transit.</li>
-                                <li><strong>Regulatory Authorities:</strong> We may disclose medical data to the ODPC, Ministry of Health, Nursing Council of Kenya, or law enforcement when legally required.</li>
-                                <li><strong>Medical Referrals:</strong> With your consent, we may share medical information with hospitals, specialists, or other healthcare facilities for continuity of care.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Healthcare Providers:</strong> Your medical information is shared with nurses and healthcare professionals directly involved in your care, as necessary for treatment.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Payment Processors:</strong> M-Pesa (Safaricom PLC) receives your phone number and transaction amount for medical service payment processing.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Cloud Infrastructure:</strong> Supabase (our database provider) stores your medical data on secure cloud servers with encryption at rest and in transit.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Regulatory Authorities:</strong> We may disclose medical data to the ODPC, Ministry of Health, Nursing Council of Kenya, or law enforcement when legally required.</li>
+                                <li><strong className="text-slate-800 dark:text-white">Medical Referrals:</strong> With your consent, we may share medical information with hospitals, specialists, or other healthcare facilities for continuity of care.</li>
                             </ul>
-                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 transition-colors">
+                            <div className="bg-amber-100/50 dark:bg-amber-900/30 border-0 rounded-2xl p-4 transition-colors">
                                 <div className="flex items-center gap-2 mb-2">
                                     <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                                     <h3 className="font-bold text-amber-800 dark:text-amber-300">Medical Data Confidentiality</h3>
@@ -209,8 +247,8 @@ export default function PrivacyPolicy() {
                             </div>
                         </section>
 
-                        {/* Section 5: Data Subject Rights - Medical Focus */}
-                        <section className="border-l-4 border-primary pl-6 py-2 bg-slate-50 dark:bg-slate-800 transition-colors">
+                        {/* Section 5: Data Subject Rights */}
+                        <section className="border-l-4 border-primary pl-6 py-2">
                             <div className="flex items-center gap-3 mb-4">
                                 <UserCheck className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">5. Your Rights Under Kenyan & Medical Law</h2>
@@ -227,7 +265,7 @@ export default function PrivacyPolicy() {
                                     { right: "Right to Restrict Processing (Section 36)", desc: "You may request limitation of medical data processing under certain circumstances." },
                                     { right: "Right to Lodge a Complaint", desc: "You have the right to complain to the Office of the Data Protection Commissioner (ODPC) at info@odpc.go.ke." }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="flex items-start gap-3 bg-white dark:bg-gray-950 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="flex items-start gap-3 bg-white dark:bg-zinc-950 p-3 rounded-xl border-0 transition-colors">
                                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                                         <div>
                                             <span className="font-bold text-slate-900 dark:text-white text-sm">{item.right}</span>
@@ -238,7 +276,7 @@ export default function PrivacyPolicy() {
                             </div>
                         </section>
 
-                        {/* Section 6: Data Retention - Medical Focus */}
+                        {/* Section 6: Data Retention */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Calendar className="text-primary w-6 h-6 flex-shrink-0" />
@@ -254,16 +292,16 @@ export default function PrivacyPolicy() {
                                     { data: "Medication Administration Records", period: "Retained for 7 years for medical liability and continuity of care purposes." },
                                     { data: "Vital Signs & Monitoring Data", period: "Retained for 5 years after the last monitoring session, then anonymized for research purposes." }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 flex justify-between items-center transition-colors">
+                                    <div key={idx} className="bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl border-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 transition-colors">
                                         <span className="text-sm text-slate-700 dark:text-slate-300">{item.data}</span>
-                                        <span className="text-xs font-bold text-primary bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full text-right ml-4">{item.period}</span>
+                                        <span className="text-xs font-bold text-primary bg-primary/10 dark:bg-primary/20 px-3 py-1 rounded-full">{item.period}</span>
                                     </div>
                                 ))}
                             </div>
                         </section>
 
-                        {/* Section 7: Data Security - Medical Focus */}
-                        <section>
+                        {/* Section 7: Data Security */}
+                        <section className="bg-slate-100 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border-0 transition-colors">
                             <div className="flex items-center gap-3 mb-4">
                                 <ShieldCheck className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">7. Medical Data Security Measures</h2>
@@ -283,7 +321,7 @@ export default function PrivacyPolicy() {
                                     "Incident response plan with ODPC notification within 72 hours of a breach",
                                     "Secure medical data backup and disaster recovery protocols"
                                 ].map((item, idx) => (
-                                    <div key={idx} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors">
+                                    <div key={idx} className="flex items-start gap-2 bg-white dark:bg-zinc-950 p-3 rounded-xl border-0 transition-colors">
                                         <Lock className="w-3 h-3 text-primary mt-1 flex-shrink-0" />
                                         <span className="text-sm">{item}</span>
                                     </div>
@@ -291,19 +329,19 @@ export default function PrivacyPolicy() {
                             </div>
                         </section>
 
-                        {/* Section 8: Minors - Medical Focus */}
+                        {/* Section 8: Minors */}
                         <section>
                             <div className="flex items-center gap-3 mb-4">
                                 <Shield className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">8. Children's Medical Privacy</h2>
                             </div>
                             <p>
-                                HommieCare Medical provides healthcare services for patients of all ages. For patients under the age of <strong>18 years</strong>, we require parental or guardian consent before collecting or processing any medical information. In accordance with the Children Act, 2022 (Kenya), we maintain strict protocols for handling pediatric medical data with the highest level of confidentiality and care.
+                                HommieCare Medical provides healthcare services for patients of all ages. For patients under the age of <strong className="text-slate-800 dark:text-white">18 years</strong>, we require parental or guardian consent before collecting or processing any medical information. In accordance with the Children Act, 2022 (Kenya), we maintain strict protocols for handling pediatric medical data with the highest level of confidentiality and care.
                             </p>
                         </section>
 
-                        {/* Section 9: Changes to Policy */}
-                        <section>
+                        {/* Section 9: Changes */}
+                        <section className="bg-slate-100 dark:bg-slate-800 rounded-3xl p-6 md:p-8 border-0 transition-colors">
                             <div className="flex items-center gap-3 mb-4">
                                 <FileText className="text-primary w-6 h-6 flex-shrink-0" />
                                 <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">9. Changes to This Privacy Policy</h2>
@@ -313,14 +351,14 @@ export default function PrivacyPolicy() {
                             </p>
                         </section>
 
-                        {/* Section 10: Contact - Medical Focus */}
-                        <section className="bg-white dark:bg-gray-950 rounded-[2rem] p-6 md:p-10 text-center border dark:border-slate-800 shadow-lg transition-colors">
+                        {/* Section 10: Contact */}
+                        <section className="bg-white dark:bg-zinc-950 rounded-3xl p-6 md:p-10 text-center border border-slate-200 dark:border-slate-800">
                             <Stethoscope className="w-12 h-12 mx-auto mb-6 text-primary" />
                             <h2 className="text-2xl font-black uppercase tracking-tighter mb-4 text-slate-900 dark:text-white">10. Contact Our Medical Data Protection Officer</h2>
                             <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
                                 If you wish to exercise your rights, have questions about your medical data, or wish to file a complaint regarding your privacy, please contact our designated Data Protection Officer:
                             </p>
-                            <div className="inline-block bg-slate-50 dark:bg-slate-800 px-8 py-6 rounded-2xl border border-slate-100 dark:border-slate-700">
+                            <div className="inline-block bg-slate-100 dark:bg-slate-800 px-8 py-6 rounded-2xl border-0">
                                 <div className="flex items-center gap-2 justify-center mb-2">
                                     <Mail className="w-4 h-4 text-primary" />
                                     <p className="font-bold text-slate-900 dark:text-white text-lg">hommiegocare@gmail.com</p>
@@ -337,15 +375,20 @@ export default function PrivacyPolicy() {
                             </div>
                             <p className="text-xs text-slate-400 dark:text-slate-500 mt-6">
                                 You may also lodge a complaint with the Office of the Data Protection Commissioner at:<br />
-                                <strong>info@odpc.go.ke</strong> | <strong>www.odpc.go.ke</strong>
+                                <strong className="text-slate-700 dark:text-slate-300">info@odpc.go.ke</strong> | <strong className="text-slate-700 dark:text-slate-300">www.odpc.go.ke</strong>
                             </p>
                         </section>
 
                         {/* Footer */}
-                        <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500 text-sm">
+                        <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center text-slate-400 dark:text-slate-500 text-sm">
                             <div className="flex items-center justify-center gap-2 mb-3">
                                 <Heart className="w-4 h-4 text-rose-400" />
                                 <p>© {new Date().getFullYear()} HommieCare Medical. Registered in the Republic of Kenya. All Rights Reserved.</p>
+                                {currentWorkspace && (
+                                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full ml-2">
+                                        {currentWorkspace.type}
+                                    </span>
+                                )}
                             </div>
                             <p className="font-medium text-slate-500 dark:text-slate-400">Regulated by the Data Protection Act, 2019, and the Kenya Health Act (Republic of Kenya).</p>
                             <p className="text-xs mt-2 text-slate-400 dark:text-slate-500">

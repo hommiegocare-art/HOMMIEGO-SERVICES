@@ -9,7 +9,14 @@ import {
   Loader2,
   Maximize2,
   User,
-  Info
+  Info,
+  ShieldCheck,
+  Building2,
+  Briefcase,
+  Home,
+  Users,
+  CheckCircle,
+  Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +30,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
+// In ServiceCard.tsx, update the interface
 interface ServiceCardProps {
   id: string;
   title: string;
@@ -34,6 +42,10 @@ interface ServiceCardProps {
   image: string;
   name: string;
   providerId: string;
+  providerType?: string;
+  verificationStatus?: string;
+  workspaceId?: string;
+  workspaceType?: string;
   initialIsLiked?: boolean;
   initialIsFavorited?: boolean;
   likeCount?: number;
@@ -50,6 +62,10 @@ export const ServiceCard = ({
   image,
   name,
   providerId,
+  providerType = "Independent Provider",
+  verificationStatus = "pending",
+  workspaceId,
+  workspaceType = "individual",
   initialIsLiked = false,
   initialIsFavorited = false,
   likeCount = 0,
@@ -69,6 +85,71 @@ export const ServiceCard = ({
     setIsFav(initialIsFavorited);
     setCount(likeCount);
   }, [initialIsLiked, initialIsFavorited, likeCount]);
+
+  // Get workspace icon based on type
+  const getWorkspaceIcon = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return <User className="w-3 h-3" />;
+      case 'family':
+        return <Home className="w-3 h-3" />;
+      case 'organization':
+        return <Building2 className="w-3 h-3" />;
+      case 'agency':
+        return <Briefcase className="w-3 h-3" />;
+      default:
+        return <Building2 className="w-3 h-3" />;
+    }
+  };
+
+  // Get provider type label
+  const getProviderTypeLabel = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return 'Independent Provider';
+      case 'family':
+        return 'Family Care';
+      case 'organization':
+        return 'Healthcare Organization';
+      case 'agency':
+        return 'Healthcare Agency';
+      default:
+        return 'Healthcare Provider';
+    }
+  };
+
+  // Get verification badge
+  const getVerificationBadge = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return {
+          icon: <ShieldCheck className="w-3 h-3" />,
+          label: 'Verified',
+          className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+        };
+      case 'pending':
+        return {
+          icon: <Clock className="w-3 h-3" />,
+          label: 'Pending Verification',
+          className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+        };
+      case 'rejected':
+        return {
+          icon: <ShieldCheck className="w-3 h-3" />,
+          label: 'Verification Failed',
+          className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+        };
+      default:
+        return {
+          icon: <Clock className="w-3 h-3" />,
+          label: 'Unverified',
+          className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+        };
+    }
+  };
+
+  const verification = getVerificationBadge(verificationStatus);
+  const isVerified = verificationStatus === 'verified';
 
   const handleToggleLike = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -246,6 +327,18 @@ export const ServiceCard = ({
                   KES {price.toLocaleString()}
                 </span>
               </div>
+
+              {/* Verification Badge */}
+              <div className={`absolute bottom-3 left-3 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${verification.className}`}>
+                {verification.icon}
+                {verification.label}
+              </div>
+
+              {/* Provider Type Badge */}
+              <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-black/60 backdrop-blur-sm text-white">
+                {getWorkspaceIcon(workspaceType)}
+                <span>{getProviderTypeLabel(workspaceType)}</span>
+              </div>
             </div>
           </DialogTrigger>
 
@@ -356,23 +449,36 @@ export const ServiceCard = ({
           )}
         </div>
 
-        <p className="text-xs text-slate-400 dark:text-zinc-500 mt-2 italic">
-          by{" "}
-          <button
-            onClick={handleProfileClick}
-            className="text-primary hover:underline font-medium hover:text-primary/80 transition-colors focus:outline-none"
-          >
-            {name}
-          </button>
-        </p>
+        {/* Provider Info with Verification */}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleProfileClick}
+              className="text-xs text-primary hover:underline font-medium hover:text-primary/80 transition-colors focus:outline-none flex items-center gap-1"
+            >
+              <User className="w-3 h-3" />
+              {name}
+            </button>
+            {isVerified && (
+              <span className="flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+                <CheckCircle className="w-3 h-3" />
+                Verified
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            {getWorkspaceIcon(workspaceType)}
+            {getProviderTypeLabel(workspaceType)}
+          </span>
+        </div>
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
         <Button
           className="w-full shadow-sm hover:shadow-md transition-shadow rounded-2xl"
-          onClick={() => navigate(`/booking/${id}`)}
+          onClick={() => navigate(`/service/${id}`)}
         >
-          More Details
+          View Details
         </Button>
       </CardFooter>
     </Card>

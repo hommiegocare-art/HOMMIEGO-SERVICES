@@ -3,26 +3,25 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner, toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, GraduationCap, Info, X } from "lucide-react"; // Added X for close button
+import { Bell, GraduationCap, Info, X } from "lucide-react";
 import { ThemeProvider } from "./components/theme-provider";
-import { Navbar } from "./components/Navbar"; // IMPORT THE NAVBAR
-import Contact from "./pages/Contact";
+import { WorkspaceProvider } from "./contexts/WorkspaceContext";
+import { Navbar } from "./components/Navbar";
+
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import ProviderDashboard from "./pages/ProviderDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+
 import ServiceDetail from "./pages/ServiceDetail";
 import Booking from "./pages/Booking";
-import Payment from "./pages/Payment";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import MyBookings from "./pages/MyBookings";
 import Ads from "./pages/Ads";
-import ProviderOnboarding from "./pages/ProviderOnboarding";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
 import { BottomNav } from "./components/BottomNav";
@@ -38,6 +37,12 @@ import Emergency from "./pages/Emergency";
 import HelpCenter from "./pages/HelpCenter";
 import MedicalProfile from "./pages/MedicalProfile";
 import Profile from "./pages/Profile";
+import Contact from "./pages/Contact";
+
+// Workspace-based dashboard redirects
+import FamilyDashboard from "./pages/FamilyDashboard";
+import OrganizationDashboard from "./pages/OrganizationDashboard";
+import AgencyDashboard from "./pages/AgencyDashboard";
 
 const queryClient = new QueryClient();
 
@@ -116,50 +121,57 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <Sonner position="top-center" expand={true} richColors closeButton />
-          <Toaster />
+          <WorkspaceProvider>
+            <Sonner position="top-center" expand={true} richColors closeButton />
+            <Toaster />
 
-          <BrowserRouter>
-            {/* ADD THE NAVBAR HERE - OUTSIDE OF ROUTES SO IT SHOWS ON ALL PAGES */}
-            <Navbar />
+            <BrowserRouter>
+              <Navbar />
 
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/dashboard/client" element={<CustomerDashboard />} />
-              <Route path="/dashboard/provider" element={<ProviderDashboard />} />
-              <Route path="/dashboard/admin" element={<AdminDashboard />} />
-              <Route path="/service/:id" element={<ServiceDetail />} />
-              <Route path="/booking/:serviceId" element={<Booking />} />
-              <Route path="/payment/:bookingId" element={<Payment />} />
-              <Route path="/booking/confirmation/:id" element={<BookingConfirmation />} />
-              <Route path="/my-bookings" element={<MyBookings />} />
-              <Route path="/ads" element={<Ads />} />
-              <Route path="/provider/onboarding" element={<ProviderOnboarding />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/about" element={<AboutUsPage />} />
-              <Route path="/edit-profile" element={<EditProfile />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/cookie-policy" element={<CookiePolicy />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/provider/services/new" element={<NewService />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/emergency" element={<Emergency />} />
-              <Route path="/help" element={<HelpCenter />} />
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/service/:id" element={<ServiceDetail />} />
+                <Route path="/about" element={<AboutUsPage />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/emergency" element={<Emergency />} />
+                <Route path="/help" element={<HelpCenter />} />
+                <Route path="/ads" element={<Ads />} />
 
-              <Route path="/medical-profile/:patientId?" element={<MedicalProfile />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="*" element={<NotFound />} />
-              {/* View profile by userId */}
-              <Route path="/profile/:userId" element={<Profile />} />
+                {/* Workspace-based Dashboard Routes */}
+                <Route path="/dashboard" element={<Navigate to="/dashboard/client" replace />} />
+                <Route path="/dashboard/client" element={<CustomerDashboard />} />
+                <Route path="/dashboard/provider" element={<ProviderDashboard />} />
+                <Route path="/dashboard/family" element={<FamilyDashboard />} />
+                <Route path="/dashboard/organization" element={<OrganizationDashboard />} />
+                <Route path="/dashboard/agency" element={<AgencyDashboard />} />
 
-              {/* View own profile (redirects to current user) */}
-              <Route path="/profile" element={<Profile />} />
-            </Routes>
-            <BottomNav />
-          </BrowserRouter>
+
+                {/* Protected Routes */}
+                <Route path="/booking/:serviceId" element={<Booking />} />
+                <Route path="/booking/confirmation/:id" element={<BookingConfirmation />} />
+                <Route path="/my-bookings" element={<MyBookings />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/edit-profile" element={<EditProfile />} />
+                <Route path="/provider/services/new" element={<NewService />} />
+                <Route path="/medical-profile/:patientId?" element={<MedicalProfile />} />
+                <Route path="/profile/:userId" element={<Profile />} />
+                <Route path="/profile" element={<Profile />} />
+
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+
+              <BottomNav />
+            </BrowserRouter>
+          </WorkspaceProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

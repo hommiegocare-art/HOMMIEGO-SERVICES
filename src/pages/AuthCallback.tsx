@@ -8,17 +8,17 @@ export default function AuthCallback() {
     const [searchParams] = useSearchParams();
     const [statusMessage, setStatusMessage] = useState("Preparing your dashboard...");
     const [progress, setProgress] = useState(0);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const handleAuth = async () => {
             try {
-                // Get role from URL
-                const role =
-                    searchParams.get("role") === "provider"
-                        ? "provider"
-                        : "client";
+                // Get role from URL (if provided)
+                const roleParam = searchParams.get("role");
+                const workspaceParam = searchParams.get("workspace") as
+                    'individual' | 'family' | 'organization' | 'agency' | null;
 
-                setProgress(20);
+                setProgress(10);
                 setStatusMessage("Verifying your identity...");
 
                 // Get logged in user
@@ -33,50 +33,168 @@ export default function AuthCallback() {
                 }
 
                 const user = session.user;
-                setProgress(50);
+                setProgress(30);
                 setStatusMessage("Setting up your profile...");
 
-                // Save/update profile
-                await supabase.from("profiles").upsert({
-                    id: user.id,
-                    email: user.email,
-                    role: role,
-                    full_name: user.user_metadata.full_name || "",
-                });
+                // Get user metadata
+                const fullName = user.user_metadata?.full_name ||
+                    user.user_metadata?.name ||
+                    user.email?.split('@')[0] ||
+                    'User';
 
-                setProgress(80);
-                setStatusMessage(
-                    role === "provider"
-                        ? "Loading your professional dashboard..."
-                        : "Loading your personalized dashboard..."
-                );
+                // 1. Check if profile exists, if not create it
+                const { data: existingProfile, error: profileCheckError } = await supabase
+                    .from("profiles")
+                    .select("id, role, current_workspace_id")
+                    .eq("id", user.id)
+                    .maybeSingle();
 
-                // Brief delay for cute animation
-                await new Promise((resolve) => setTimeout(resolve, 800));
+                if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+                    console.error('Profile check error:', profileCheckError);
+                }
+
+                setProgress(50);
+                setStatusMessage("Checking your workspace...");
+
+                // 2. If no profile exists, create one
+                if (!existingProfile) {
+                    const { error: insertError } = await supabase
+                        .from("profiles")
+                        .insert({
+                            id: user.id,
+                            email: user.email,
+                            role: roleParam === "provider" ? "provider" : "client",
+                            full_name: fullName,
+                            phone_number: user.user_metadata?.phone_number || "",
+                            city: user.user_metadata?.city || "",
+                            country: user.user_metadata?.country || "Kenya",
+                            is_active: true,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                        });
+
+                    if (insertError) {
+                        console.error('Profile insert error:', insertError);
+                        throw new Error("Failed to create profile");
+                    }
+                }
+
+                setProgress(60);
+                setStatusMessage("Loading your workspaces...");
+
+                // 3. Check if user has workspaces
+                const { data: workspaceMembers, error: workspaceError } = await supabase
+                    .from("workspace_members")
+                    .select(`
+                        workspace_id,
+                        role,
+                        workspaces!inner (
+                            id,
+                            name,
+                            type,
+                            slug,
+                            verification_status
+                        )
+                    `)
+                    .eq("user_id", user.id)
+                    .eq("status", "active");
+
+                if (workspaceError) {
+                    console.error('Workspace error:', workspaceError);
+                }
+
+                setProgress(75);
+                setStatusMessage("Finalizing setup...");
+
+                // 4. Determine where to redirect
+                const hasWorkspaces = workspaceMembers && workspaceMembers.length > 0;
+
+                if (!hasWorkspaces) {
+                    // User has no workspace → redirect to onboarding with role
+                    setProgress(90);
+                    setStatusMessage("Setting up your workspace...");
+
+                    // Store the role in localStorage for the onboarding flow
+                    const userRole = roleParam === "provider" ? "provider" : "client";
+                    localStorage.setItem('onboarding_role', userRole);
+                    localStorage.setItem('onboarding_email', user.email || '');
+                    localStorage.setItem('onboarding_full_name', fullName);
+
+                    setTimeout(() => {
+                        navigate("/auth?mode=onboarding&step=role");
+                    }, 500);
+                    return;
+                }
 
                 setProgress(100);
-                setStatusMessage(
-                    role === "provider"
-                        ? "Ready to manage your services! ✨"
-                        : "Ready to discover amazing services! ✨"
-                );
+                setStatusMessage("Ready to go! ✨");
 
-                // Redirect user after showing completion
+                // 5. User has workspaces - get the current/primary one
+                const primaryWorkspace = workspaceMembers[0];
+                const userWorkspaceType = primaryWorkspace.workspaces.type;
+
+                // Update profile with current workspace
+                await supabase
+                    .from("profiles")
+                    .update({
+                        current_workspace_id: primaryWorkspace.workspace_id
+                    })
+                    .eq("id", user.id);
+
+                // Store workspace info in localStorage for quick access
+                localStorage.setItem('currentWorkspaceId', primaryWorkspace.workspace_id);
+                localStorage.setItem('currentWorkspaceType', userWorkspaceType);
+
+                // Redirect to appropriate dashboard
                 setTimeout(() => {
-                    navigate(`/dashboard/${role}`);
+                    const dashboardPath = userWorkspaceType === 'individual'
+                        ? '/dashboard/provider'
+                        : `/dashboard/${userWorkspaceType}`;
+                    navigate(dashboardPath);
                 }, 600);
-            } catch (error) {
-                console.error(error);
+
+            } catch (error: any) {
+                console.error('Auth callback error:', error);
+                setError(error.message || "Authentication failed");
                 setStatusMessage("Something went wrong. Redirecting...");
-                setTimeout(() => navigate("/auth"), 1500);
+
+                setTimeout(() => {
+                    navigate("/auth?mode=signin");
+                }, 2000);
             }
         };
 
         handleAuth();
     }, [navigate, searchParams]);
 
-    const role = searchParams.get("role") === "provider" ? "provider" : "client";
-    const roleLabel = role === "provider" ? "Professional" : "Client";
+    // If there's an error, show it
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 md:p-10 text-center max-w-md">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-4">
+                        <ShieldCheck className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                        Authentication Error
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
+                        {error}
+                    </p>
+                    <button
+                        onClick={() => navigate("/auth")}
+                        className="w-full py-3 px-4 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors"
+                    >
+                        Return to Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Determine role for display
+    const roleParam = searchParams.get("role");
+    const roleLabel = roleParam === "provider" ? "Professional" : "Client";
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4 transition-colors duration-300">
@@ -111,7 +229,7 @@ export default function AuthCallback() {
                             Welcome to HommieCare
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 text-sm">
-                            {role === "provider"
+                            {roleParam === "provider"
                                 ? "Your professional journey starts here"
                                 : "Your service discovery starts here"}
                         </p>

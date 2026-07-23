@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { HommieLoader } from "@/components/HommieLoader";
 import {
     MapPin,
@@ -36,7 +37,20 @@ import {
     HeartHandshake,
     FileCheck,
     BadgeCheck,
-    VerifiedIcon
+    VerifiedIcon,
+    Building,
+    Home,
+    UserCircle,
+    Layers,
+    Filter,
+    ChevronDown,
+    ChevronRight,
+    Info,
+    AlertCircle,
+    TrendingUp,
+    Award as AwardIcon,
+    Target,
+    Zap
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -61,6 +75,20 @@ interface ProfileData {
     last_seen_at: string | null;
     created_at: string;
     updated_at: string;
+    current_workspace_id: string | null;
+}
+
+interface WorkspaceInfo {
+    id: string;
+    name: string;
+    type: string;
+    slug: string;
+    verification_status: string;
+    description: string | null;
+    logo_url: string | null;
+    country: string | null;
+    county: string | null;
+    city: string | null;
 }
 
 interface ServiceStats {
@@ -77,18 +105,28 @@ interface RecentService {
     cover_image: string | null;
     price: number;
     created_at: string;
+    workspace_id: string;
+    workspaces?: {
+        name: string;
+        type: string;
+        verification_status: string;
+    };
 }
 
 export default function ProfilePage() {
     const { userId } = useParams();
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { currentWorkspace, workspaces, switchWorkspace } = useWorkspace();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<ProfileData | null>(null);
+    const [userWorkspaces, setUserWorkspaces] = useState<WorkspaceInfo[]>([]);
     const [stats, setStats] = useState<ServiceStats | null>(null);
     const [recentServices, setRecentServices] = useState<RecentService[]>([]);
     const [isOwner, setIsOwner] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [selectedWorkspaceFilter, setSelectedWorkspaceFilter] = useState<string | null>(null);
+    const [showWorkspaceSelector, setShowWorkspaceSelector] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -119,18 +157,65 @@ export default function ProfilePage() {
             if (profileError) throw profileError;
             setProfile(profileData);
 
-            // 2. Fetch recent services
-            const { data: servicesData } = await supabase
+            // 2. Fetch user's workspaces
+            const { data: workspaceMembers, error: workspaceError } = await supabase
+                .from("workspace_members")
+                .select(`
+                    workspace_id,
+                    role,
+                    workspaces:workspace_id (
+                        id,
+                        name,
+                        type,
+                        slug,
+                        verification_status,
+                        description,
+                        logo_url,
+                        country,
+                        county,
+                        city
+                    )
+                `)
+                .eq("user_id", targetId)
+                .eq("status", "active");
+
+            if (!workspaceError && workspaceMembers) {
+                const wsData = workspaceMembers
+                    .map(wm => wm.workspaces)
+                    .filter(Boolean) as WorkspaceInfo[];
+                setUserWorkspaces(wsData);
+            }
+
+            // 3. Fetch recent services with workspace info
+            let servicesQuery = supabase
                 .from("services")
-                .select("id, title, cover_image, price, created_at")
+                .select(`
+                    id,
+                    title,
+                    cover_image,
+                    price,
+                    created_at,
+                    workspace_id,
+                    workspaces:workspace_id (
+                        name,
+                        type,
+                        verification_status
+                    )
+                `)
                 .eq("provider_id", targetId)
                 .eq("is_active", true)
                 .order("created_at", { ascending: false })
                 .limit(4);
 
+            // Apply workspace filter if selected
+            if (selectedWorkspaceFilter) {
+                servicesQuery = servicesQuery.eq("workspace_id", selectedWorkspaceFilter);
+            }
+
+            const { data: servicesData } = await servicesQuery;
             setRecentServices(servicesData || []);
 
-            // 3. 🔥 FAST - Get stats from service_stats table (pre-calculated!)
+            // 4. Get stats from service_stats table
             const { data: statsData, error: statsError } = await supabase
                 .from("service_stats")
                 .select(`
@@ -145,7 +230,7 @@ export default function ProfilePage() {
 
             if (statsError) throw statsError;
 
-            // 4. Calculate provider totals
+            // 5. Calculate provider totals
             const providerStats: ServiceStats = {
                 total_services: servicesData?.length || 0,
                 total_bookings: statsData?.reduce((sum, s) => sum + (s.total_bookings || 0), 0) || 0,
@@ -176,7 +261,7 @@ export default function ProfilePage() {
         } finally {
             setLoading(false);
         }
-    }, [userId, navigate, toast]);
+    }, [userId, navigate, toast, selectedWorkspaceFilter]);
 
     const getInitials = (name: string | null) => {
         if (!name) return "U";
@@ -194,6 +279,59 @@ export default function ProfilePage() {
         }
     };
 
+    const getWorkspaceIcon = (type: string) => {
+        switch (type) {
+            case 'individual':
+                return <User className="w-4 h-4" />;
+            case 'family':
+                return <Home className="w-4 h-4" />;
+            case 'organization':
+                return <Building className="w-4 h-4" />;
+            case 'agency':
+                return <Briefcase className="w-4 h-4" />;
+            default:
+                return <Building className="w-4 h-4" />;
+        }
+    };
+
+    const getWorkspaceTypeLabel = (type: string) => {
+        switch (type) {
+            case 'individual':
+                return 'Independent Provider';
+            case 'family':
+                return 'Family Workspace';
+            case 'organization':
+                return 'Healthcare Organization';
+            case 'agency':
+                return 'Healthcare Agency';
+            default:
+                return 'Healthcare Provider';
+        }
+    };
+
+    const getVerificationBadge = (status: string) => {
+        switch (status) {
+            case 'verified':
+                return {
+                    icon: <CheckCircle className="w-3 h-3" />,
+                    label: 'Verified',
+                    className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                };
+            case 'pending':
+                return {
+                    icon: <Clock className="w-3 h-3" />,
+                    label: 'Pending',
+                    className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400'
+                };
+            default:
+                return {
+                    icon: <AlertCircle className="w-3 h-3" />,
+                    label: 'Unverified',
+                    className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                };
+        }
+    };
+
     const handleEditProfile = () => {
         navigate("/edit-profile");
     };
@@ -203,6 +341,13 @@ export default function ProfilePage() {
             title: "Coming Soon",
             description: "Messaging feature will be available soon.",
         });
+    };
+
+    const handleWorkspaceSwitch = async (workspaceId: string) => {
+        await switchWorkspace(workspaceId);
+        setSelectedWorkspaceFilter(workspaceId);
+        setShowWorkspaceSelector(false);
+        fetchProfile();
     };
 
     if (loading) return <HommieLoader />;
@@ -373,7 +518,112 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* Stats Cards - Now using pre-calculated data */}
+                    {/* Workspace Section */}
+                    {userWorkspaces.length > 0 && (
+                        <div className="mb-6">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
+                                    <Building2 className="w-4 h-4 inline mr-2" />
+                                    Workspaces
+                                </h3>
+                                {userWorkspaces.length > 1 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs gap-1"
+                                        onClick={() => setShowWorkspaceSelector(!showWorkspaceSelector)}
+                                    >
+                                        {showWorkspaceSelector ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                                        {userWorkspaces.length} workspaces
+                                    </Button>
+                                )}
+                            </div>
+
+                            {showWorkspaceSelector ? (
+                                <div className="space-y-2">
+                                    {userWorkspaces.map((ws) => {
+                                        const verification = getVerificationBadge(ws.verification_status);
+                                        const isActive = currentWorkspace?.id === ws.id || selectedWorkspaceFilter === ws.id;
+                                        return (
+                                            <div
+                                                key={ws.id}
+                                                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${isActive
+                                                    ? 'bg-primary/10 dark:bg-primary/20 border border-primary/20'
+                                                    : 'bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                                    }`}
+                                                onClick={() => handleWorkspaceSwitch(ws.id)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {getWorkspaceIcon(ws.type)}
+                                                    <div>
+                                                        <p className="font-medium text-sm text-zinc-900 dark:text-white">
+                                                            {ws.name}
+                                                        </p>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                                                {getWorkspaceTypeLabel(ws.type)}
+                                                            </span>
+                                                            <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full ${verification.className}`}>
+                                                                {verification.icon}
+                                                                {verification.label}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {isActive && (
+                                                    <Badge className="bg-primary/20 text-primary text-[10px]">
+                                                        Active
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {userWorkspaces.map((ws) => {
+                                        const verification = getVerificationBadge(ws.verification_status);
+                                        const isActive = currentWorkspace?.id === ws.id || selectedWorkspaceFilter === ws.id;
+                                        return (
+                                            <Badge
+                                                key={ws.id}
+                                                className={`cursor-pointer px-3 py-1.5 rounded-full text-xs ${isActive
+                                                    ? 'bg-primary text-white hover:bg-primary/90'
+                                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                                                    }`}
+                                                onClick={() => {
+                                                    setSelectedWorkspaceFilter(ws.id);
+                                                    fetchProfile();
+                                                }}
+                                            >
+                                                <span className="flex items-center gap-1.5">
+                                                    {getWorkspaceIcon(ws.type)}
+                                                    {ws.name}
+                                                    {ws.verification_status === 'verified' && (
+                                                        <CheckCircle className="w-3 h-3 text-emerald-500" />
+                                                    )}
+                                                </span>
+                                            </Badge>
+                                        );
+                                    })}
+                                    {selectedWorkspaceFilter && (
+                                        <Badge
+                                            className="cursor-pointer px-3 py-1.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                                            onClick={() => {
+                                                setSelectedWorkspaceFilter(null);
+                                                fetchProfile();
+                                            }}
+                                        >
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                            Clear Filter
+                                        </Badge>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Stats Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
                         <Card className="border border-zinc-100 dark:border-transparent shadow-sm rounded-2xl bg-white dark:bg-zinc-900">
                             <CardContent className="p-4 text-center">
@@ -454,6 +704,14 @@ export default function ProfilePage() {
                                                         className="w-full h-full object-cover"
                                                         loading="lazy"
                                                     />
+                                                    {service.workspaces && (
+                                                        <div className="absolute top-2 left-2">
+                                                            <Badge className="bg-black/60 text-white text-[10px] backdrop-blur-sm flex items-center gap-1">
+                                                                {getWorkspaceIcon(service.workspaces.type)}
+                                                                {service.workspaces.name}
+                                                            </Badge>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <CardContent className="p-4">
                                                     <h3 className="font-bold text-zinc-900 dark:text-white line-clamp-1">
@@ -465,6 +723,19 @@ export default function ProfilePage() {
                                                     <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
                                                         {format(new Date(service.created_at), "MMM d, yyyy")}
                                                     </p>
+                                                    {service.workspaces && (
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            <Badge className={`text-[8px] px-1.5 py-0.5 ${service.workspaces.verification_status === 'verified'
+                                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400'
+                                                                }`}>
+                                                                {service.workspaces.verification_status === 'verified' ? '✓ Verified' : 'Pending'}
+                                                            </Badge>
+                                                            <span className="text-[8px] text-zinc-400 dark:text-zinc-500">
+                                                                {getWorkspaceTypeLabel(service.workspaces.type)}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </CardContent>
                                             </Card>
                                         ))}
@@ -473,6 +744,11 @@ export default function ProfilePage() {
                                     <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-100 dark:border-transparent shadow-sm">
                                         <Stethoscope className="w-12 h-12 text-zinc-300 dark:text-zinc-600 mx-auto mb-3" />
                                         <p className="text-zinc-500 dark:text-zinc-400">No services offered yet</p>
+                                        {selectedWorkspaceFilter && (
+                                            <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
+                                                Try clearing the workspace filter
+                                            </p>
+                                        )}
                                     </div>
                                 )
                             ) : (
@@ -533,7 +809,7 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* Edit Profile Button - For Owner */}
+                    {/* Edit Profile Button */}
                     {isOwner && (
                         <div className="mt-6">
                             <Button

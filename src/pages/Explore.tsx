@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSearchParams } from "react-router-dom";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
   Search, SlidersHorizontal, MapPin, X, Bookmark, GraduationCap, FileText, FileCheck, Pill, Stethoscope,
   Heart, HeartHandshake, Users, PhoneCall, Mic, ShoppingBag, Package, Calendar, Sparkles, Settings, AlertCircle,
   Camera, Video, Wrench, Hammer, Key, Building2, Bug, Droplets, Flame, Fan, Shirt, Dumbbell, Paintbrush, Brush,
   PartyPopper, Trees, Dog, Utensils, Car, Truck, Wifi, Zap, Briefcase, Baby, MessageSquare, ShieldCheck,
-  Clock, Award, Target, Globe, Phone, Mail, MapPin as MapPinIcon
+  Clock, Award, Target, Globe, Phone, Mail, MapPin as MapPinIcon, Building, Home, User, CheckCircle,
+  Filter, Layers, LayoutGrid, List, Star, TrendingUp, Zap as ZapIcon, Eye, EyeOff, Crown, Gem, Rocket
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -35,12 +37,15 @@ interface Service {
   is_liked_by_user?: boolean;
   is_favorited_by_user?: boolean;
   provider_id: string;
+  workspace_id: string;
   categories: { id: string; name: string; slug: string; icon?: string | null } | null;
   profiles: { full_name: string | null; city: string | null; country: string | null } | null;
+  workspaces: { name: string; type: string; verification_status: string } | null;
   provider_profiles?: {
     average_rating: number | null;
     total_reviews: number | null;
     business_name: string | null;
+    professional_title: string | null;
   };
   service_ratings?: {
     average_rating: number;
@@ -54,17 +59,25 @@ export default function Explore() {
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterByWorkspace, setFilterByWorkspace] = useState<string | null>(null);
+  const [filterByType, setFilterByType] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const { currentWorkspace, workspaces } = useWorkspace();
 
   const iconMap: Record<string, any> = {
     GraduationCap, FileText, FileCheck, Pill, Stethoscope, Heart, HeartHandshake, Users, PhoneCall,
     Mic, MessageSquare, ShoppingBag, Package, Calendar, Sparkles, Settings, AlertCircle, Camera, Video, Wrench,
     Hammer, Key, Building2, Bug, Droplets, Flame, Fan, Shirt, Dumbbell, Paintbrush, Brush, PartyPopper, Trees, Dog, Utensils,
-    Car, Truck, Wifi, Zap, Briefcase, Baby, ShieldCheck, Clock, Award, Target, Globe, Phone, Mail, MapPinIcon
+    Car, Truck, Wifi, Zap, Briefcase, Baby, ShieldCheck, Clock, Award, Target, Globe, Phone, Mail, MapPinIcon,
+    Building, Home, User, CheckCircle, Filter, Layers, LayoutGrid, List, Star, TrendingUp, ZapIcon, Eye, EyeOff,
+    Crown, Gem, Rocket
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParam = searchParams.get("filter");
   const categoryParam = searchParams.get("category");
+  const workspaceParam = searchParams.get("workspace");
 
   // AUTO SELECT CATEGORY FROM URL
   useEffect(() => {
@@ -78,6 +91,18 @@ export default function Explore() {
       }
     }
   }, [categoryParam, categories]);
+
+  // Auto select workspace from URL
+  useEffect(() => {
+    if (workspaceParam && workspaces.length > 0) {
+      const foundWorkspace = workspaces.find(
+        (ws) => ws.id === workspaceParam
+      );
+      if (foundWorkspace) {
+        setFilterByWorkspace(foundWorkspace.id);
+      }
+    }
+  }, [workspaceParam, workspaces]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -96,29 +121,37 @@ export default function Explore() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1️⃣ Get all services with basic data
+      // 1️⃣ Get all services with workspace data
       const { data: servicesData, error: sError } = await supabase
         .from("services")
         .select(`
           *,
           categories(id, name, slug, icon),
-          profiles:profiles!services_provider_id_fkey(full_name, city, country)
+          profiles:profiles!services_provider_id_fkey(full_name, city, country),
+          workspaces:workspaces!services_workspace_id_fkey(id, name, type, verification_status)
         `)
         .eq("is_active", true);
 
       if (sError) throw sError;
 
-      // 2️⃣ Get ALL reviews to calculate ratings
+      // 2️⃣ Get provider profiles
+      const providerIds = servicesData?.map(s => s.provider_id).filter(Boolean) || [];
+      const { data: providerProfiles } = await supabase
+        .from("provider_profiles")
+        .select("user_id, average_rating, total_reviews, business_name, professional_title")
+        .in("user_id", providerIds);
+
+      // 3️⃣ Get ALL reviews to calculate ratings
       const { data: reviewsData } = await supabase
         .from("reviews")
         .select("service_id, rating");
 
-      // 3️⃣ Get ALL likes to count them
+      // 4️⃣ Get ALL likes to count them
       const { data: allLikes } = await supabase
         .from("service_likes")
         .select("service_id");
 
-      // 4️⃣ If user is logged in, get THEIR likes and favorites
+      // 5️⃣ If user is logged in, get THEIR likes and favorites
       let userLikes: string[] = [];
       let userFavorites: string[] = [];
 
@@ -132,7 +165,7 @@ export default function Explore() {
         userFavorites = favData?.map(f => f.service_id) || [];
       }
 
-      // 5️⃣ Build maps for quick lookup
+      // 6️⃣ Build maps for quick lookup
       const likeCountMap: Record<string, number> = {};
       if (allLikes) {
         allLikes.forEach((like: any) => {
@@ -155,11 +188,12 @@ export default function Explore() {
         });
       }
 
-      // 6️⃣ Merge all data
+      // 7️⃣ Merge all data
       const merged = servicesData?.map((service: any) => {
         const rating = reviewMap[service.id] || { avg: 0, count: 0 };
         const isLiked = userLikes.includes(service.id);
         const isFavorited = userFavorites.includes(service.id);
+        const providerProfile = providerProfiles?.find(p => p.user_id === service.provider_id);
 
         return {
           ...service,
@@ -167,7 +201,8 @@ export default function Explore() {
           calculated_count: rating.count,
           like_count: likeCountMap[service.id] || 0,
           is_liked_by_user: isLiked,
-          is_favorited_by_user: isFavorited
+          is_favorited_by_user: isFavorited,
+          provider_profiles: providerProfile || null
         };
       });
 
@@ -180,6 +215,38 @@ export default function Explore() {
     }
   }, []);
 
+  // Get provider type label
+  const getProviderTypeLabel = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return 'Independent Provider';
+      case 'family':
+        return 'Family Care';
+      case 'organization':
+        return 'Healthcare Organization';
+      case 'agency':
+        return 'Healthcare Agency';
+      default:
+        return 'Healthcare Provider';
+    }
+  };
+
+  // Get workspace icon
+  const getWorkspaceIcon = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return <User className="w-3 h-3" />;
+      case 'family':
+        return <Home className="w-3 h-3" />;
+      case 'organization':
+        return <Building className="w-3 h-3" />;
+      case 'agency':
+        return <Briefcase className="w-3 h-3" />;
+      default:
+        return <Building className="w-3 h-3" />;
+    }
+  };
+
   const filteredServices = useMemo(() => {
     return services.filter((s) => {
       const query = searchQuery.toLowerCase();
@@ -188,14 +255,25 @@ export default function Explore() {
         s.title?.toLowerCase().includes(query) ||
         s.location_name?.toLowerCase().includes(query) ||
         s.short_description?.toLowerCase().includes(query) ||
-        s.categories?.name?.toLowerCase().includes(query);
+        s.categories?.name?.toLowerCase().includes(query) ||
+        s.workspaces?.name?.toLowerCase().includes(query);
 
       const matchesCategory = !selectedCategory || s.categories?.id === selectedCategory;
       const matchesFavorites = filterParam === "favorites" ? s.is_favorited_by_user : true;
+      const matchesWorkspace = !filterByWorkspace || s.workspace_id === filterByWorkspace;
+      const matchesType = !filterByType || s.workspaces?.type === filterByType;
 
-      return matchesSearch && matchesCategory && matchesFavorites;
+      return matchesSearch && matchesCategory && matchesFavorites && matchesWorkspace && matchesType;
     });
-  }, [services, searchQuery, selectedCategory, filterParam]);
+  }, [services, searchQuery, selectedCategory, filterParam, filterByWorkspace, filterByType]);
+
+  // Workspace filter options
+  const workspaceTypeOptions = [
+    { value: 'individual', label: 'Independent Providers' },
+    { value: 'family', label: 'Family Care' },
+    { value: 'organization', label: 'Healthcare Organizations' },
+    { value: 'agency', label: 'Healthcare Agencies' }
+  ];
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 overflow-x-hidden">
@@ -206,14 +284,14 @@ export default function Explore() {
         <div className="w-full px-4 md:px-6 max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 md:px-4 py-1.5 md:py-2 rounded-full mb-3 md:mb-4">
             <HeartHandshake className="w-3 h-3 md:w-4 md:h-4" />
-            <span className="text-[10px] md:text-sm font-semibold whitespace-nowrap">Professional Home Nursing & Healthcare Services</span>
+            <span className="text-[10px] md:text-sm font-semibold whitespace-nowrap">Professional Home Healthcare Services</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-white mb-2 md:mb-4 leading-tight">
             Find the Perfect <span className="text-primary">Healthcare Professional</span>
           </h1>
           <p className="text-sm sm:text-base md:text-lg text-zinc-600 dark:text-zinc-300 mb-6 md:mb-8 max-w-xl mx-auto px-2">
-            Browse through licensed nurses and healthcare providers offering compassionate
+            Browse through licensed healthcare providers offering compassionate
             medical care at your doorstep. Quality healthcare, delivered to you.
           </p>
 
@@ -232,7 +310,7 @@ export default function Explore() {
                 focus-visible:ring-primary
                 text-sm md:text-lg
               "
-              placeholder="Find nursing services, medication administration, elderly care..."
+              placeholder="Find healthcare services, providers, or locations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -251,7 +329,7 @@ export default function Explore() {
             </Badge>
             <Badge className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-transparent px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 rounded-full">
               <ShieldCheck className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 md:mr-1.5 text-primary" />
-              Licensed Nurses
+              Licensed Providers
             </Badge>
             <Badge className="bg-white dark:bg-zinc-800 border-zinc-200 dark:border-transparent px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 rounded-full">
               <Heart className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 md:mr-1.5 text-primary" />
@@ -269,8 +347,13 @@ export default function Explore() {
         {/* Categories Horizontal Scroll */}
         <div className="flex items-center gap-2 md:gap-4 mb-6 md:mb-10 overflow-x-auto pb-3 md:pb-4 no-scrollbar">
           <Button
-            variant={selectedCategory === null ? "default" : "outline"}
-            onClick={() => setSelectedCategory(null)}
+            variant={selectedCategory === null && filterByWorkspace === null && filterByType === null ? "default" : "outline"}
+            onClick={() => {
+              setSelectedCategory(null);
+              setFilterByWorkspace(null);
+              setFilterByType(null);
+              setSearchParams({});
+            }}
             className="rounded-full px-4 md:px-6 whitespace-nowrap text-xs md:text-sm h-8 md:h-10"
           >
             All Services
@@ -281,9 +364,7 @@ export default function Explore() {
               variant={selectedCategory === cat.id ? "default" : "outline"}
               onClick={() => {
                 setSelectedCategory(cat.id);
-                setSearchParams({
-                  category: cat.slug,
-                });
+                setSearchParams({ category: cat.slug });
               }}
               className="
                 rounded-full px-4 md:px-6 py-1.5 md:py-2.5 whitespace-nowrap gap-1.5 md:gap-2
@@ -301,6 +382,66 @@ export default function Explore() {
               })()}
               {cat.name}
             </Button>
+          ))}
+        </div>
+
+        {/* Workspace Filters - Show if user has workspaces */}
+        {workspaces.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6">
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+              Your Workspaces:
+            </span>
+            {workspaces.map((ws) => (
+              <Badge
+                key={ws.id}
+                className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs transition-all duration-300 ${filterByWorkspace === ws.id
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                  }`}
+                onClick={() => {
+                  if (filterByWorkspace === ws.id) {
+                    setFilterByWorkspace(null);
+                    setSearchParams({});
+                  } else {
+                    setFilterByWorkspace(ws.id);
+                    setSearchParams({ workspace: ws.id });
+                  }
+                }}
+              >
+                <span className="flex items-center gap-1.5">
+                  {getWorkspaceIcon(ws.type)}
+                  {ws.name}
+                  {ws.verification_status === 'verified' && (
+                    <CheckCircle className="w-3 h-3 text-emerald-500" />
+                  )}
+                </span>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Workspace Type Filters */}
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6">
+          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Provider Type:
+          </span>
+          {workspaceTypeOptions.map((type) => (
+            <Badge
+              key={type.value}
+              className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs transition-all duration-300 ${filterByType === type.value
+                ? 'bg-primary text-white hover:bg-primary/90'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              onClick={() => {
+                if (filterByType === type.value) {
+                  setFilterByType(null);
+                } else {
+                  setFilterByType(type.value);
+                }
+              }}
+            >
+              {type.label}
+            </Badge>
           ))}
         </div>
 
@@ -347,13 +488,43 @@ export default function Explore() {
                 </Badge>
               )}
 
-              {(filterParam === "favorites" || selectedCategory) && (
+              {filterByWorkspace && (
+                <Badge className="bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border-blue-100 dark:border-blue-800 transition-colors gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-full border shadow-sm animate-in fade-in slide-in-from-left-2 text-[10px] md:text-xs">
+                  {getWorkspaceIcon(workspaces.find(w => w.id === filterByWorkspace)?.type || '')}
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">
+                    {workspaces.find(w => w.id === filterByWorkspace)?.name || "Workspace"}
+                  </span>
+                  <X
+                    className="w-3 h-3 md:w-3.5 md:h-3.5 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/50 rounded-full transition-colors"
+                    onClick={() => {
+                      setFilterByWorkspace(null);
+                      setSearchParams({});
+                    }}
+                  />
+                </Badge>
+              )}
+
+              {filterByType && (
+                <Badge className="bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400 border-purple-100 dark:border-purple-800 transition-colors gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-full border shadow-sm animate-in fade-in slide-in-from-left-2 text-[10px] md:text-xs">
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">
+                    {workspaceTypeOptions.find(t => t.value === filterByType)?.label || "Type"}
+                  </span>
+                  <X
+                    className="w-3 h-3 md:w-3.5 md:h-3.5 cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800/50 rounded-full transition-colors"
+                    onClick={() => setFilterByType(null)}
+                  />
+                </Badge>
+              )}
+
+              {(filterParam === "favorites" || selectedCategory || filterByWorkspace || filterByType) && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-6 md:h-8 px-1.5 md:px-2 text-[8px] md:text-[10px] font-bold text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white uppercase tracking-tighter"
                   onClick={() => {
                     setSelectedCategory(null);
+                    setFilterByWorkspace(null);
+                    setFilterByType(null);
                     setSearchParams({});
                   }}
                 >
@@ -375,9 +546,10 @@ export default function Explore() {
               shadow-sm transition-all font-semibold
               text-xs md:text-sm
             "
+            onClick={() => setShowFilters(!showFilters)}
           >
             <SlidersHorizontal className="w-3 h-3 md:w-4 md:h-4 text-zinc-400 dark:text-zinc-500" />
-            Sort & Filters
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
           </Button>
         </div>
 
@@ -409,6 +581,10 @@ export default function Explore() {
                 image={service.cover_image || "https://images.unsplash.com/photo-1584515933487-779824d29309?w=800"}
                 name={service.provider_profiles?.business_name || service.profiles?.full_name || "Healthcare Provider"}
                 providerId={service.provider_id}
+                providerType={service.workspaces?.type || 'individual'}
+                verificationStatus={service.workspaces?.verification_status || 'pending'}
+                workspaceType={service.workspaces?.type || 'individual'}
+                workspaceId={service.workspace_id}
               />
             ))}
           </div>
@@ -429,6 +605,9 @@ export default function Explore() {
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedCategory(null);
+                  setFilterByWorkspace(null);
+                  setFilterByType(null);
+                  setSearchParams({});
                 }}
               >
                 Clear all filters
@@ -464,7 +643,7 @@ export default function Explore() {
               <div className="flex gap-4 md:gap-6">
                 <div className="text-center">
                   <div className="font-bold text-primary text-lg md:text-2xl">100%</div>
-                  <div className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400">Verified Nurses</div>
+                  <div className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400">Verified Providers</div>
                 </div>
                 <div className="w-px bg-zinc-200 dark:bg-zinc-700" />
                 <div className="text-center">
