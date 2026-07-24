@@ -19,7 +19,6 @@ import ProviderDashboard from "./pages/ProviderDashboard";
 
 import ServiceDetail from "./pages/ServiceDetail";
 import Booking from "./pages/Booking";
-import BookingConfirmation from "./pages/BookingConfirmation";
 import MyBookings from "./pages/MyBookings";
 import Ads from "./pages/Ads";
 import NotFound from "./pages/NotFound";
@@ -153,10 +152,8 @@ const App = () => {
                 <Route path="/dashboard/organization" element={<OrganizationDashboard />} />
                 <Route path="/dashboard/agency" element={<AgencyDashboard />} />
 
-
                 {/* Protected Routes */}
                 <Route path="/booking/:serviceId" element={<Booking />} />
-                <Route path="/booking/confirmation/:id" element={<BookingConfirmation />} />
                 <Route path="/my-bookings" element={<MyBookings />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/edit-profile" element={<EditProfile />} />
