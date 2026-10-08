@@ -1,184 +1,245 @@
-import { useEffect, useState, useRef } from "react";
+// src/pages/Notifications.tsx
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    Bell,
+    CalendarCheck,
+    CreditCard,
+    Users,
+    Star,
+    Info,
+    CheckCheck,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Bell, ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
-import { HommieLoader } from "@/components/HommieLoader";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner"; // Use sonner for popups
+import { useSession } from "@/hooks/useSession";
+import type { Notification } from "@/types/db";
 
-interface Notification {
-  id: string;
-  user_id: string | null;
-  title: string;
-  body: string;
-  is_read: boolean;
-  created_at: string;
+type NotificationType = "booking" | "payment" | "connection" | "review" | "system";
+
+function iconFor(type: string | null) {
+    switch (type) {
+        case "booking":
+            return CalendarCheck;
+        case "payment":
+            return CreditCard;
+        case "connection":
+            return Users;
+        case "review":
+            return Star;
+        default:
+            return Info;
+    }
+}
+
+function groupByDay(items: Notification[]): Array<[string, Notification[]]> {
+    const groups = new Map<string, Notification[]>();
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    for (const n of items) {
+        const d = new Date(n.created_at);
+        let label: string;
+        if (d.toDateString() === today.toDateString()) label = "Today";
+        else if (d.toDateString() === yesterday.toDateString()) label = "Yesterday";
+        else label = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+        const arr = groups.get(label) ?? [];
+        arr.push(n);
+        groups.set(label, arr);
+    }
+    return Array.from(groups.entries());
 }
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+    const { user } = useSession();
+    const qc = useQueryClient();
 
-  // Reference for the audio
-  const audioPlayer = useRef<HTMLAudioElement | null>(null);
+    const { data: rows = [], isLoading } = useQuery({
+        queryKey: ["notifications", "list", user?.id],
+        enabled: !!user,
+        staleTime: 15_000,
+        queryFn: async (): Promise<Notification[]> => {
+            const { data, error } = await supabase
+                .from("notifications")
+                .select("*")
+                .eq("user_id", user!.id)
+                .order("created_at", { ascending: false })
+                .limit(50);
+            if (error) throw error;
+            return (data ?? []) as Notification[];
+        },
+    });
 
-  useEffect(() => {
-    // 1. Initialize Audio
-    audioPlayer.current = new Audio("/sound.mp3");
-    // This helps "prime" the audio for the browser
-    audioPlayer.current.load();
+    const markOne = useMutation({
+        mutationFn: async (id: string) => {
+            const { error } = await supabase
+                .from("notifications")
+                .update({ is_read: true })
+                .eq("id", id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["notifications"] });
+        },
+    });
 
-    fetchNotifications();
+    const markAll = useMutation({
+        mutationFn: async () => {
+            const { error } = await supabase
+                .from("notifications")
+                .update({ is_read: true })
+                .eq("user_id", user!.id)
+                .eq("is_read", false);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["notifications"] });
+        },
+    });
 
-    // 2. Setup Realtime Listener
-    console.log("Realtime: Listener starting...");
-    const channel = supabase
-      .channel('notif-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
-          console.log("Realtime: New data received!", payload);
-          handleNewIncomingNotification(payload.new as Notification);
-        }
-      )
-      .subscribe((status) => {
-        console.log("Realtime: Status is", status);
-      });
+    const grouped = useMemo(() => groupByDay(rows), [rows]);
+    const unreadCount = rows.filter((r) => !r.is_read).length;
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function handleNewIncomingNotification(newNotif: Notification) {
-    const { data: { session } } = await supabase.auth.getSession();
-    const currentUserId = session?.user.id;
-
-    // Only play if global (null) or matches current user
-    if (!newNotif.user_id || newNotif.user_id === currentUserId) {
-      console.log("Realtime: Matches user, attempting to play sound...");
-
-      // Update UI immediately
-      setNotifications(prev => [newNotif, ...prev]);
-
-      // TRY TO PLAY SOUND
-      if (audioPlayer.current) {
-        audioPlayer.current.play().then(() => {
-          console.log("Sound: Played successfully!");
-        }).catch(error => {
-          console.error("Sound: Browser blocked autoplay. Tap the screen once!", error);
-          // Fallback: show a toast so the user at least sees it
-          toast.success(newNotif.title, { description: newNotif.body });
-        });
-      }
-    }
-  }
-
-  async function fetchNotifications() {
-    try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("*")
-        .or(`user_id.eq.${session.user.id},user_id.is.null`)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setNotifications(data || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function markAsRead(id: string) {
-    const { error } = await supabase
-      .from("notifications")
-      .update({ is_read: true })
-      .eq("id", id);
-
-    if (!error) {
-      setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-      );
-    }
-  }
-
-  if (loading) return <HommieLoader />;
-
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-24 transition-colors duration-300">
-      <div className="bg-white dark:bg-gray-950 border-b dark:border-slate-800 sticky top-0 z-10 transition-colors duration-300">
-        <div className="container max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="dark:hover:bg-slate-800">
-              <ArrowLeft className="w-5 h-5 dark:text-slate-300" />
-            </Button>
-            <h1 className="text-xl font-black text-[#0B1623] dark:text-white">Notifications</h1>
-          </div>
-          {notifications.some(n => !n.is_read) && (
-            <Badge variant="destructive" className="animate-pulse">New</Badge>
-          )}
-        </div>
-      </div>
-
-      <div className="container max-w-2xl mx-auto px-4 py-6">
-        {notifications.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-              <Bell className="text-slate-300 dark:text-slate-600 w-8 h-8" />
+    if (isLoading) {
+        return (
+            <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+                <div className="h-8 w-40 rounded-2xl skeleton-shimmer" />
+                <div className="h-20 rounded-2xl skeleton-shimmer" />
+                <div className="h-20 rounded-2xl skeleton-shimmer" />
+                <div className="h-20 rounded-2xl skeleton-shimmer" />
             </div>
-            <h3 className="text-lg font-bold dark:text-white">No notifications</h3>
-            <p className="text-slate-500 dark:text-slate-400">We will notify you when things happen.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {notifications.map((n) => (
-              <Card
-                key={n.id}
-                onClick={() => markAsRead(n.id)}
-                className={`p-5 border-none shadow-sm cursor-pointer transition-all ${!n.is_read
-                  ? "bg-white dark:bg-gray-950 border-l-4 border-l-red-600 shadow-md"
-                  : "bg-white/60 dark:bg-gray-950/60 opacity-80"
-                  }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`p-2 rounded-xl ${!n.is_read
-                    ? 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
-                    } transition-colors`}>
-                    <Bell className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className={`text-sm tracking-tight ${!n.is_read
-                        ? 'font-black text-slate-900 dark:text-white'
-                        : 'font-bold text-slate-600 dark:text-slate-400'
-                        }`}>
-                        {n.title}
-                      </h3>
-                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      {n.body}
-                    </p>
-                  </div>
+        );
+    }
+
+    return (
+        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-5">
+                <h1 className="text-2xl font-black tracking-tight text-foreground">
+                    Notifications
+                </h1>
+                {unreadCount > 0 && (
+                    <button
+                        onClick={() => markAll.mutate()}
+                        disabled={markAll.isPending}
+                        className="h-11 px-3 rounded-2xl text-sm font-semibold text-primary active:bg-muted transition-colors disabled:opacity-60 inline-flex items-center gap-1.5"
+                    >
+                        <CheckCheck className="w-4 h-4" />
+                        Mark all read
+                    </button>
+                )}
+            </div>
+
+            {rows.length === 0 ? (
+                <EmptyState />
+            ) : (
+                <div className="space-y-6">
+                    {grouped.map(([label, items]) => (
+                        <section key={label}>
+                            <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                                {label}
+                            </h2>
+                            <div className="space-y-2">
+                                {items.map((n) => (
+                                    <NotificationRow
+                                        key={n.id}
+                                        n={n}
+                                        onOpen={() => {
+                                            if (!n.is_read) markOne.mutate(n.id);
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    ))}
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+            )}
+        </div>
+    );
+}
+
+/* ---------- pieces ---------- */
+
+function NotificationRow({
+    n,
+    onOpen,
+}: {
+    n: Notification;
+    onOpen: () => void;
+}) {
+    const Icon = iconFor(n.type);
+    const content = (
+        <div className="flex items-start gap-3">
+            <span
+                className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center ${n.is_read ? "bg-muted" : "bg-primary/10"
+                    }`}
+            >
+                <Icon
+                    className={`w-5 h-5 ${n.is_read ? "text-muted-foreground" : "text-primary"
+                        }`}
+                />
+            </span>
+
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                    <p
+                        className={`text-sm truncate ${n.is_read ? "font-medium text-muted-foreground" : "font-bold text-foreground"
+                            }`}
+                    >
+                        {n.title}
+                    </p>
+                    {!n.is_read && (
+                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                    )}
+                </div>
+                {n.body && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {n.body}
+                    </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(n.created_at).toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
+                </p>
+            </div>
+        </div>
+    );
+
+    if (n.link) {
+        return (
+            <Link
+                to={n.link}
+                onClick={onOpen}
+                className="block rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
+            >
+                {content}
+            </Link>
+        );
+    }
+
+    return (
+        <button
+            onClick={onOpen}
+            className="w-full text-left rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
+        >
+            {content}
+        </button>
+    );
+}
+
+function EmptyState() {
+    return (
+        <div className="py-16 text-center animate-fade-in">
+            <Bell className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+                You're all caught up.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+                New activity will show up here.
+            </p>
+        </div>
+    );
 }

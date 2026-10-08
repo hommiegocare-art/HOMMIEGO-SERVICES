@@ -1,224 +1,225 @@
-import { Link, useLocation } from "react-router-dom";
+// src/components/BottomNav.tsx
+import { useEffect, useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
-  Search,
-  PlusCircle,
-  Calendar,
+  Compass,
+  Users,
+  CalendarCheck,
   User,
-  LayoutDashboard,
-  Plus,
+  Menu,
+  Bell,
+  Briefcase,
+  Wallet,
+  Award,
   Settings,
-  ShieldCheck,
-  Sparkles
+  BriefcaseBusiness,
+  X,
 } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@/hooks/useSession";
 
-export const BottomNav = () => {
+export function BottomNav() {
+  const { user } = useSession();
+  const [open, setOpen] = useState(false);
   const location = useLocation();
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
+  // Close sheet on route change
   useEffect(() => {
-    const fetchUserRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    setOpen(false);
+  }, [location.pathname]);
 
-      if (session?.user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .maybeSingle();
+  const isCaregiver = user?.role === "caregiver";
 
-        setUserRole(data?.role || null);
-      }
-    };
+  const TABS = [
+    { to: "/dashboard", label: "Home", icon: Home },
+    { to: "/explore", label: "Explore", icon: Compass },
+    { to: "/connections", label: "Connect", icon: Users },
+    isCaregiver
+      ? { to: "/jobs", label: "Jobs", icon: BriefcaseBusiness }
+      : { to: "/bookings", label: "Bookings", icon: CalendarCheck },
+  ];
 
-    fetchUserRole();
-  }, []);
-
-  // Scroll handler for bottom nav
-  useEffect(() => {
-    const controlBottomNav = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY === 0) {
-        setIsVisible(true);
-        setLastScrollY(currentScrollY);
-        return;
-      }
-
-      if (currentScrollY > lastScrollY) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', controlBottomNav, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', controlBottomNav);
-    };
-  }, [lastScrollY]);
-
-  const isActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
-
-  const getNavItems = useCallback(() => {
-    // PROVIDER NAVIGATION
-    if (userRole === "provider") {
-      return [
-        { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/provider" },
-        { icon: Search, label: "Explore", path: "/explore" },
-        { icon: PlusCircle, label: "New", path: "/provider/services/new", primary: true },
-        { icon: Calendar, label: "Bookings", path: "/my-bookings" },
-        { icon: Settings, label: "Profile", path: "/edit-profile" },
-      ];
-    }
-
-    // ADMIN NAVIGATION
-    if (userRole === "admin") {
-      return [
-        { icon: ShieldCheck, label: "Admin", path: "/dashboard/admin" },
-        { icon: Search, label: "Explore", path: "/explore" },
-        { icon: PlusCircle, label: "Ads", path: "/ads" },
-        { icon: Home, label: "Home", path: "/" },
-        { icon: User, label: "Settings", path: "/edit-profile" },
-      ];
-    }
-
-    // CUSTOMER NAVIGATION
-    return [
-      { icon: Home, label: "Home", path: "/" },
-      { icon: Search, label: "Explore", path: "/explore" },
-      { icon: PlusCircle, label: "Bookings", path: "/my-bookings" },
-      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/client" },
-      { icon: Settings, label: "Profile", path: "/edit-profile" },
-    ];
-  }, [userRole]);
-
-  const navItems = getNavItems();
+  const MORE = [
+    { to: "/notifications", label: "Notifications", icon: Bell },
+    ...(isCaregiver
+      ? [
+        { to: "/services", label: "Services", icon: Briefcase },
+        { to: "/earnings", label: "Earnings", icon: Wallet },
+        { to: "/cpd", label: "CPD", icon: Award },
+      ]
+      : []),
+    { to: user ? `/profile/${user.id}` : "/auth", label: "Profile", icon: User },
+    { to: "/settings", label: "Settings", icon: Settings },
+  ];
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 md:hidden transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
-      <nav className="
-        bg-white/95 dark:bg-zinc-950/95
-        backdrop-blur-xl
-        rounded-t-3xl rounded-b-none
-        shadow-[0_-8px_32px_rgba(0,0,0,0.08)]
-        dark:shadow-[0_-8px_32px_rgba(0,0,0,0.6)]
-        border-t-0 border-x-0 border-b-0
-        dark:border-transparent
-        transition-colors duration-300
-        overflow-hidden
-        safe-area-bottom
-      ">
-        <div className="flex items-center justify-around h-[72px] px-2">
-
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-
-            // PRIMARY CENTER BUTTON
-            if (item.primary) {
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className="flex flex-col items-center justify-center -mt-8"
-                >
-                  <div className="
-                    w-14 h-14 rounded-2xl
-                    bg-gradient-to-br from-primary to-primary/80
-                    text-white
-                    border-4 border-white dark:border-zinc-950
-                    shadow-lg shadow-primary/40
-                    flex items-center justify-center
-                    transition-all duration-300
-                    hover:scale-110
-                    active:scale-95
-                  ">
-                    <Plus className="w-7 h-7 stroke-[2.5px]" />
-                  </div>
-
-                  <span
-                    className={`text-[10px] font-bold mt-1 transition-colors
-                      ${active
-                        ? "text-primary"
-                        : "text-zinc-500 dark:text-zinc-400"
-                      }`}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            }
-
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`
-                  relative flex flex-col items-center justify-center flex-1 h-full
-                  transition-all duration-300 group
-                  ${active
-                    ? "text-primary scale-105"
-                    : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-                  }
-                `}
-              >
-                {/* Active Glow */}
-                {active && (
-                  <div className="
-                    absolute top-0
-                    w-10 h-10
-                    rounded-full
-                    bg-primary/10 dark:bg-primary/20
-                    blur-xl
-                    -z-10
-                  " />
-                )}
-
-                <Icon
-                  className={`
-                    w-5 h-5 transition-all duration-300
-                    ${active
-                      ? "stroke-[2.5px] text-primary"
-                      : "stroke-[1.5px] group-hover:scale-110 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-                    }
-                  `}
-                />
-
-                <span
-                  className={`
-                    text-[10px] font-semibold tracking-tight transition-all mt-0.5
-                    ${active
-                      ? "text-primary opacity-100"
-                      : "text-zinc-500 dark:text-zinc-400 opacity-90 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
-                    }
-                  `}
-                >
-                  {item.label}
-                </span>
-
-                {/* Active Indicator Bar */}
-                {active && (
-                  <div className="
-                    absolute -top-0.5
-                    w-6 h-1
-                    bg-primary
-                    rounded-full
-                    shadow-sm shadow-primary/50
-                  " />
-                )}
-              </Link>
-            );
-          })}
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background lg:hidden border-t border-border">
+        <div
+          className="max-w-6xl mx-auto grid grid-cols-5"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          {TABS.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={label}
+              to={to}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center gap-1 h-14 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"
+                }`
+              }
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-medium">{label}</span>
+            </NavLink>
+          ))}
+          <button
+            onClick={() => setOpen(true)}
+            className="flex flex-col items-center justify-center gap-1 h-14 transition-colors text-muted-foreground"
+            aria-label="More"
+          >
+            <Menu className="w-5 h-5" />
+            <span className="text-[10px] font-medium">More</span>
+          </button>
         </div>
       </nav>
+
+      <MoreSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        items={MORE}
+      />
+    </>
+  );
+}
+
+/* ---------- MoreSheet: bottom sheet with drag-to-dismiss ---------- */
+
+function MoreSheet({
+  open,
+  onClose,
+  items,
+}: {
+  open: boolean;
+  onClose: () => void;
+  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+}) {
+  const navigate = useNavigate();
+  const [dragY, setDragY] = useState(0);
+  const startY = useRef<number | null>(null);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset drag when opening
+  useEffect(() => {
+    if (open) setDragY(0);
+  }, [open]);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    startY.current = e.clientY;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (startY.current === null) return;
+    const dy = Math.max(0, e.clientY - startY.current);
+    setDragY(dy);
+  };
+
+  const onPointerUp = () => {
+    if (dragY > 100) {
+      onClose();
+    } else {
+      setDragY(0);
+    }
+    startY.current = null;
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 lg:hidden ${open ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      aria-hidden={!open}
+    >
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        className={`absolute inset-0 bg-foreground/40 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
+          }`}
+      />
+
+      {/* Sheet */}
+      <div
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="More"
+        className={`absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl shadow-xl transform transition-transform duration-250 ease-out ${open ? "translate-y-0" : "translate-y-full"
+          }`}
+        style={{
+          transform: open
+            ? `translateY(${dragY}px)`
+            : "translateY(100%)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        {/* Drag handle */}
+        <div className="pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none">
+          <span className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
+        </div>
+
+        <div className="flex items-center justify-between px-5 pb-3">
+          <p className="text-sm font-semibold">More</p>
+          <button
+            onClick={onClose}
+            className="h-9 w-9 rounded-full inline-flex items-center justify-center text-muted-foreground active:bg-muted"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <ul className="px-3 pb-4">
+          {items.map(({ to, label, icon: Icon }) => (
+            <li key={label}>
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate(to);
+                }}
+                className="w-full flex items-center gap-3 h-12 px-3 rounded-2xl active:bg-muted transition-colors text-left"
+              >
+                <span className="w-9 h-9 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center">
+                  <Icon className="w-4 h-4" />
+                </span>
+                <span className="text-sm font-medium">{label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
-};
+}
