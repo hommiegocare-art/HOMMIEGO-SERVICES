@@ -47,6 +47,7 @@ export default function BookingNew() {
     const [state, setState] = useState<
         | { kind: "loading" }
         | { kind: "no-connection" }
+        | { kind: "self" }
         | { kind: "ok"; caregiver: CaregiverLite }
         | { kind: "error"; message: string }
     >({ kind: "loading" });
@@ -70,15 +71,22 @@ export default function BookingNew() {
         if (!user || !caregiverId) return;
         let cancelled = false;
 
+        // Can't book yourself
+        if (caregiverId === user.id) {
+            setState({ kind: "self" });
+            return;
+        }
+
         (async () => {
-            // connection check
+            // Connection gate: the current user must be the CLIENT on an
+            // accepted connection with this caregiver.
             const { data: conn, error: connErr } = await supabase
                 .from("connections")
-                .select("id,status")
-                .or(
-                    `and(requester_id.eq.${user.id},recipient_id.eq.${caregiverId}),and(requester_id.eq.${caregiverId},recipient_id.eq.${user.id})`,
-                )
+                .select("id")
+                .eq("client_id", user.id)
+                .eq("caregiver_id", caregiverId)
                 .eq("status", "accepted")
+                .is("deleted_at", null)
                 .limit(1)
                 .maybeSingle();
 
@@ -141,9 +149,15 @@ export default function BookingNew() {
         [services, serviceId],
     );
 
-    // Recompute duration default when service changes
+    // When the user picks a different service, reset the duration to that
+    // service's default. Tracked via a ref so manual edits aren't clobbered
+    // on unrelated re-renders.
+    const lastServiceIdRef = useRef<string>("");
     useEffect(() => {
-        if (selectedService?.duration_minutes != null) {
+        if (!selectedService) return;
+        if (lastServiceIdRef.current === selectedService.id) return;
+        lastServiceIdRef.current = selectedService.id;
+        if (selectedService.duration_minutes != null) {
             setDuration(String(selectedService.duration_minutes));
         }
     }, [selectedService]);
@@ -198,6 +212,10 @@ export default function BookingNew() {
             setError(e.message);
             return;
         }
+        if (!data?.id) {
+            setError("Booking was created but no id was returned.");
+            return;
+        }
         navigate(`/bookings/${data.id}`);
     };
 
@@ -221,6 +239,20 @@ export default function BookingNew() {
                 <p className="mt-2 text-sm text-muted-foreground">
                     Open a caregiver's profile to book them.
                 </p>
+            </main>
+        );
+    }
+
+    if (state.kind === "self") {
+        return (
+            <main className="mx-auto max-w-2xl px-6 py-20 text-center">
+                <h1 className="text-2xl font-semibold">You can't book yourself</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Open another caregiver's profile to book them.
+                </p>
+                <Button asChild variant="outline" className="mt-6">
+                    <Link to="/explore">Find a caregiver</Link>
+                </Button>
             </main>
         );
     }

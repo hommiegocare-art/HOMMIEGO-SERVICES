@@ -88,14 +88,19 @@ async function fetchTarget(targetId: string, viewerId: string): Promise<Target |
 
     let existingConnection: Connection | null = null;
     if (p.role === "caregiver" || p.role === "client") {
-        const clientCol = p.role === "caregiver" ? targetId : viewerId;
-        const caregiverCol = p.role === "caregiver" ? viewerId : targetId;
+        // Determine who is the client and who is the caregiver in this pair.
+        //  - If the target is a caregiver, *I* am the client.
+        //  - If the target is a client, the caregiver is *me* (only if I'm a caregiver).
+        const clientId =
+            p.role === "caregiver" ? viewerId : targetId;
+        const caregiverId =
+            p.role === "caregiver" ? targetId : viewerId;
 
         const { data: conn } = await supabase
             .from("connections")
             .select("*")
-            .eq("client_id", clientCol)
-            .eq("caregiver_id", caregiverCol)
+            .eq("client_id", clientId)
+            .eq("caregiver_id", caregiverId)
             .is("deleted_at", null)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -131,7 +136,13 @@ export function PublicProfile({ userId }: { userId: string }) {
                 status: "pending",
                 initiated_by: user.id,
             });
-            if (error) throw error;
+            if (error) {
+                console.error("[connections] insert failed:", error);
+                throw error;
+            }
+        },
+        onError: (e) => {
+            alert(`Could not send request: ${(e as Error).message}`);
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["profile", "public", userId] });
