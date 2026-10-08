@@ -348,7 +348,7 @@ export function PublicProfile({ userId }: { userId: string }) {
                     </div>
                     {connStatus === "accepted" && (
                         <Link
-                            to={`/booking/new?caregiver=${profile.id}`}
+                            to={`/bookings/new?caregiver=${profile.id}`}
                             className="mt-3 inline-flex items-center gap-1 text-xs text-primary font-semibold h-11"
                         >
                             Book a service <ArrowRight className="w-3 h-3" />

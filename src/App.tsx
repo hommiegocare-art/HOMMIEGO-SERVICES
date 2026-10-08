@@ -32,6 +32,7 @@ import Safety from "@/pages/legal/Safety";
 import About from "@/pages/legal/About";
 import Contact from "@/pages/legal/Contact";
 import { usePresence } from "./hooks/usePresence";
+import { AppUpdateBanner } from "./components/AppUpdateBanner";
 
 const HOME_FOR: Record<"client" | "caregiver", string> = {
   client: "/dashboard",
@@ -145,6 +146,7 @@ export default function App() {
     <QueryClientProvider client={qc}>
       <TooltipProvider>
         <Toaster />
+        <AppUpdateBanner />
         <BrowserRouter>
           <Shell />
         </BrowserRouter>

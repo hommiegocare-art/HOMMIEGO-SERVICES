@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -33,10 +33,8 @@ type CaregiverLite = {
 };
 
 type ClientProfile = {
-    whatsapp_number: string | null;
     address: string | null;
 };
-
 export default function BookingNew() {
     const [params] = useSearchParams();
     const navigate = useNavigate();
@@ -116,7 +114,7 @@ export default function BookingNew() {
                     .limit(50),
                 supabase
                     .from("client_profiles")
-                    .select("whatsapp_number,address")
+                    .select("address")
                     .eq("user_id", user.id)
                     .maybeSingle(),
             ]);
@@ -129,7 +127,7 @@ export default function BookingNew() {
             setState({ kind: "ok", caregiver: cgRes.data as CaregiverLite });
             setServices((svcRes.data ?? []) as Service[]);
             setClient((cliRes.data ?? null) as ClientProfile | null);
-            if (cliRes.data?.whatsapp_number) setWhatsapp(cliRes.data.whatsapp_number);
+            if (user.phone_number) setWhatsapp(user.phone_number);
             if (cliRes.data?.address) setAddress(cliRes.data.address);
             if (svcRes.data && svcRes.data.length > 0) {
                 setServiceId(svcRes.data[0].id);
