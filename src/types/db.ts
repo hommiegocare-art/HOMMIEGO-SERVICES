@@ -20,6 +20,26 @@ export type CpdSource = "course" | "workshop" | "conference" | "self_study" | "m
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
 export type VisitType = "routine" | "emergency" | "follow_up" | "assessment" | "therapy" | "other";
 
+// ---- Medical enums ----
+export type AllergyCategory = "drug" | "food" | "environmental";
+export type AllergySeverity = "mild" | "moderate" | "severe";
+export type MedicationAdherence = "good" | "partial" | "poor";
+export type ConditionStatus = "active" | "resolved";
+export type FamilyMemberStatus = "alive" | "deceased";
+export type PregnancyOutcome = "live_birth" | "miscarriage" | "termination";
+export type PainCharacter = "sharp" | "dull" | "burning" | "aching" | "cramping" | "other";
+export type FunctionalStatus = "independent" | "assisted" | "bedbound";
+export type SmokingStatus = "never" | "former" | "current";
+export type AlcoholUse = "none" | "occasional" | "moderate" | "heavy";
+export type ExerciseFrequency = "none" | "1-2x" | "3-4x" | "5+x";
+export type ConsciousnessLevel = "alert" | "drowsy" | "confused" | "unresponsive";
+export type ImmunizationStatus = "up_to_date" | "partial" | "none" | "unknown";
+export type MaritalStatus = "single" | "married" | "divorced" | "widowed" | "separated";
+export type SexAtBirth = "male" | "female" | "intersex";
+export type DeliveryType = "vaginal" | "cesarean";
+export type AuditAction = "insert" | "update" | "delete" | "lock";
+export type AuditActorRole = "client" | "caregiver" | "admin" | "unknown";
+
 export type Profile = {
     id: string;
     role: UserRole;
@@ -358,8 +378,14 @@ export type ClientDiscoveryRow = {
     created_at: string;
 };
 
+// ============================================================
+// MEDICAL — main profile (one row per client)
+// Matches the extended client_medical_profile table
+// ============================================================
 export type ClientMedicalProfile = {
     client_id: string;
+
+    // Legacy flat fields (kept for back-compat)
     blood_type: string | null;
     allergies: string[];
     chronic_conditions: string[];
@@ -370,7 +396,450 @@ export type ClientMedicalProfile = {
     special_needs: string | null;
     preferred_hospital: string | null;
     notes: string | null;
+
+    // ---- Demographics ----
+    date_of_birth: string | null;
+    sex_at_birth: SexAtBirth | null;
+    gender_identity: string | null;
+    height_cm: number | null;
+    weight_kg: number | null;
+    national_id: string | null;
+    nhif_sha_number: string | null;
+    marital_status: MaritalStatus | null;
+    occupation: string | null;
+    next_of_kin_name: string | null;
+    next_of_kin_phone: string | null;
+    next_of_kin_relationship: string | null;
+
+    // ---- Presenting complaint (nurse intake) ----
+    presenting_complaint: string | null;
+    history_of_present_illness: string | null;
+    onset_date: string | null;
+    pain_score: number | null;
+    pain_location: string | null;
+    pain_character: PainCharacter | null;
+    functional_status: FunctionalStatus | null;
+
+    // ---- Past medical history flags ----
+    has_hypertension: boolean;
+    has_diabetes: boolean;
+    diabetes_type: string | null;
+    has_asthma: boolean;
+    has_copd: boolean;
+    has_heart_disease: boolean;
+    has_stroke: boolean;
+    has_epilepsy: boolean;
+    has_cancer: boolean;
+    cancer_details: string | null;
+    has_hiv: boolean;
+    hiv_on_art: boolean;
+    has_tb: boolean;
+    has_mental_health_condition: boolean;
+    mental_health_details: string | null;
+    has_kidney_disease: boolean;
+    has_liver_disease: boolean;
+    other_chronic_conditions: string | null;
+
+    // ---- Surgical extras ----
+    has_implant: boolean;
+    implant_details: string | null;
+    anesthesia_reaction: boolean;
+    anesthesia_reaction_details: string | null;
+
+    // ---- Medications ----
+    medication_adherence: MedicationAdherence | null;
+    on_blood_thinners: boolean;
+    on_insulin: boolean;
+    on_steroids: boolean;
+    herbal_remedies: string | null;
+
+    // ---- Allergies ----
+    drug_allergies: string[];
+    food_allergies: string[];
+    environmental_allergies: string[];
+    allergy_reactions: string | null;
+    latex_allergy: boolean;
+
+    // ---- Family history flags ----
+    family_history_diabetes: boolean;
+    family_history_hypertension: boolean;
+    family_history_heart_disease: boolean;
+    family_history_cancer: boolean;
+    family_history_mental_illness: boolean;
+    family_history_genetic_disorders: string | null;
+    family_history_details: string | null;
+
+    // ---- Social history ----
+    smoking_status: SmokingStatus | null;
+    smoking_pack_years: number | null;
+    alcohol_use: AlcoholUse | null;
+    alcohol_units_per_week: number | null;
+    recreational_drugs: string | null;
+    exercise_frequency: ExerciseFrequency | null;
+    diet_notes: string | null;
+    sleep_hours: number | null;
+    living_situation: string | null;
+    caregiver_at_home: boolean;
+    caregiver_name: string | null;
+    caregiver_phone: string | null;
+    home_safety_notes: string | null;
+    pets: string | null;
+    exposure_history: string | null;
+
+    // ---- Obstetric / gynecological ----
+    is_pregnant: boolean;
+    gravida: number | null;
+    para: number | null;
+    abortions: number | null;
+    living_children: number | null;
+    last_menstrual_period: string | null;
+    menopause: boolean;
+    contraception_method: string | null;
+    family_planning_goals: string | null;
+    desires_more_children: boolean | null;
+    planned_pregnancy_timeline: string | null;
+    cervical_screening_last: string | null;
+    breast_screening_last: string | null;
+    gynecological_issues: string | null;
+
+    // ---- Pediatric ----
+    birth_weight_kg: number | null;
+    delivery_type: DeliveryType | null;
+    gestational_age_weeks: number | null;
+    birth_complications: string | null;
+    breastfed: boolean | null;
+    breastfeeding_duration_months: number | null;
+    immunization_status: ImmunizationStatus | null;
+    developmental_milestones: string | null;
+    schooling_status: string | null;
+
+    // ---- Immunization summary ----
+    immunizations_up_to_date: boolean;
+    immunization_notes: string | null;
+    covid_vaccinated: boolean;
+    covid_doses: number | null;
+    tetanus_last: string | null;
+    flu_vaccine_last: string | null;
+
+    // ---- Review of systems (ROS) ----
+    // ---- Review of systems (ROS) ----
+    // Constitutional
+    ros_fever: boolean;
+    ros_chills: boolean;
+    ros_night_sweats: boolean;
+    ros_weight_loss: boolean;
+    ros_weight_gain: boolean;
+    ros_loss_of_appetite: boolean;
+    ros_fatigue: boolean;
+    ros_malaise: boolean;
+    ros_poor_sleep: boolean;
+    ros_dehydration: boolean;
+
+    // Cardiovascular
+    ros_chest_pain: boolean;
+    ros_palpitations: boolean;
+    ros_shortness_of_breath: boolean;
+    ros_orthopnea: boolean;
+    ros_pnd: boolean;
+    ros_leg_swelling: boolean;
+    ros_fainting: boolean;
+    ros_cold_extremities: boolean;
+
+    // Respiratory
+    ros_cough: boolean;
+    ros_productive_cough: boolean;
+    ros_hemoptysis: boolean;
+    ros_wheezing: boolean;
+    ros_night_cough: boolean;
+    ros_sore_throat: boolean;
+    ros_runny_nose: boolean;
+    ros_sneezing: boolean;
+    ros_chest_tightness: boolean;
+
+    // Gastrointestinal
+    ros_abdominal_pain: boolean;
+    ros_nausea: boolean;
+    ros_vomiting: boolean;
+    ros_vomiting_blood: boolean;
+    ros_diarrhea: boolean;
+    ros_constipation: boolean;
+    ros_blood_in_stool: boolean;
+    ros_black_stool: boolean;
+    ros_bloating: boolean;
+    ros_heartburn: boolean;
+    ros_jaundice: boolean;
+    ros_difficulty_swallowing: boolean;
+
+    // Neurological
+    ros_headache: boolean;
+    ros_dizziness: boolean;
+    ros_vertigo: boolean;
+    ros_fainting_neuro: boolean;
+    ros_seizures: boolean;
+    ros_tremor: boolean;
+    ros_numbness: boolean;
+    ros_tingling: boolean;
+    ros_weakness: boolean;
+    ros_memory_loss: boolean;
+    ros_speech_difficulty: boolean;
+    ros_gait_problems: boolean;
+
+    // HEENT
+    ros_vision_changes: boolean;
+    ros_blurred_vision: boolean;
+    ros_eye_pain: boolean;
+    ros_double_vision: boolean;
+    ros_hearing_loss: boolean;
+    ros_ear_pain: boolean;
+    ros_tinnitus: boolean;
+    ros_nosebleed: boolean;
+    ros_dental_pain: boolean;
+    ros_hoarseness: boolean;
+
+    // Genitourinary
+    ros_urinary_issues: boolean;
+    ros_dysuria: boolean;
+    ros_frequency: boolean;
+    ros_urgency: boolean;
+    ros_nocturia: boolean;
+    ros_incontinence: boolean;
+    ros_retention: boolean;
+    ros_blood_in_urine: boolean;
+    ros_discharge: boolean;
+    ros_sexual_dysfunction: boolean;
+
+    // Musculoskeletal
+    ros_joint_pain: boolean;
+    ros_joint_swelling: boolean;
+    ros_joint_stiffness: boolean;
+    ros_back_pain: boolean;
+    ros_neck_pain: boolean;
+    ros_muscle_weakness: boolean;
+    ros_muscle_cramps: boolean;
+    ros_limited_mobility: boolean;
+    ros_falls: boolean;
+    ros_bone_pain: boolean;
+
+    // Skin
+    ros_skin_rash: boolean;
+    ros_itching: boolean;
+    ros_dry_skin: boolean;
+    ros_wounds: boolean;
+    ros_ulcers: boolean;
+    ros_skin_infection: boolean;
+    ros_hair_loss: boolean;
+    ros_nail_changes: boolean;
+    ros_swelling_skin: boolean;
+    ros_skin_discoloration: boolean;
+
+    // Psychiatric
+    ros_anxiety: boolean;
+    ros_depression: boolean;
+    ros_sleep_issues: boolean;
+    ros_irritability: boolean;
+    ros_mood_swings: boolean;
+    ros_panic_attacks: boolean;
+    ros_hallucinations: boolean;
+    ros_suicidal_thoughts: boolean;
+    ros_poor_concentration: boolean;
+    ros_social_withdrawal: boolean;
+
+    ros_other: string | null;
+
+    // ---- Preferences ----
+    preferred_visit_time: string | null;
+    communication_preferences: string | null;
+    religious_preferences: string | null;
+    cultural_preferences: string | null;
+    dietary_restrictions: string | null;
+    mobility_aids: string | null;
+    hearing_aids: boolean;
+    vision_aids: boolean;
+    cognitive_impairment: boolean;
+    advance_directive: string | null;
+    dnr_status: boolean;
+    organ_donor: boolean;
+
+    // ---- Metadata / locking ----
+    patient_updated_at: string | null;
+    nurse_updated_at: string | null;
+    nurse_updated_by: string | null;
+    verified_by_nurse: boolean;
+    locked_at: string | null;
+    locked_by: string | null;
+    updated_by: string | null;
+    completion_percent: number;
+    is_locked: boolean;
+
     updated_at: string;
+};
+
+// ============================================================
+// MEDICAL — child tables (one row per item)
+// ============================================================
+
+export type MedicalAllergy = {
+    id: string;
+    client_id: string;
+    allergen: string;
+    category: AllergyCategory | null;
+    reaction: string | null;
+    severity: AllergySeverity | null;
+    confirmed: boolean;
+    notes: string | null;
+    created_at: string;
+};
+
+export type MedicalMedication = {
+    id: string;
+    client_id: string;
+    name: string;
+    dose: string | null;
+    frequency: string | null;
+    route: string | null;
+    indication: string | null;
+    started_on: string | null;
+    stopped_on: string | null;
+    prescribed_by: string | null;
+    adherence: MedicationAdherence | null;
+    notes: string | null;
+    created_at: string;
+};
+
+export type MedicalCondition = {
+    id: string;
+    client_id: string;
+    condition: string;
+    diagnosed_on: string | null;
+    severity: string | null;
+    current_status: ConditionStatus | null;
+    managed_by: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+export type MedicalSurgery = {
+    id: string;
+    client_id: string;
+    procedure: string;
+    performed_on: string | null;
+    hospital: string | null;
+    surgeon: string | null;
+    anesthesia_type: string | null;
+    complications: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+export type MedicalImmunization = {
+    id: string;
+    client_id: string;
+    vaccine: string;
+    dose_number: number | null;
+    administered_on: string | null;
+    administered_at: string | null;
+    lot_number: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+export type MedicalFamilyHistoryRow = {
+    id: string;
+    client_id: string;
+    relative: string;
+    condition: string;
+    age_at_diagnosis: number | null;
+    status: FamilyMemberStatus | null;
+    cause_of_death: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+export type MedicalPregnancy = {
+    id: string;
+    client_id: string;
+    year: number | null;
+    outcome: PregnancyOutcome | null;
+    delivery_type: DeliveryType | null;
+    complications: string | null;
+    baby_weight_kg: number | null;
+    baby_health_notes: string | null;
+    created_at: string;
+};
+
+export type MedicalVisit = {
+    id: string;
+    client_id: string;
+    caregiver_id: string | null;
+    visit_date: string;
+
+    exam_general_appearance: string | null;
+    exam_consciousness: ConsciousnessLevel | null;
+    exam_temperature_c: number | null;
+    exam_pulse_bpm: number | null;
+    exam_respiratory_rate: number | null;
+    exam_blood_pressure: string | null;
+    exam_oxygen_saturation: number | null;
+    exam_weight_kg: number | null;
+    exam_height_cm: number | null;
+    exam_head_neck: string | null;
+    exam_eyes_pupils: string | null;
+    exam_ent: string | null;
+    exam_cardiovascular: string | null;
+    exam_respiratory: string | null;
+    exam_abdominal: string | null;
+    exam_genitourinary: string | null;
+    exam_musculoskeletal: string | null;
+    exam_neurological: string | null;
+    exam_skin: string | null;
+    exam_extremities: string | null;
+    exam_lymph_nodes: string | null;
+    exam_mental_status: string | null;
+    exam_other_findings: string | null;
+
+    nursing_diagnosis: string | null;
+    care_plan: string | null;
+    goals_of_care: string | null;
+    review_date: string | null;
+    referred_to: string | null;
+    referral_reason: string | null;
+
+    nurse_name: string | null;
+    nurse_reg_number: string | null;
+    locked_at: string | null;
+    locked_by: string | null;
+
+    // Free-text ROS notes per body system (nurse's narrative)
+    ros_constitutional_notes: string | null;
+    ros_cardiovascular_notes: string | null;
+    ros_respiratory_notes: string | null;
+    ros_gastrointestinal_notes: string | null;
+    ros_neurological_notes: string | null;
+    ros_heent_notes: string | null;
+    ros_genitourinary_notes: string | null;
+    ros_musculoskeletal_notes: string | null;
+    ros_skin_notes: string | null;
+    ros_psychiatric_notes: string | null;
+    ros_other: string | null;
+
+    // Attestation timestamp (set when nurse signs)
+    declared_at: string | null;
+
+    created_at: string;
+};
+
+export type MedicalAuditEntry = {
+    id: string;
+    table_name: string;
+    row_id: string;
+    client_id: string;
+    actor_id: string;
+    actor_role: AuditActorRole;
+    action: AuditAction;
+    changed_columns: string[] | null;
+    before_data: Record<string, unknown> | null;
+    after_data: Record<string, unknown> | null;
+    created_at: string;
 };
 
 export type ClientEmergencyContact = {
@@ -394,7 +863,9 @@ export type ClientInsurance = {
     updated_at: string;
 };
 
-// Supabase Database shape (minimum needed for typed client)
+// ============================================================
+// Supabase Database shape
+// ============================================================
 export type Database = {
     public: {
         Tables: {
@@ -418,7 +889,19 @@ export type Database = {
             cpd_events: { Row: CpdEvent; Insert: Partial<CpdEvent>; Update: Partial<CpdEvent> };
             service_milestones: { Row: ServiceMilestone; Insert: Partial<ServiceMilestone>; Update: Partial<ServiceMilestone> };
             caregiver_follows: { Row: CaregiverFollow; Insert: Partial<CaregiverFollow>; Update: Partial<CaregiverFollow> };
+
+            // ---- Medical ----
             client_medical_profile: { Row: ClientMedicalProfile; Insert: Partial<ClientMedicalProfile>; Update: Partial<ClientMedicalProfile> };
+            medical_allergies: { Row: MedicalAllergy; Insert: Partial<MedicalAllergy>; Update: Partial<MedicalAllergy> };
+            medical_medications: { Row: MedicalMedication; Insert: Partial<MedicalMedication>; Update: Partial<MedicalMedication> };
+            medical_conditions: { Row: MedicalCondition; Insert: Partial<MedicalCondition>; Update: Partial<MedicalCondition> };
+            medical_surgeries: { Row: MedicalSurgery; Insert: Partial<MedicalSurgery>; Update: Partial<MedicalSurgery> };
+            medical_immunizations: { Row: MedicalImmunization; Insert: Partial<MedicalImmunization>; Update: Partial<MedicalImmunization> };
+            medical_family_history: { Row: MedicalFamilyHistoryRow; Insert: Partial<MedicalFamilyHistoryRow>; Update: Partial<MedicalFamilyHistoryRow> };
+            medical_pregnancies: { Row: MedicalPregnancy; Insert: Partial<MedicalPregnancy>; Update: Partial<MedicalPregnancy> };
+            medical_visits: { Row: MedicalVisit; Insert: Partial<MedicalVisit>; Update: Partial<MedicalVisit> };
+            medical_audit_log: { Row: MedicalAuditEntry; Insert: Partial<MedicalAuditEntry>; Update: Partial<MedicalAuditEntry> };
+
             client_emergency_contacts: { Row: ClientEmergencyContact; Insert: Partial<ClientEmergencyContact>; Update: Partial<ClientEmergencyContact> };
             client_insurance: { Row: ClientInsurance; Insert: Partial<ClientInsurance>; Update: Partial<ClientInsurance> };
         };

@@ -47,6 +47,8 @@ export function OwnProfile() {
         queryKey: ["profile", "caregiver", user?.id],
         enabled: !!user && isCaregiver,
         staleTime: 60_000,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
         queryFn: () => fetchCaregiver(user!.id),
     });
 
@@ -54,6 +56,8 @@ export function OwnProfile() {
         queryKey: ["profile", "client", user?.id],
         enabled: !!user && !isCaregiver,
         staleTime: 60_000,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
         queryFn: () => fetchClient(user!.id),
     });
 
@@ -213,6 +217,8 @@ function OwnGallery({ userId }: { userId: string }) {
     const { data } = useQuery({
         queryKey: ["own-gallery", userId],
         staleTime: 30_000,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from("profile_media")

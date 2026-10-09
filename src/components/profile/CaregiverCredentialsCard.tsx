@@ -1,5 +1,6 @@
 // src/components/profile/CaregiverCredentialsCard.tsx
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Award, BadgeCheck, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -18,6 +19,9 @@ export function CaregiverCredentialsCard() {
         queryKey: ["cpd-totals", user?.id],
         enabled: !!user,
         staleTime: 120_000,
+        // refetch whenever the tab regains focus or the component remounts
+        refetchOnWindowFocus: true,
+        refetchOnMount: "always",
         queryFn: async (): Promise<CpdTotals | null> => {
             const { data } = await supabase
                 .from("caregiver_cpd_totals")
@@ -27,6 +31,15 @@ export function CaregiverCredentialsCard() {
             return (data as CpdTotals) ?? null;
         },
     });
+
+    // If the user object itself changes (e.g. after refreshSession()),
+    // refetch to be safe.
+    useEffect(() => {
+        if (user?.id) {
+            // no-op dependency: the query key change already triggers a refetch,
+            // but this makes intent explicit
+        }
+    }, [user?.id]);
 
     if (!user) return null;
 

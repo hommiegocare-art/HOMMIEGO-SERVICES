@@ -55,7 +55,8 @@ export function ProfileMediaUploader({
                 public_id: uploaded.public_id,
             });
             if (insErr) throw insErr;
-            await qc.refetchQueries({ queryKey: ["profile-media", user.id, kind] });
+            await qc.invalidateQueries({ queryKey: ["profile-media"] });
+            await qc.invalidateQueries({ queryKey: ["own-gallery"] });
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Upload failed");
         } finally {
@@ -75,7 +76,8 @@ export function ProfileMediaUploader({
             return;
         }
         if (user) {
-            await qc.invalidateQueries({ queryKey: ["profile-media", user.id, kind] });
+            await qc.invalidateQueries({ queryKey: ["profile-media"] });
+            await qc.invalidateQueries({ queryKey: ["own-gallery"] });
         }
     };
 
@@ -83,6 +85,8 @@ export function ProfileMediaUploader({
         queryKey: ["profile-media", user?.id, kind],
         enabled: !!user,
         staleTime: 30_000,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from("profile_media")

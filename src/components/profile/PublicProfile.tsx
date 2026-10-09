@@ -11,6 +11,10 @@ import {
     Check,
     Loader2,
     ArrowRight,
+    Stethoscope,
+    FileSignature,
+    History,
+    HeartPulse,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -119,6 +123,8 @@ export function PublicProfile({ userId }: { userId: string }) {
         queryKey: ["profile", "public", userId, user?.id],
         enabled: !!user,
         staleTime: 60_000,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: true,
         queryFn: () => fetchTarget(userId, user!.id),
     });
 
@@ -145,8 +151,9 @@ export function PublicProfile({ userId }: { userId: string }) {
             alert(`Could not send request: ${(e as Error).message}`);
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["profile", "public", userId] });
+            qc.invalidateQueries({ queryKey: ["profile", "public"] });
             qc.invalidateQueries({ queryKey: ["connections"] });
+            qc.invalidateQueries({ queryKey: ["dashboard"] });
         },
     });
 
@@ -178,6 +185,13 @@ export function PublicProfile({ userId }: { userId: string }) {
             (user.role === "caregiver" && profile.role === "client"));
 
     const connStatus = existingConnection?.status;
+
+    // Caregiver viewing an accepted client — show medical entry card
+    const showMedicalEntry =
+        !!user &&
+        user.role === "caregiver" &&
+        profile.role === "client" &&
+        connStatus === "accepted";
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
@@ -357,11 +371,15 @@ export function PublicProfile({ userId }: { userId: string }) {
                 </section>
             )}
 
+            {/* MEDICAL ENTRY — caregiver viewing an accepted client */}
+            {showMedicalEntry && <MedicalEntryCard clientId={profile.id} />}
+
             {client && (
                 <div className="rounded-2xl bg-muted px-4 py-3 mb-5">
                     <p className="text-xs text-muted-foreground">
-                        This is a client profile. Their medical details are private and only
-                        shared with connected caregivers.
+                        {connStatus === "accepted"
+                            ? "You're connected. Use the links above to view the patient's history or record an examination."
+                            : "This is a client profile. Their medical details are private and only shared with connected caregivers."}
                     </p>
                 </div>
             )}
@@ -373,6 +391,79 @@ export function PublicProfile({ userId }: { userId: string }) {
                     </p>
                 </div>
             )}
+        </div>
+    );
+}
+
+// ============================================================
+// Medical entry card — for caregivers viewing accepted clients
+// ============================================================
+function MedicalEntryCard({ clientId }: { clientId: string }) {
+    return (
+        <div className="rounded-2xl bg-card border border-border px-4 py-4 mb-5">
+            <div className="flex items-center gap-2 mb-3">
+                <HeartPulse className="w-4 h-4 text-primary" />
+                <p className="text-sm font-bold text-foreground">Medical profile</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+                View the patient's history, record a new examination, or review the audit
+                trail.
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+                <Link
+                    to={`/medical/${clientId}/exam/new`}
+                    className="flex items-center gap-3 rounded-2xl bg-primary/10 px-3 py-3 active:bg-primary/20 transition-colors"
+                >
+                    <span className="h-9 w-9 rounded-xl bg-primary/15 text-primary inline-flex items-center justify-center shrink-0">
+                        <Stethoscope className="w-4 h-4" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">
+                            Start new examination
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Record vitals, exam findings, and plan
+                        </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </Link>
+
+                <Link
+                    to={`/medical/${clientId}/record`}
+                    className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-3 active:bg-secondary transition-colors"
+                >
+                    <span className="h-9 w-9 rounded-xl bg-muted text-foreground inline-flex items-center justify-center shrink-0">
+                        <FileSignature className="w-4 h-4" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">
+                            Open medical record
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Read or update the patient's full history
+                        </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </Link>
+
+                <Link
+                    to={`/medical/${clientId}/audit`}
+                    className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-3 active:bg-secondary transition-colors"
+                >
+                    <span className="h-9 w-9 rounded-xl bg-muted text-foreground inline-flex items-center justify-center shrink-0">
+                        <History className="w-4 h-4" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">
+                            Audit trail
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Every change with actor and timestamp
+                        </p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </Link>
+            </div>
         </div>
     );
 }

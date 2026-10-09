@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@/hooks/useSession";
+
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { ProfileMediaUploader } from "@/components/profile/ProfileMediaUploader";
 import {
@@ -20,7 +20,7 @@ import {
     normalizePhone,
 } from "@/lib/kenya";
 import type { CaregiverProfile, ClientProfile } from "@/types/db";
-
+import { useSession, refreshSession } from "@/hooks/useSession";
 const LANGUAGE_LABELS = KENYA_LANGUAGES.map((l) => l.label);
 
 function labelFromCode(code: string) {
@@ -114,7 +114,8 @@ export function EditProfileForm({
                 if (cErr) throw cErr;
             }
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+            await refreshSession();                              // ← rebuild the useSession cache
             qc.invalidateQueries({ queryKey: ["profile"] });
             qc.invalidateQueries({ queryKey: ["explore"] });
             onDone();
@@ -297,7 +298,14 @@ export function EditProfileForm({
                             className="h-11 rounded-2xl bg-muted border-0"
                         />
                     </Field>
-
+                    <Field label="Registration number">
+                        <div className="h-11 flex items-center rounded-2xl bg-muted px-3 text-sm text-foreground">
+                            {caregiver?.license_number || "Issued on signup"}
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                            Auto-issued by HomieCare. Cannot be changed.
+                        </p>
+                    </Field>
                     <Field label="Specialties">
                         <MultiSelect
                             options={CAREGIVER_SPECIALTIES}

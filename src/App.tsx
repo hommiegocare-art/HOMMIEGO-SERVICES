@@ -25,6 +25,8 @@ import Profile from "@/pages/Profile";
 import Notifications from "@/pages/Notifications";
 import PrivacySettings from "@/pages/PrivacySettings";
 import NotFound from "@/pages/NotFound";
+import CaregiverMedicalExam from "@/pages/CaregiverMedicalExam";
+import MedicalAuditPage from "@/pages/MedicalAuditPage";
 
 import Privacy from "@/pages/legal/Privacy";
 import Terms from "@/pages/legal/Terms";
@@ -33,6 +35,7 @@ import About from "@/pages/legal/About";
 import Contact from "@/pages/legal/Contact";
 import { usePresence } from "./hooks/usePresence";
 import { AppUpdateBanner } from "./components/AppUpdateBanner";
+import MedicalRecordPage from "./pages/MedicalRecordPage";
 
 const HOME_FOR: Record<"client" | "caregiver", string> = {
   client: "/dashboard",
@@ -115,6 +118,11 @@ function Shell() {
             <Route path="/explore" element={<Explore />} />
             <Route path="/connections" element={<Connections />} />
 
+            {/* Medical */}
+            <Route path="/medical/:clientId/exam/new" element={<CaregiverMedicalExam />} />
+            <Route path="/medical/:clientId/exam/:visitId" element={<CaregiverMedicalExam />} />
+            <Route path="/medical/:clientId/audit" element={<MedicalAuditPage />} />
+            <Route path="/medical/:clientId/record" element={<MedicalRecordPage />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/bookings/new" element={<BookingNew />} />
             <Route path="/bookings/:id" element={<BookingDetail />} />

@@ -138,7 +138,6 @@ export default function PrivacySettings() {
         </div>
     );
 }
-
 function ToggleRow({
     label,
     hint,
@@ -156,16 +155,29 @@ function ToggleRow({
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
             </div>
+
             <button
                 type="button"
+                role="switch"
+                aria-checked={on}
                 aria-label={label}
                 onClick={onChange}
-                className={`relative w-14 h-8 rounded-full transition-colors duration-150 shrink-0 ${on ? "bg-primary" : "bg-muted"
-                    }`}
+                dir="ltr"                       // ← force LTR so RTL can't flip it
+                className={[
+                    "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center",
+                    "rounded-full border border-transparent p-0.5",
+                    "transition-colors duration-200",
+                    on ? "bg-primary" : "bg-muted",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                ].join(" ")}
             >
                 <span
-                    className={`absolute top-1 w-6 h-6 rounded-full bg-background transition-transform duration-150 ${on ? "translate-x-7" : "translate-x-1"
-                        }`}
+                    className={[
+                        "pointer-events-none block h-6 w-6 rounded-full bg-background shadow-sm",
+                        "transition-transform duration-200 ease-in-out",
+                        on ? "translate-x-5" : "translate-x-0",
+                    ].join(" ")}
                 />
             </button>
         </div>
