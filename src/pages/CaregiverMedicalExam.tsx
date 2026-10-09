@@ -37,6 +37,7 @@ import type {
     ConsciousnessLevel,
     ClientMedicalProfile,
 } from "@/types/db";
+import { Combobox } from "@/components/ui/combobox";
 
 // ============================================================
 // Page
@@ -813,7 +814,6 @@ function NumField({
         </div>
     );
 }
-
 function SelectField<T extends string>({
     label,
     value,
@@ -832,19 +832,14 @@ function SelectField<T extends string>({
             <Label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 {label}
             </Label>
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value as T | "")}
-                disabled={disabled}
-                className="mt-1 w-full h-11 rounded-2xl bg-muted border-0 px-3 text-sm"
-            >
-                <option value="">—</option>
-                {options.map((o) => (
-                    <option key={o} value={o}>
-                        {o}
-                    </option>
-                ))}
-            </select>
+            <div className={`mt-1 ${disabled ? "pointer-events-none opacity-60" : ""}`}>
+                <Combobox
+                    options={options as unknown as string[]}
+                    value={value}
+                    onChange={(v) => onChange(v as T | "")}
+                    placeholder="—"
+                />
+            </div>
         </div>
     );
 }

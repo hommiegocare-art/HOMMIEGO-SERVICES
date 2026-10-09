@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Combobox } from "@/components/ui/combobox";
 import { useSession } from "@/hooks/useSession";
 import { useDailyDiary } from "@/hooks/useDailyDiary";
 import {
@@ -14,7 +15,7 @@ import {
     MOOD_OPTIONS,
     BODY_LOCATIONS,
     BODY_LOCATION_LABELS,
-    groupedSymptoms,
+    SYMPTOMS,
     symptomLabel,
     actionLabel,
 } from "@/lib/dailyOptions";
@@ -41,6 +42,30 @@ export default function LogEntry() {
     const [moodValue, setMoodValue] = useState(3);
 
     if (!user) return null;
+
+    // Build label lists for the Comboboxes.
+    // The Combobox works on plain string values; we map label → key with a lookup.
+    const symptomLabels = SYMPTOMS.map((s) => s.label);
+    const symptomLabelToKey = (label: string) =>
+        SYMPTOMS.find((s) => s.label === label)?.key ?? "";
+    const symptomLabelFromKey = (key: string) =>
+        SYMPTOMS.find((s) => s.key === key)?.label ?? "";
+
+    const actionLabels = ACTIONS.map((a) => a.label);
+    const actionLabelToKey = (label: string) =>
+        ACTIONS.find((a) => a.label === label)?.key ?? "";
+    const actionLabelFromKey = (key: string) =>
+        ACTIONS.find((a) => a.key === key)?.label ?? "";
+
+    const bodyLocationLabels = BODY_LOCATIONS.map(
+        (loc) => BODY_LOCATION_LABELS[loc] ?? loc,
+    );
+    const bodyLocationLabelToKey = (label: string) =>
+        BODY_LOCATIONS.find(
+            (loc) => (BODY_LOCATION_LABELS[loc] ?? loc) === label,
+        ) ?? "";
+    const bodyLocationLabelFromKey = (key: string) =>
+        key ? BODY_LOCATION_LABELS[key] ?? key : "";
 
     const canSave = (() => {
         if (category === "symptom") return !!symptomKey || symptomCustom.trim().length > 0;
@@ -91,11 +116,8 @@ export default function LogEntry() {
         }
     };
 
-    const symptomGroups = groupedSymptoms();
-
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in pb-32">
-            {/* Back */}
             <button
                 onClick={() => navigate(-1)}
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-2 mb-4 h-11"
@@ -103,7 +125,6 @@ export default function LogEntry() {
                 <ChevronLeft className="w-4 h-4" /> Back
             </button>
 
-            {/* Header */}
             <h1 className="text-2xl font-black tracking-tight text-foreground mb-1">
                 Log an entry
             </h1>
@@ -140,22 +161,16 @@ export default function LogEntry() {
                         <Label className="text-xs font-semibold text-muted-foreground">
                             What's happening?
                         </Label>
-                        <select
-                            value={symptomKey}
-                            onChange={(e) => setSymptomKey(e.target.value)}
-                            className="mt-1 w-full h-11 rounded-2xl bg-muted border-0 px-3 text-sm"
-                        >
-                            <option value="">— Pick a symptom —</option>
-                            {symptomGroups.map(([group, items]) => (
-                                <optgroup key={group} label={group}>
-                                    {items.map((s) => (
-                                        <option key={s.key} value={s.key}>
-                                            {s.label}
-                                        </option>
-                                    ))}
-                                </optgroup>
-                            ))}
-                        </select>
+                        <div className="mt-1">
+                            <Combobox
+                                options={symptomLabels}
+                                value={symptomLabelFromKey(symptomKey)}
+                                onChange={(label) =>
+                                    setSymptomKey(symptomLabelToKey(label))
+                                }
+                                placeholder="Pick a symptom"
+                            />
+                        </div>
                     </div>
 
                     {symptomKey === "other" && (
@@ -191,18 +206,16 @@ export default function LogEntry() {
                             <Label className="text-xs font-semibold text-muted-foreground">
                                 Where?
                             </Label>
-                            <select
-                                value={bodyLocation}
-                                onChange={(e) => setBodyLocation(e.target.value)}
-                                className="mt-1 w-full h-11 rounded-2xl bg-muted border-0 px-3 text-sm"
-                            >
-                                <option value="">—</option>
-                                {BODY_LOCATIONS.map((loc) => (
-                                    <option key={loc} value={loc}>
-                                        {BODY_LOCATION_LABELS[loc] ?? loc}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="mt-1">
+                                <Combobox
+                                    options={bodyLocationLabels}
+                                    value={bodyLocationLabelFromKey(bodyLocation)}
+                                    onChange={(label) =>
+                                        setBodyLocation(bodyLocationLabelToKey(label))
+                                    }
+                                    placeholder="Where does it hurt?"
+                                />
+                            </div>
                         </div>
                         <div>
                             <Label className="text-xs font-semibold text-muted-foreground">
@@ -228,18 +241,16 @@ export default function LogEntry() {
                         <Label className="text-xs font-semibold text-muted-foreground">
                             What did you do?
                         </Label>
-                        <select
-                            value={actionKey}
-                            onChange={(e) => setActionKey(e.target.value)}
-                            className="mt-1 w-full h-11 rounded-2xl bg-muted border-0 px-3 text-sm"
-                        >
-                            <option value="">— Pick an action —</option>
-                            {ACTIONS.map((a) => (
-                                <option key={a.key} value={a.key}>
-                                    {a.label}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="mt-1">
+                            <Combobox
+                                options={actionLabels}
+                                value={actionLabelFromKey(actionKey)}
+                                onChange={(label) =>
+                                    setActionKey(actionLabelToKey(label))
+                                }
+                                placeholder="Pick an action"
+                            />
+                        </div>
                     </div>
 
                     {actionKey === "other_action" && (
@@ -332,7 +343,6 @@ export default function LogEntry() {
                 </p>
             )}
 
-            {/* Actions — fixed bottom, same style as exam page */}
             <div className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border">
                 <div
                     className="max-w-3xl mx-auto px-4 py-3 flex gap-3"

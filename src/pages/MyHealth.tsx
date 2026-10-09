@@ -24,10 +24,7 @@ export default function MyHealth() {
                         My Health
                     </h1>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                    Daily symptoms, medications, moods, pregnancy, and your
-                    children's health — all in one place.
-                </p>
+
             </header>
 
             <DailyDiaryCard clientId={user.id} defaultRangeDays={30} />

@@ -315,9 +315,9 @@ function EmptyCTA({ onLog }: { onLog: () => void }) {
     ];
 
     return (
-        <div className="rounded-2xl bg-primary/5 border border-primary/20 px-4 py-4 mb-4">
+        <div className="rounded-2xl bg-primary/5 border-none px-4 py-4 mb-4">
             <div className="flex items-start gap-3">
-                <span className="h-10 w-10 rounded-2xl bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
+                <span className="h-10 w-10 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
                     <Sparkles className="w-5 h-5" />
                 </span>
                 <div className="flex-1 min-w-0">
