@@ -2,6 +2,7 @@
 import { NavLink } from "react-router-dom";
 import {
     Home,
+    HeartPulse,
     Compass,
     Users,
     CalendarCheck,
@@ -22,6 +23,12 @@ export function Sidebar() {
 
     const ITEMS = [
         { to: "/dashboard", label: "Home", icon: Home },
+
+        // My Health — clients only. Caregivers never see their own diary.
+        ...(isCaregiver
+            ? []
+            : [{ to: "/health", label: "My Health", icon: HeartPulse }]),
+
         { to: "/explore", label: "Explore", icon: Compass },
         { to: "/connections", label: "Connections", icon: Users },
 
@@ -42,15 +49,12 @@ export function Sidebar() {
     return (
         <aside className="hidden lg:flex fixed top-0 left-0 bottom-0 z-40 group">
             <div className="w-16 group-hover:w-60 bg-background transition-[width] duration-150 flex flex-col py-3 overflow-hidden">
-                {/* Brand — icon-only when collapsed, icon + wordmark on hover */}
                 <div className="flex h-14 shrink-0 items-center px-3.5">
-                    {/* Icon only (visible when collapsed) */}
                     <img
                         src="/pwa-192x192.png"
                         alt="HommieCare"
                         className="h-8 w-8 rounded-full shrink-0 group-hover:hidden"
                     />
-                    {/* Full wordmark (visible when expanded) */}
                     <div className="hidden group-hover:inline-flex">
                         <Logo size="sm" />
                     </div>

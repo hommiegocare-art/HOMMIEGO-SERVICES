@@ -10,12 +10,15 @@ import {
     Star,
     Info,
     CheckCheck,
+    Activity,
+    Baby,
+    HeartPulse,
+    Stethoscope,
+    Syringe,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import type { Notification } from "@/types/db";
-
-type NotificationType = "booking" | "payment" | "connection" | "review" | "system";
 
 function iconFor(type: string | null) {
     switch (type) {
@@ -27,8 +30,56 @@ function iconFor(type: string | null) {
             return Users;
         case "review":
             return Star;
+
+        case "health_symptom":
+        case "health_mood":
+            return Activity;
+
+        case "pregnancy_start":
+        case "pregnancy_kick":
+        case "pregnancy_contraction":
+            return Baby;
+
+        case "child_added":
+            return HeartPulse;
+
+        case "medical_exam":
+            return Stethoscope;
+
+        case "vaccine_due":
+        case "vaccine_due_soon":
+        case "vaccine_overdue":
+            return Syringe;
+
         default:
             return Info;
+    }
+}
+
+function toneFor(type: string | null, isRead: boolean) {
+    if (isRead) {
+        return { bg: "bg-muted", fg: "text-muted-foreground" };
+    }
+    switch (type) {
+        case "vaccine_overdue":
+            return { bg: "bg-destructive/10", fg: "text-destructive" };
+        case "medical_exam":
+            return { bg: "bg-primary/10", fg: "text-primary" };
+        case "pregnancy_kick":
+        case "pregnancy_contraction":
+        case "pregnancy_start":
+            return { bg: "bg-pink-500/10", fg: "text-pink-600" };
+        case "child_added":
+            return { bg: "bg-sky-500/10", fg: "text-sky-600" };
+        case "vaccine_due":
+        case "vaccine_due_soon":
+            return { bg: "bg-amber-500/10", fg: "text-amber-600" };
+        case "health_symptom":
+            return { bg: "bg-primary/10", fg: "text-primary" };
+        case "health_mood":
+            return { bg: "bg-emerald-500/10", fg: "text-emerald-600" };
+        default:
+            return { bg: "bg-primary/10", fg: "text-primary" };
     }
 }
 
@@ -159,8 +210,6 @@ export default function Notifications() {
     );
 }
 
-/* ---------- pieces ---------- */
-
 function NotificationRow({
     n,
     onOpen,
@@ -169,16 +218,14 @@ function NotificationRow({
     onOpen: () => void;
 }) {
     const Icon = iconFor(n.type);
+    const tone = toneFor(n.type, n.is_read);
+
     const content = (
         <div className="flex items-start gap-3">
             <span
-                className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center ${n.is_read ? "bg-muted" : "bg-primary/10"
-                    }`}
+                className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center ${tone.bg}`}
             >
-                <Icon
-                    className={`w-5 h-5 ${n.is_read ? "text-muted-foreground" : "text-primary"
-                        }`}
-                />
+                <Icon className={`w-5 h-5 ${tone.fg}`} />
             </span>
 
             <div className="flex-1 min-w-0">

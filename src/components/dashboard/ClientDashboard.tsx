@@ -1,7 +1,13 @@
 // src/components/dashboard/ClientDashboard.tsx
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Users, CalendarCheck, Search, ArrowRight } from "lucide-react";
+import {
+    Users,
+    CalendarCheck,
+    Search,
+    ArrowRight,
+    HeartPulse,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { StatCard } from "./StatCard";
@@ -47,6 +53,30 @@ export function ClientDashboard({ greeting }: { greeting: string }) {
 
     return (
         <div className="space-y-5 animate-fade-in">
+            {/* ---------- Health CTA ---------- */}
+            <Link
+                to="/health"
+                className="block rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-4 py-4 active:opacity-90 transition-opacity"
+            >
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-11 h-11 rounded-full bg-primary-foreground/15 flex items-center justify-center shrink-0">
+                            <HeartPulse className="w-5 h-5" />
+                        </span>
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold">
+                                How are you feeling today?
+                            </p>
+                            <p className="text-xs opacity-85 mt-0.5">
+                                Log symptoms, medications, mood, and more.
+                            </p>
+                        </div>
+                    </div>
+                    <ArrowRight className="w-5 h-5 shrink-0 opacity-90" />
+                </div>
+            </Link>
+
+            {/* ---------- Stat cards ---------- */}
             <div className="grid grid-cols-2 gap-3">
                 <StatCard
                     label="Caregivers"
@@ -60,6 +90,7 @@ export function ClientDashboard({ greeting }: { greeting: string }) {
                 />
             </div>
 
+            {/* ---------- Explore CTA ---------- */}
             <Link
                 to="/explore"
                 className="flex items-center justify-between rounded-2xl bg-card px-4 py-4 active:bg-muted transition-colors"
@@ -78,6 +109,7 @@ export function ClientDashboard({ greeting }: { greeting: string }) {
                 <ArrowRight className="w-4 h-4 text-muted-foreground" />
             </Link>
 
+            {/* ---------- Upcoming visits ---------- */}
             <section>
                 <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
                     Next visits

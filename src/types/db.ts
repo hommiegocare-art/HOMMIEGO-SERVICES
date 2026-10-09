@@ -1,5 +1,22 @@
 // src/types/db.ts
+import type {
+    DailyEntry,
+    DailyPregnancy,
+    DailyPregnancyEvent,
+    DailyBirth,
+    DailyChildProfile,
+    DailyChildEvent,
+} from "./daily";
 
+// Re-export so consumers can import from either path
+export type {
+    DailyEntry,
+    DailyPregnancy,
+    DailyPregnancyEvent,
+    DailyBirth,
+    DailyChildProfile,
+    DailyChildEvent,
+} from "./daily";
 export type UserRole = "client" | "caregiver" | "admin";
 export type ConnectionStatus = "pending" | "accepted" | "declined" | "ended" | "blocked";
 export type BookingStatus =
@@ -901,7 +918,13 @@ export type Database = {
             medical_pregnancies: { Row: MedicalPregnancy; Insert: Partial<MedicalPregnancy>; Update: Partial<MedicalPregnancy> };
             medical_visits: { Row: MedicalVisit; Insert: Partial<MedicalVisit>; Update: Partial<MedicalVisit> };
             medical_audit_log: { Row: MedicalAuditEntry; Insert: Partial<MedicalAuditEntry>; Update: Partial<MedicalAuditEntry> };
-
+            // ---- Daily (health diary, pregnancy, child) ----
+            daily_entries: { Row: DailyEntry; Insert: Partial<DailyEntry>; Update: Partial<DailyEntry> };
+            daily_pregnancy: { Row: DailyPregnancy; Insert: Partial<DailyPregnancy>; Update: Partial<DailyPregnancy> };
+            daily_pregnancy_events: { Row: DailyPregnancyEvent; Insert: Partial<DailyPregnancyEvent>; Update: Partial<DailyPregnancyEvent> };
+            daily_births: { Row: DailyBirth; Insert: Partial<DailyBirth>; Update: Partial<DailyBirth> };
+            daily_child_profiles: { Row: DailyChildProfile; Insert: Partial<DailyChildProfile>; Update: Partial<DailyChildProfile> };
+            daily_child_events: { Row: DailyChildEvent; Insert: Partial<DailyChildEvent>; Update: Partial<DailyChildEvent> };
             client_emergency_contacts: { Row: ClientEmergencyContact; Insert: Partial<ClientEmergencyContact>; Update: Partial<ClientEmergencyContact> };
             client_insurance: { Row: ClientInsurance; Insert: Partial<ClientInsurance>; Update: Partial<ClientInsurance> };
         };

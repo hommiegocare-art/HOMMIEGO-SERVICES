@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
+  HeartPulse,
   Compass,
   Users,
   CalendarCheck,
@@ -23,31 +24,41 @@ export function BottomNav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
-  // Close sheet on route change
   useEffect(() => {
     setOpen(false);
   }, [location.pathname]);
 
   const isCaregiver = user?.role === "caregiver";
 
-  const TABS = [
-    { to: "/dashboard", label: "Home", icon: Home },
-    { to: "/explore", label: "Explore", icon: Compass },
-    { to: "/connections", label: "Connect", icon: Users },
-    isCaregiver
-      ? { to: "/jobs", label: "Jobs", icon: BriefcaseBusiness }
-      : { to: "/bookings", label: "Bookings", icon: CalendarCheck },
-  ];
+  // Tabs — Health only for clients
+  const TABS = isCaregiver
+    ? [
+      { to: "/dashboard", label: "Home", icon: Home },
+      { to: "/explore", label: "Explore", icon: Compass },
+      { to: "/connections", label: "Connect", icon: Users },
+      { to: "/jobs", label: "Jobs", icon: BriefcaseBusiness },
+    ]
+    : [
+      { to: "/dashboard", label: "Home", icon: Home },
+      { to: "/health", label: "Health", icon: HeartPulse },
+      { to: "/explore", label: "Explore", icon: Compass },
+      { to: "/connections", label: "Connect", icon: Users },
+    ];
 
   const MORE = [
+    ...(isCaregiver
+      ? [{ to: "/services", label: "Services", icon: Briefcase }]
+      : [{ to: "/bookings", label: "Bookings", icon: CalendarCheck }]),
+
     { to: "/notifications", label: "Notifications", icon: Bell },
+
     ...(isCaregiver
       ? [
-        { to: "/services", label: "Services", icon: Briefcase },
         { to: "/earnings", label: "Earnings", icon: Wallet },
         { to: "/cpd", label: "CPD", icon: Award },
       ]
       : []),
+
     { to: user ? `/profile/${user.id}` : "/auth", label: "Profile", icon: User },
     { to: "/settings", label: "Settings", icon: Settings },
   ];
@@ -83,16 +94,10 @@ export function BottomNav() {
         </div>
       </nav>
 
-      <MoreSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        items={MORE}
-      />
+      <MoreSheet open={open} onClose={() => setOpen(false)} items={MORE} />
     </>
   );
 }
-
-/* ---------- MoreSheet: bottom sheet with drag-to-dismiss ---------- */
 
 function MoreSheet({
   open,
@@ -108,12 +113,10 @@ function MoreSheet({
   const startY = useRef<number | null>(null);
   const sheetRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset drag when opening
   useEffect(() => {
     if (open) setDragY(0);
   }, [open]);
 
-  // Lock body scroll while open
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -123,7 +126,6 @@ function MoreSheet({
     };
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -159,14 +161,12 @@ function MoreSheet({
         }`}
       aria-hidden={!open}
     >
-      {/* Backdrop */}
       <div
         onClick={onClose}
         className={`absolute inset-0 bg-foreground/40 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
           }`}
       />
 
-      {/* Sheet */}
       <div
         ref={sheetRef}
         role="dialog"
@@ -175,9 +175,7 @@ function MoreSheet({
         className={`absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl shadow-xl transform transition-transform duration-250 ease-out ${open ? "translate-y-0" : "translate-y-full"
           }`}
         style={{
-          transform: open
-            ? `translateY(${dragY}px)`
-            : "translateY(100%)",
+          transform: open ? `translateY(${dragY}px)` : "translateY(100%)",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
         onPointerDown={onPointerDown}
@@ -185,7 +183,6 @@ function MoreSheet({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {/* Drag handle */}
         <div className="pt-3 pb-2 flex justify-center cursor-grab active:cursor-grabbing touch-none">
           <span className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
         </div>

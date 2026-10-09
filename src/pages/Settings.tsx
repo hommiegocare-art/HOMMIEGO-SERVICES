@@ -28,7 +28,16 @@ import {
     Info,
     Mail,
     ChevronRight,
+    Bell,
+    Loader2,
 } from "lucide-react";
+import {
+    pushSupported,
+    getPermission,
+    isPushEnabled,
+    enablePush,
+    disablePush,
+} from "@/lib/push";
 
 type Theme = "light" | "dark";
 
@@ -62,6 +71,14 @@ export default function Settings() {
     const [signingOut, setSigningOut] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // ---- Push notification state ----
+    const [pushOn, setPushOn] = useState(false);
+    const [pushBusy, setPushBusy] = useState(false);
+    const [pushErr, setPushErr] = useState<string | null>(null);
+    const [permission, setPermission] = useState<
+        NotificationPermission | "unsupported"
+    >("default");
+
     useEffect(() => {
         setTheme(readTheme());
     }, []);
@@ -75,6 +92,15 @@ export default function Settings() {
         return () => mq.removeEventListener("change", handler);
     }, [theme]);
 
+    // Load push state when user is available
+    useEffect(() => {
+        if (!user) return;
+        setPermission(getPermission());
+        if (pushSupported()) {
+            isPushEnabled(user.id).then(setPushOn).catch(() => setPushOn(false));
+        }
+    }, [user]);
+
     const setThemeAndPersist = (next: Theme | null) => {
         setTheme(next);
         if (next === null) {
@@ -83,6 +109,33 @@ export default function Settings() {
             window.localStorage.setItem(THEME_KEY, next);
         }
         applyTheme(next);
+    };
+
+    const onTogglePush = async (next: boolean) => {
+        if (!user) return;
+        setPushBusy(true);
+        setPushErr(null);
+        try {
+            if (next) {
+                const r = await enablePush(user.id);
+                if (!r.ok) {
+                    setPushErr(r.reason ?? "Could not enable push notifications.");
+                    // re-read permission in case the user blocked it
+                    setPermission(getPermission());
+                    setPushBusy(false);
+                    return;
+                }
+                setPushOn(true);
+                setPermission(getPermission());
+            } else {
+                await disablePush(user.id);
+                setPushOn(false);
+            }
+        } catch (e) {
+            setPushErr(e instanceof Error ? e.message : "Something went wrong");
+        } finally {
+            setPushBusy(false);
+        }
     };
 
     const onSignOut = async () => {
@@ -140,13 +193,14 @@ export default function Settings() {
 
     const isDark = theme === "dark";
     const isSystem = theme === null;
+    const pushAvailable = pushSupported();
 
     return (
         <main className="mx-auto max-w-2xl px-6 py-10">
             <header className="mb-6">
                 <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                    Manage appearance and your account.
+                    Manage appearance, notifications, and your account.
                 </p>
             </header>
 
@@ -198,6 +252,60 @@ export default function Settings() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* NOTIFICATIONS */}
+            {pushAvailable && (
+                <Card className="mt-6 rounded-2xl">
+                    <CardHeader>
+                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                            <Bell className="h-4 w-4" /> Notifications
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between gap-4">
+                            <div>
+                                <Label htmlFor="push-switch" className="text-sm">
+                                    Push notifications
+                                </Label>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                    Alerts on this device when your health record or
+                                    a patient you care for changes.
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                                {pushBusy && (
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                )}
+                                <Switch
+                                    id="push-switch"
+                                    checked={pushOn}
+                                    disabled={pushBusy}
+                                    onCheckedChange={onTogglePush}
+                                />
+                            </div>
+                        </div>
+
+                        {pushErr && (
+                            <p className="text-xs text-destructive">{pushErr}</p>
+                        )}
+
+                        {permission === "denied" && (
+                            <p className="text-xs text-muted-foreground">
+                                Notifications are blocked for this site. Enable
+                                them in your browser settings, then try again.
+                            </p>
+                        )}
+
+                        {!pushOn && permission !== "denied" && (
+                            <p className="text-xs text-muted-foreground">
+                                Tip: On iPhone, add HommieCare to your Home
+                                Screen first (Share → Add to Home Screen), then
+                                turn this on.
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* SESSION */}
             <Card className="mt-6 rounded-2xl">
@@ -357,7 +465,6 @@ function LegalRow({
 }
 
 async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
-    // 1. Cancel in-flight queries, then drop the entire cache
     try {
         await qc.cancelQueries();
     } catch {
@@ -365,7 +472,6 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
     }
     qc.clear();
 
-    // 2. Sign out the Supabase client globally
     try {
         await supabase.auth.signOut({ scope: "global" });
     } catch {
@@ -376,7 +482,6 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
         }
     }
 
-    // 3. Clear app-owned localStorage keys (keep theme)
     try {
         const toRemove: string[] = [];
         for (let i = 0; i < window.localStorage.length; i++) {
@@ -391,14 +496,12 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
         /* ignore */
     }
 
-    // 4. Clear sessionStorage entirely
     try {
         window.sessionStorage.clear();
     } catch {
         /* ignore */
     }
 
-    // 5. Drop service worker caches if present
     if ("caches" in window) {
         try {
             const keys = await caches.keys();

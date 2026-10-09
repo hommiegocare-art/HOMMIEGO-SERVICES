@@ -13,9 +13,56 @@ type SessionState = {
     error: string | null;
 };
 
-// ---- module-level store ----
-let cachedProfile: Profile | null = null;
-let cachedUserId: string | null = null;
+// ============================================================
+// Persisted cache — survives hard reloads
+// ============================================================
+const PROFILE_CACHE_KEY = "hommiecare:cached-profile";
+const PROFILE_CACHE_USER_KEY = "hommiecare:cached-profile-user-id";
+
+function readCachedProfile(): Profile | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const raw = window.localStorage.getItem(PROFILE_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as Profile;
+        if (!parsed || typeof parsed !== "object" || !parsed.id || !parsed.role) {
+            return null;
+        }
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function readCachedUserId(): string | null {
+    if (typeof window === "undefined") return null;
+    try {
+        return window.localStorage.getItem(PROFILE_CACHE_USER_KEY);
+    } catch {
+        return null;
+    }
+}
+
+function writeCachedProfile(p: Profile | null) {
+    if (typeof window === "undefined") return;
+    try {
+        if (p) {
+            window.localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(p));
+            window.localStorage.setItem(PROFILE_CACHE_USER_KEY, p.id);
+        } else {
+            window.localStorage.removeItem(PROFILE_CACHE_KEY);
+            window.localStorage.removeItem(PROFILE_CACHE_USER_KEY);
+        }
+    } catch {
+        /* quota errors — ignore */
+    }
+}
+
+// ============================================================
+// Module-level store
+// ============================================================
+let cachedProfile: Profile | null = readCachedProfile();
+let cachedUserId: string | null = readCachedUserId();
 let cachedSession: Session | null = null;
 let inflightProfile: Promise<Profile | null> | null = null;
 
@@ -48,6 +95,8 @@ async function loadProfile(userId: string, force = false) {
     inflightProfile = fetchProfile(userId)
         .then((p) => {
             cachedProfile = p;
+            cachedUserId = p?.id ?? userId;
+            writeCachedProfile(p);
             inflightProfile = null;
             emit();
             return p;
@@ -82,6 +131,7 @@ export function invalidateSessionCache() {
     cachedUserId = null;
     cachedSession = null;
     inflightProfile = null;
+    writeCachedProfile(null);
     emit();
 }
 
@@ -89,6 +139,8 @@ export function useSession(): SessionState {
     const [, force] = useState(0);
     const [session, setSession] = useState<Session | null>(cachedSession);
     const [user, setUser] = useState<SessionUser | null>(cachedProfile);
+    // Loading starts false when we already have a cached profile —
+    // so the avatar renders on the first paint, no "U" flash.
     const [loading, setLoading] = useState<boolean>(cachedProfile === null);
     const [error, setError] = useState<string | null>(null);
 
@@ -116,6 +168,14 @@ export function useSession(): SessionState {
             setSession(data.session);
 
             if (data.session?.user) {
+                // If the cached profile belongs to a *different* user,
+                // wipe it before fetching — prevents showing the wrong name.
+                if (cachedUserId && cachedUserId !== data.session.user.id) {
+                    cachedProfile = null;
+                    cachedUserId = null;
+                    writeCachedProfile(null);
+                    if (mounted) setUser(null);
+                }
                 try {
                     const p = await loadProfile(data.session.user.id);
                     if (!mounted) return;
@@ -123,11 +183,12 @@ export function useSession(): SessionState {
                 } catch (e) {
                     if (!mounted) return;
                     setError(e instanceof Error ? e.message : "Failed to load profile");
-                    setUser(null);
+                    // keep cached profile visible on error; don't blank the UI
                 }
             } else {
                 cachedProfile = null;
                 cachedUserId = null;
+                writeCachedProfile(null);
                 setUser(null);
             }
             if (mounted) setLoading(false);
@@ -147,6 +208,7 @@ export function useSession(): SessionState {
             } else {
                 cachedProfile = null;
                 cachedUserId = null;
+                writeCachedProfile(null);
                 setUser(null);
                 setLoading(false);
             }
@@ -167,6 +229,7 @@ export async function signOut() {
     cachedUserId = null;
     cachedSession = null;
     inflightProfile = null;
+    writeCachedProfile(null);
     emit();
     await supabase.auth.signOut();
 }

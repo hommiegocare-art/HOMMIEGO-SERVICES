@@ -1,11 +1,12 @@
 // src/pages/Profile.tsx
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/hooks/useSession";
 import { PublicProfile } from "@/components/profile/PublicProfile";
 import { OwnProfile } from "@/components/profile/OwnProfile";
 import { MedicalProfileCard } from "@/components/profile/MedicalProfileCard";
+import { DailyDiaryCard } from "@/components/daily/DailyDiaryCard";
 import { supabase } from "@/integrations/supabase/client";
 
 // Returns true only when `caregiverId` has an accepted connection to `clientId`
@@ -49,8 +50,7 @@ export default function Profile() {
         checkConnection ? userId : undefined,
     );
 
-    const showMedical =
-        checkConnection && connected.data === true;
+    const showMedical = checkConnection && connected.data === true;
 
     // Scroll-to-anchor (kept for the optional #medical-record hash)
     useEffect(() => {
@@ -97,9 +97,11 @@ export default function Profile() {
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
             <PublicProfile userId={userId} />
 
-            {/* Embedded medical record — only for connected caregivers */}
+            {/* Embedded medical record + daily diary — only for connected caregivers */}
             {showMedical && (
                 <div id="medical-record" className="mt-4 scroll-mt-24">
+
+                    <DailyDiaryCard clientId={userId} defaultRangeDays={30} />
                     <MedicalProfileCard clientId={userId} />
                 </div>
             )}

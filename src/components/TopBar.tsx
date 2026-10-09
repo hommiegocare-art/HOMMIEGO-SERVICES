@@ -7,7 +7,7 @@ import { useSession } from "@/hooks/useSession";
 import { Logo } from "@/components/brand/Logo";
 
 export function TopBar() {
-    const { user } = useSession();
+    const { user, loading } = useSession();
     const navigate = useNavigate();
 
     const { data: unread = 0 } = useQuery({
@@ -63,7 +63,11 @@ export function TopBar() {
                                 src={user.avatar_url}
                                 alt=""
                                 className="w-8 h-8 rounded-full object-cover"
+                                draggable={false}
                             />
+                        ) : loading && !user ? (
+                            /* First-ever load, nothing cached yet: shimmer instead of letter */
+                            <span className="w-8 h-8 rounded-full bg-muted animate-pulse" />
                         ) : (
                             <span className="w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-black flex items-center justify-center">
                                 {initial}

@@ -21,7 +21,22 @@ import {
 } from "@/lib/kenya";
 import type { CaregiverProfile, ClientProfile } from "@/types/db";
 import { useSession, refreshSession } from "@/hooks/useSession";
+
 const LANGUAGE_LABELS = KENYA_LANGUAGES.map((l) => l.label);
+
+// Sex values stored on profiles.gender (lowercase, matching the app's convention)
+const SEX_OPTIONS: { value: string; label: string }[] = [
+    { value: "female", label: "Female" },
+    { value: "male", label: "Male" },
+];
+
+// Normalize whatever is in the DB to a known value ("female" | "male" | "")
+function normalizeSex(v: string | null | undefined): string {
+    const g = (v ?? "").toLowerCase().trim();
+    if (g === "female" || g === "f") return "female";
+    if (g === "male" || g === "m") return "male";
+    return "";
+}
 
 function labelFromCode(code: string) {
     return KENYA_LANGUAGES.find((l) => l.code === code)?.label ?? "";
@@ -46,6 +61,7 @@ export function EditProfileForm({
     // ---- Profile fields ----
     const [displayName, setDisplayName] = useState(user?.display_name ?? "");
     const [legalName, setLegalName] = useState(user?.legal_name ?? "");
+    const [sex, setSex] = useState<string>(normalizeSex(user?.gender));
     const [phone, setPhone] = useState(user?.phone_number ?? "");
     const [county, setCounty] = useState(user?.county ?? "");
     const [city, setCity] = useState(user?.city ?? "");
@@ -85,6 +101,7 @@ export function EditProfileForm({
                 .update({
                     display_name: displayName.trim(),
                     legal_name: legalName.trim() || null,
+                    gender: sex || null,                       // ← writes "female" | "male" | null
                     phone_number: normalizePhone(phone) || null,
                     county: county.trim() || null,
                     city: city.trim() || null,
@@ -118,6 +135,8 @@ export function EditProfileForm({
             await refreshSession();                              // ← rebuild the useSession cache
             qc.invalidateQueries({ queryKey: ["profile"] });
             qc.invalidateQueries({ queryKey: ["explore"] });
+            // Sex change affects pregnancy visibility on the diary module
+            qc.invalidateQueries({ queryKey: ["patient-sex"] });
             onDone();
         },
     });
@@ -193,6 +212,27 @@ export function EditProfileForm({
                     placeholder="Shown to connected caregivers only"
                     className="h-11 rounded-2xl bg-muted border-0"
                 />
+            </Field>
+
+            <Field label="Sex">
+                <div className="flex gap-2">
+                    {SEX_OPTIONS.map((o) => (
+                        <button
+                            key={o.value}
+                            type="button"
+                            onClick={() => setSex(o.value)}
+                            className={`flex-1 h-11 rounded-2xl text-sm font-semibold transition-colors ${sex === o.value
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground active:bg-secondary"
+                                }`}
+                        >
+                            {o.label}
+                        </button>
+                    ))}
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                    Used to show you the right health features. Cannot be blank.
+                </p>
             </Field>
 
             <Field label="Phone">

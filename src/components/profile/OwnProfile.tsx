@@ -18,6 +18,7 @@ import type { CaregiverProfile, ClientProfile } from "@/types/db";
 import { EditProfileForm } from "@/components/profile/EditProfileForm";
 import { MedicalProfileCard } from "@/components/profile/MedicalProfileCard";
 import { CaregiverCredentialsCard } from "@/components/profile/CaregiverCredentialsCard";
+import { DailyDiaryCard } from "../daily/DailyDiaryCard";
 
 async function fetchCaregiver(userId: string): Promise<CaregiverProfile | null> {
     const { data } = await supabase
@@ -198,10 +199,8 @@ export function OwnProfile() {
                             </Link>
                         </>
                     )}
-
-                    {!isCaregiver && (
-                        <MedicalProfileCard />
-                    )}
+                    {!isCaregiver && <MedicalProfileCard />}
+                    {!isCaregiver && <DailyDiaryCard />}
                 </>
             )}
         </div>

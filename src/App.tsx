@@ -36,6 +36,10 @@ import Contact from "@/pages/legal/Contact";
 import { usePresence } from "./hooks/usePresence";
 import { AppUpdateBanner } from "./components/AppUpdateBanner";
 import MedicalRecordPage from "./pages/MedicalRecordPage";
+import MyHealth from "./pages/MyHealth";
+import LogEntry from "./pages/LogEntry";
+import HealthPrint from "./pages/HealthPrint";
+import { IosInstallBanner } from "./components/IosInstallBanner";
 
 const HOME_FOR: Record<"client" | "caregiver", string> = {
   client: "/dashboard",
@@ -115,6 +119,10 @@ function Shell() {
         <main className="pb-24 lg:pb-8">
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/health" element={<MyHealth />} />
+            <Route path="/health/log" element={<LogEntry />} />
+            <Route path="/health/print" element={<HealthPrint />} />
+            <Route path="/health/print/:childId" element={<HealthPrint />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/connections" element={<Connections />} />
 
@@ -155,6 +163,7 @@ export default function App() {
       <TooltipProvider>
         <Toaster />
         <AppUpdateBanner />
+        <IosInstallBanner />
         <BrowserRouter>
           <Shell />
         </BrowserRouter>
