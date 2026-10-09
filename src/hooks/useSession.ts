@@ -225,11 +225,37 @@ export function useSession(): SessionState {
 }
 
 export async function signOut() {
+    // 1. Clear the in-memory + persisted profile cache FIRST
     cachedProfile = null;
     cachedUserId = null;
     cachedSession = null;
     inflightProfile = null;
     writeCachedProfile(null);
+
+    // 2. Remove all hommiecare + supabase keys from localStorage
+    if (typeof window !== "undefined") {
+        try {
+            const toRemove: string[] = [];
+            for (let i = 0; i < window.localStorage.length; i++) {
+                const k = window.localStorage.key(i);
+                if (!k) continue;
+                if (k === "theme") continue;                // keep theme
+                if (k.startsWith("sb-")) toRemove.push(k);  // supabase auth
+                if (k.startsWith("hommiecare:")) toRemove.push(k);
+            }
+            toRemove.forEach((k) => window.localStorage.removeItem(k));
+        } catch { /* ignore */ }
+
+        try { window.sessionStorage.clear(); } catch { /* ignore */ }
+    }
+
+    // 3. Notify all subscribers so UI re-renders as signed-out
     emit();
-    await supabase.auth.signOut();
+
+    // 4. Tell Supabase to sign out (global so other tabs/devices too)
+    try {
+        await supabase.auth.signOut({ scope: "global" });
+    } catch {
+        try { await supabase.auth.signOut({ scope: "local" }); } catch { /* ignore */ }
+    }
 }

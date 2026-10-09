@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@/hooks/useSession";
+import { useSession, signOut } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -61,12 +61,13 @@ function applyTheme(theme: Theme | null) {
 }
 
 export default function Settings() {
-    const { user, loading: sessionLoading, signOut } = useSession();
+    const { user, loading: sessionLoading } = useSession();
     const navigate = useNavigate();
     const qc = useQueryClient();
 
     const [theme, setTheme] = useState<Theme | null>(null);
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [confirmSignOut, setConfirmSignOut] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [signingOut, setSigningOut] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -120,7 +121,6 @@ export default function Settings() {
                 const r = await enablePush(user.id);
                 if (!r.ok) {
                     setPushErr(r.reason ?? "Could not enable push notifications.");
-                    // re-read permission in case the user blocked it
                     setPermission(getPermission());
                     setPushBusy(false);
                     return;
@@ -142,10 +142,22 @@ export default function Settings() {
         setSigningOut(true);
         setError(null);
         try {
+            // 1. Wipe React Query cache
+            try {
+                await qc.cancelQueries();
+                qc.clear();
+            } catch { /* ignore */ }
+
+            // 2. signOut() wipes profile cache + localStorage + sessionStorage
             await signOut();
+
+            // 3. Hard reset → brand-new app
+            navigate("/", { replace: true });
+            window.location.assign("/");
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Sign out failed");
             setSigningOut(false);
+            setConfirmSignOut(false);
         }
     };
 
@@ -174,9 +186,7 @@ export default function Settings() {
             setError(e instanceof Error ? e.message : "Delete failed");
             try {
                 await supabase.auth.signOut({ scope: "local" });
-            } catch {
-                /* ignore */
-            }
+            } catch { /* ignore */ }
             setDeleting(false);
             setConfirmDelete(false);
         }
@@ -322,7 +332,7 @@ export default function Settings() {
                         </div>
                         <Button
                             variant="outline"
-                            onClick={onSignOut}
+                            onClick={() => setConfirmSignOut(true)}
                             disabled={signingOut}
                         >
                             <LogOut className="mr-1.5 h-4 w-4" />
@@ -403,6 +413,35 @@ export default function Settings() {
                 </CardContent>
             </Card>
 
+            {/* SIGN OUT CONFIRM */}
+            <Dialog open={confirmSignOut} onOpenChange={setConfirmSignOut}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Sign out?</DialogTitle>
+                        <DialogDescription>
+                            You'll need to sign back in to access your account.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setConfirmSignOut(false)}
+                            disabled={signingOut}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={onSignOut}
+                            disabled={signingOut}
+                        >
+                            {signingOut ? "Signing out…" : "Sign out"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* DELETE CONFIRM */}
             <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -467,9 +506,7 @@ function LegalRow({
 async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
     try {
         await qc.cancelQueries();
-    } catch {
-        /* ignore */
-    }
+    } catch { /* ignore */ }
     qc.clear();
 
     try {
@@ -477,9 +514,7 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
     } catch {
         try {
             await supabase.auth.signOut({ scope: "local" });
-        } catch {
-            /* ignore */
-        }
+        } catch { /* ignore */ }
     }
 
     try {
@@ -492,23 +527,17 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
             if (k.startsWith("hommiecare:")) toRemove.push(k);
         }
         toRemove.forEach((k) => window.localStorage.removeItem(k));
-    } catch {
-        /* ignore */
-    }
+    } catch { /* ignore */ }
 
     try {
         window.sessionStorage.clear();
-    } catch {
-        /* ignore */
-    }
+    } catch { /* ignore */ }
 
     if ("caches" in window) {
         try {
             const keys = await caches.keys();
             await Promise.all(keys.map((k) => caches.delete(k)));
-        } catch {
-            /* ignore */
-        }
+        } catch { /* ignore */ }
     }
 }
 
