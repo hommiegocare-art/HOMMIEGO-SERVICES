@@ -117,7 +117,7 @@ export default function LogEntry() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in pb-32">
+        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in pb-6">
             <button
                 onClick={() => navigate(-1)}
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-2 mb-4 h-11"
@@ -343,7 +343,8 @@ export default function LogEntry() {
                 </p>
             )}
 
-            <div className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t border-border">
+            {/* Save bar — sticky at bottom, works inside any container */}
+            <div className="sticky bottom-0 z-30 -mx-4 mt-6 bg-background/95 backdrop-blur border-t border-border">
                 <div
                     className="max-w-3xl mx-auto px-4 py-3 flex gap-3"
                     style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
