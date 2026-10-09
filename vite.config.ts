@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       manifest: {
-        name: 'HommieCare - Trusted Local Services',
+        name: 'HommieCare',
         short_name: 'HommieCare',
         description: 'Connect with verified professional service providers near you.',
         theme_color: '#ffffff',
