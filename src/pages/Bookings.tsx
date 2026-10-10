@@ -1,6 +1,6 @@
 // src/pages/Bookings.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
     CalendarCheck,
     ChevronRight,
@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import type { Booking, BookingStatus, Profile } from "@/types/db";
 import { Link } from "react-router-dom";
+import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
+
 const PAGE_SIZE = 20;
 
 type BookingRow = Booking & {
@@ -103,6 +105,43 @@ function statusTone(s: BookingStatus): {
     return { bg: "bg-primary/10", fg: "text-primary" };
 }
 
+/**
+ * If the viewer is a client, the counterparty is a caregiver —
+ * fetch verified statuses for all counterparties in one query.
+ * If the viewer is a caregiver, the counterparty is a client and no
+ * badge applies.
+ */
+function useVerifiedCounterparties(
+    rows: BookingRow[],
+    role: "client" | "caregiver"
+) {
+    const caregiverIds =
+        role === "client"
+            ? Array.from(
+                new Set(
+                    rows
+                        .map((r) => r.counterparty?.id)
+                        .filter((id): id is string => !!id)
+                )
+            )
+            : [];
+
+    return useQuery({
+        queryKey: ["bookings-verified-ids", caregiverIds.sort().join(",")],
+        enabled: caregiverIds.length > 0,
+        staleTime: 60_000,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("caregiver_profiles")
+                .select("user_id")
+                .in("user_id", caregiverIds)
+                .eq("verification_status", "verified");
+            if (error) return new Set<string>();
+            return new Set((data ?? []).map((r: any) => r.user_id as string));
+        },
+    });
+}
+
 /* ---------- page ---------- */
 
 export default function Bookings() {
@@ -131,6 +170,8 @@ export default function Bookings() {
         if (bucket === "all") return allRows;
         return allRows.filter((b) => bucketOf(b.status) === bucket);
     }, [allRows, bucket]);
+
+    const { data: verifiedIds } = useVerifiedCounterparties(allRows, role);
 
     const sentinelRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
@@ -182,7 +223,15 @@ export default function Bookings() {
                                 to={`/bookings/${b.id}`}
                                 className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
-                                <BookingCard b={b} role={role} />
+                                <BookingCard
+                                    b={b}
+                                    role={role}
+                                    showVerified={
+                                        role === "client" &&
+                                        !!b.counterparty?.id &&
+                                        !!verifiedIds?.has(b.counterparty.id)
+                                    }
+                                />
                             </Link>
                         ))}
                     </div>
@@ -225,9 +274,11 @@ function BucketChip({
 function BookingCard({
     b,
     role,
+    showVerified,
 }: {
     b: BookingRow;
     role: "client" | "caregiver";
+    showVerified: boolean;
 }) {
     const tone = statusTone(b.status);
     const name =
@@ -252,9 +303,15 @@ function BookingCard({
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-bold text-foreground truncate">
-                            {name}
-                        </p>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                            <p className="text-sm font-bold text-foreground truncate">
+                                {name}
+                            </p>
+                            <VerifiedBadge
+                                show={showVerified}
+                                className="w-4 h-4 shrink-0"
+                            />
+                        </div>
                         <span
                             className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${tone.bg} ${tone.fg}`}
                         >

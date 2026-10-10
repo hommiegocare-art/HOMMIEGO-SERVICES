@@ -41,6 +41,15 @@ import LogEntry from "./pages/LogEntry";
 import HealthPrint from "./pages/HealthPrint";
 import { IosInstallBanner } from "./components/IosInstallBanner";
 
+// Chat module
+import Chats from "@/pages/Chats";
+import { ChatFab } from "@/components/ChatFab";
+import ChatWindow from "./pages/ChatWindow";
+
+// Admin / verification
+import AdminVerifications from "@/pages/admin/AdminVerifications";
+import AdminVerificationDetail from "@/pages/admin/AdminVerificationDetail";
+
 const HOME_FOR: Record<"client" | "caregiver", string> = {
   client: "/dashboard",
   caregiver: "/jobs",
@@ -67,10 +76,18 @@ function isLegalRoute(path: string) {
   return path === "/legal" || path.startsWith("/legal/");
 }
 
+// Chat detail pages render their own full-screen chrome (own header,
+// own composer). They must NOT sit inside TopBar/BottomNav/main padding,
+// otherwise h-[100dvh] overflows the viewport and the page scrolls.
+function isBareAppRoute(path: string) {
+  return /^\/chats\/[^/]+$/.test(path);
+}
+
 function Shell() {
   const { pathname } = useLocation();
   const { user, loading } = useSession();
   usePresence();
+
   if (loading) {
     return (
       <div className="min-h-[100dvh] bg-background">
@@ -110,6 +127,17 @@ function Shell() {
     );
   }
 
+  // Full-screen chat window: no TopBar, no BottomNav, no main padding.
+  // ChatWindow renders its own header + composer and owns the viewport.
+  if (isBareAppRoute(pathname)) {
+    return (
+      <Routes>
+        <Route path="/chats/:connectionId" element={<ChatWindow />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
+  }
+
   // Authenticated app shell.
   return (
     <div className="min-h-[100dvh] bg-background">
@@ -125,6 +153,9 @@ function Shell() {
             <Route path="/health/print/:childId" element={<HealthPrint />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/connections" element={<Connections />} />
+
+            {/* Chat list — detail pages render bare (see isBareAppRoute). */}
+            <Route path="/chats" element={<Chats />} />
 
             {/* Medical */}
             <Route path="/medical/:clientId/exam/new" element={<CaregiverMedicalExam />} />
@@ -148,10 +179,18 @@ function Shell() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/:userId" element={<Profile />} />
 
+            {/* Admin / verification — access gated inside the page components */}
+            <Route path="/admin/verifications" element={<AdminVerifications />} />
+            <Route
+              path="/admin/verifications/:id"
+              element={<AdminVerificationDetail />}
+            />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <BottomNav />
+        <ChatFab />
       </div>
     </div>
   );

@@ -5,7 +5,6 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Search,
   Star,
-  BadgeCheck,
   MapPin,
   Users,
   Heart,
@@ -14,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import type {
   CaregiverDiscoveryRow,
   ClientDiscoveryRow,
@@ -70,7 +70,6 @@ async function fetchClients(
 
   const s = search.trim().replace(/[,()]/g, " ");
   if (s) {
-    // Only display_name is searchable — other fields are privacy-gated
     q = q.ilike("display_name", `%${s}%`);
   }
 
@@ -265,9 +264,10 @@ function CaregiverCard({ c }: { c: CaregiverDiscoveryRow }) {
           <p className="text-sm font-bold text-foreground line-clamp-1 flex-1">
             {c.display_name || "Caregiver"}
           </p>
-          {c.verification_status === "verified" && (
-            <BadgeCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-          )}
+          <VerifiedBadge
+            show={c.verification_status === "verified"}
+            className="w-4 h-4 mt-0.5"
+          />
         </div>
 
         {c.professional_title && (

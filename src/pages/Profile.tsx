@@ -38,16 +38,20 @@ export default function Profile() {
     const { user, loading } = useSession();
     const { hash } = useLocation();
 
+    // Bare /profile → own profile
+    const isSelf = !userId || userId === user?.id;
+    const targetId = isSelf ? user?.id : userId;
+
     // Only caregivers viewing a *client* should we bother checking the connection
     const checkConnection =
         !!user &&
         user.role === "caregiver" &&
-        !!userId &&
-        userId !== user.id;
+        !!targetId &&
+        targetId !== user.id;
 
     const connected = useIsConnectedCaregiver(
         checkConnection ? user?.id : undefined,
-        checkConnection ? userId : undefined,
+        checkConnection ? targetId : undefined,
     );
 
     const showMedical = checkConnection && connected.data === true;
@@ -73,7 +77,7 @@ export default function Profile() {
         return () => {
             cancelled = true;
         };
-    }, [hash, userId, showMedical]);
+    }, [hash, targetId, showMedical]);
 
     if (loading) {
         return (
@@ -87,22 +91,19 @@ export default function Profile() {
 
     if (!user) return null;
 
-    // Viewing own profile
-    if (userId && userId === user.id) return <OwnProfile />;
+    // Own profile (bare /profile OR /profile/<own-id>)
+    if (isSelf) return <OwnProfile />;
 
-    // Viewing someone else
-    if (!userId) return null;
-
+    // Someone else's profile
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-            <PublicProfile userId={userId} />
+            <PublicProfile userId={targetId!} />
 
             {/* Embedded medical record + daily diary — only for connected caregivers */}
             {showMedical && (
                 <div id="medical-record" className="mt-4 scroll-mt-24">
-
-                    <DailyDiaryCard clientId={userId} defaultRangeDays={30} />
-                    <MedicalProfileCard clientId={userId} />
+                    <DailyDiaryCard clientId={targetId!} defaultRangeDays={30} />
+                    <MedicalProfileCard clientId={targetId!} />
                 </div>
             )}
         </div>

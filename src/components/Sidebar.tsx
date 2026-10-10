@@ -13,12 +13,15 @@ import {
     Award,
     BriefcaseBusiness,
     Settings,
+    ShieldCheck,
 } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Logo } from "@/components/brand/Logo";
 
 export function Sidebar() {
     const { user } = useSession();
+    const { isVerifier } = useAdmin();
     const isCaregiver = user?.role === "caregiver";
 
     const ITEMS = [
@@ -78,6 +81,24 @@ export function Sidebar() {
                             </span>
                         </NavLink>
                     ))}
+
+                    {/* Verifications — verifiers only */}
+                    {isVerifier && (
+                        <NavLink
+                            to="/admin/verifications"
+                            className={({ isActive }) =>
+                                `flex items-center gap-3 h-11 px-3 rounded-2xl transition-colors whitespace-nowrap mt-1 ${isActive
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-foreground active:bg-muted"
+                                }`
+                            }
+                        >
+                            <ShieldCheck className="w-5 h-5 shrink-0" />
+                            <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                Verifications
+                            </span>
+                        </NavLink>
+                    )}
                 </nav>
             </div>
         </aside>

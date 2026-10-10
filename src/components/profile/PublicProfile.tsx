@@ -15,6 +15,7 @@ import {
     FileSignature,
     History,
     HeartPulse,
+    ShieldAlert,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -25,6 +26,7 @@ import type {
     Service,
     Connection,
 } from "@/types/db";
+import { VerifiedBadge } from "../brand/VerifiedBadge";
 
 type Media = { id: string; url: string; kind: string };
 
@@ -193,6 +195,14 @@ export function PublicProfile({ userId }: { userId: string }) {
         profile.role === "client" &&
         connStatus === "accepted";
 
+    // Not-verified banner — only for caregivers who are not verified.
+    // Hidden from the caregiver themselves (they see the action card on
+    // their own profile instead).
+    const isViewingSelf = user?.id === profile.id;
+    const isUnverifiedCaregiver =
+        profile.role === "caregiver" &&
+        caregiver?.verification_status !== "verified";
+
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
             <header className="flex items-start gap-4 mb-5">
@@ -211,9 +221,7 @@ export function PublicProfile({ userId }: { userId: string }) {
                         <h1 className="text-xl font-black tracking-tight text-foreground truncate">
                             {profile.display_name || "Anonymous"}
                         </h1>
-                        {caregiver?.verification_status === "verified" && (
-                            <BadgeCheck className="w-5 h-5 text-primary shrink-0" />
-                        )}
+                        <VerifiedBadge show={caregiver?.verification_status === "verified"} />
                     </div>
                     {caregiver?.professional_title && (
                         <p className="text-sm text-muted-foreground mt-0.5">
@@ -227,6 +235,25 @@ export function PublicProfile({ userId }: { userId: string }) {
                     )}
                 </div>
             </header>
+
+            {/* Not-verified notice — read-only for viewers, hidden from self */}
+            {isUnverifiedCaregiver && !isViewingSelf && (
+                <div className="rounded-2xl bg-muted px-4 py-3 mb-5 flex items-start gap-3">
+                    <ShieldAlert className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">
+                            {caregiver?.verification_status === "pending"
+                                ? "Verification pending"
+                                : "Not yet verified"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            {caregiver?.verification_status === "pending"
+                                ? "This caregiver has submitted their profile for review."
+                                : "This caregiver hasn't completed HommieCare verification yet."}
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {canConnect && (
                 <div className="mb-5">
@@ -331,8 +358,14 @@ export function PublicProfile({ userId }: { userId: string }) {
                         Services
                     </h2>
                     <div className="space-y-2">
-                        {services.map((s) => (
-                            <div key={s.id} className="rounded-2xl bg-card px-4 py-3">
+                        {services.map((s) => {
+                            const isFree = s.is_free_consultation;
+                            const canChat =
+                                isFree &&
+                                connStatus === "accepted" &&
+                                !!existingConnection?.id;
+
+                            const inner = (
                                 <div className="flex items-center gap-3">
                                     <span className="w-12 h-12 rounded-2xl bg-muted shrink-0 overflow-hidden flex items-center justify-center">
                                         {s.cover_image ? (
@@ -342,9 +375,16 @@ export function PublicProfile({ userId }: { userId: string }) {
                                         )}
                                     </span>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-foreground truncate">
-                                            {s.title}
-                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-bold text-foreground truncate">
+                                                {s.title}
+                                            </p>
+                                            {isFree && (
+                                                <span className="px-2 py-0.5 rounded-full bg-success/10 text-[10px] font-bold text-success shrink-0">
+                                                    Free
+                                                </span>
+                                            )}
+                                        </div>
                                         {s.short_description && (
                                             <p className="text-xs text-muted-foreground truncate">
                                                 {s.short_description}
@@ -352,13 +392,29 @@ export function PublicProfile({ userId }: { userId: string }) {
                                         )}
                                     </div>
                                     <p className="text-sm font-bold text-foreground shrink-0">
-                                        {s.price != null
-                                            ? `KES ${Math.round(s.price).toLocaleString()}`
-                                            : "Ask"}
+                                        {isFree
+                                            ? "Chat"
+                                            : s.price != null
+                                                ? `KES ${Math.round(s.price).toLocaleString()}`
+                                                : "Ask"}
                                     </p>
                                 </div>
-                            </div>
-                        ))}
+                            );
+
+                            return canChat ? (
+                                <Link
+                                    key={s.id}
+                                    to={`/chats/${existingConnection!.id}`}
+                                    className="block rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
+                                >
+                                    {inner}
+                                </Link>
+                            ) : (
+                                <div key={s.id} className="rounded-2xl bg-card px-4 py-3">
+                                    {inner}
+                                </div>
+                            );
+                        })}
                     </div>
                     {connStatus === "accepted" && (
                         <Link

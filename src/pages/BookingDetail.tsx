@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { QRDisplay } from "@/components/booking/QRDisplay";
 import { QRScanner } from "@/components/booking/QRScanner";
 import { PayButton } from "@/components/booking/PayButton";
@@ -33,6 +34,7 @@ import type {
 type BookingFull = Booking & {
     client: Pick<Profile, "id" | "display_name" | "avatar_url"> | null;
     caregiver: Pick<Profile, "id" | "display_name" | "avatar_url"> | null;
+    caregiverVerified: boolean;
 };
 
 const TIMELINE: BookingStatus[] = [
@@ -78,10 +80,18 @@ async function fetchBooking(id: string): Promise<BookingFull | null> {
 
     const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
+    // Check caregiver verification (batched single query)
+    const { data: cg } = await supabase
+        .from("caregiver_profiles")
+        .select("verification_status")
+        .eq("user_id", b.caregiver_id)
+        .maybeSingle();
+
     return {
         ...b,
         client: byId.get(b.client_id) ?? null,
         caregiver: byId.get(b.caregiver_id) ?? null,
+        caregiverVerified: cg?.verification_status === "verified",
     };
 }
 
@@ -209,6 +219,10 @@ export default function BookingDetail() {
     const otherName =
         other?.display_name || (role === "caregiver" ? "Client" : "Caregiver");
 
+    // Only show the verified badge when the viewer is the client
+    // (i.e., the counterparty is a caregiver).
+    const showBadge = role === "client" && b.caregiverVerified;
+
     const canCancel =
         role === "client" &&
         ["paid_escrow", "accepted", "en_route"].includes(b.status);
@@ -246,9 +260,13 @@ export default function BookingDetail() {
                         </p>
                         <Link
                             to={`/profile/${other?.id}`}
-                            className="text-base font-black text-foreground truncate block active:opacity-70"
+                            className="text-base font-black text-foreground truncate active:opacity-70 inline-flex items-center gap-1.5"
                         >
                             {otherName}
+                            <VerifiedBadge
+                                show={showBadge}
+                                className="w-4 h-4 shrink-0"
+                            />
                         </Link>
                     </div>
                     <span className="text-right">

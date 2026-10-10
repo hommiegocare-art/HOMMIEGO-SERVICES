@@ -179,12 +179,12 @@ export type Service = {
     cover_image: string | null;
     is_active: boolean;
     is_featured: boolean;
+    is_free_consultation: boolean;   // ← ADD THIS LINE
     views_count: number;
     deleted_at: string | null;
     created_at: string;
     updated_at: string;
 };
-
 export type Booking = {
     id: string;
     client_id: string;
@@ -879,6 +879,64 @@ export type ClientInsurance = {
     notes: string | null;
     updated_at: string;
 };
+// ============================================================
+// CHAT — ephemeral 1:1 messaging
+// ============================================================
+
+export type ChatMessage = {
+    id: string;
+    connection_id: string;
+    sender_id: string;
+    body: string | null;
+    ciphertext: string | null;
+    nonce: string | null;
+    sender_public_key: string | null;
+    ttl_seconds: number | null;
+    created_at: string;
+    delivered_at: string | null;
+    read_at: string | null;
+    expires_at: string;
+    tombstoned: boolean;
+    edited_at: string | null;
+    deleted_at: string | null;
+    reply_to_id: string | null;
+};
+export type ChatAttachment = {
+    id: string;
+    message_id: string | null;
+    connection_id: string;
+    uploader_id: string;
+    kind: "image" | "video";
+    cloudinary_public_id: string;
+    cloudinary_url: string;
+    mime_type: string | null;
+    bytes: number | null;
+    width: number | null;
+    height: number | null;
+    duration_seconds: number | null;
+    created_at: string;
+    deleted_at: string | null;
+};
+export type ChatConnectionSettings = {
+    connection_id: string;
+    default_ttl_seconds: number | null;
+    disappearing_enabled: boolean;
+    updated_by: string | null;
+    updated_at: string;
+};
+
+export type Report = {
+    id: string;
+    reporter_id: string;
+    reported_user_id: string;
+    connection_id: string | null;
+    booking_id: string | null;
+    reason: string;
+    notes: string | null;
+    status: "open" | "reviewing" | "resolved" | "dismissed";
+    created_at: string;
+    resolved_at: string | null;
+};
 
 // ============================================================
 // Supabase Database shape
@@ -927,6 +985,14 @@ export type Database = {
             daily_child_events: { Row: DailyChildEvent; Insert: Partial<DailyChildEvent>; Update: Partial<DailyChildEvent> };
             client_emergency_contacts: { Row: ClientEmergencyContact; Insert: Partial<ClientEmergencyContact>; Update: Partial<ClientEmergencyContact> };
             client_insurance: { Row: ClientInsurance; Insert: Partial<ClientInsurance>; Update: Partial<ClientInsurance> };
+
+            // ---- Chat module ----
+            // ---- Chat module ----
+            chat_messages: { Row: ChatMessage; Insert: Partial<ChatMessage>; Update: Partial<ChatMessage> };
+            chat_attachments: { Row: ChatAttachment; Insert: Partial<ChatAttachment>; Update: Partial<ChatAttachment> };
+            chat_connection_settings: { Row: ChatConnectionSettings; Insert: Partial<ChatConnectionSettings>; Update: Partial<ChatConnectionSettings> };
+            reports: { Row: Report; Insert: Partial<Report>; Update: Partial<Report> };
+
         };
         Views: {
             caregiver_discovery_view: { Row: CaregiverDiscoveryRow };

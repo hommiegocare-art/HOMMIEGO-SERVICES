@@ -15,12 +15,15 @@ import {
   Award,
   Settings,
   BriefcaseBusiness,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
+import { useAdmin } from "@/hooks/useAdmin";
 
 export function BottomNav() {
   const { user } = useSession();
+  const { isVerifier } = useAdmin();
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
@@ -61,6 +64,11 @@ export function BottomNav() {
 
     { to: user ? `/profile/${user.id}` : "/auth", label: "Profile", icon: User },
     { to: "/settings", label: "Settings", icon: Settings },
+
+    // Verifiers only
+    ...(isVerifier
+      ? [{ to: "/admin/verifications", label: "Verifications", icon: ShieldCheck }]
+      : []),
   ];
 
   return (

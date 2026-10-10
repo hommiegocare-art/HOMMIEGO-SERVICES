@@ -19,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import type { Service } from "@/types/db";
-
 type FormState = {
     title: string;
     short_description: string;
@@ -29,6 +28,7 @@ type FormState = {
     duration_minutes: string;
     category_id: string;
     cover_image: string;
+    is_free_consultation: boolean;
 };
 
 const EMPTY: FormState = {
@@ -40,8 +40,8 @@ const EMPTY: FormState = {
     duration_minutes: "",
     category_id: "",
     cover_image: "",
+    is_free_consultation: false,
 };
-
 export default function Services() {
     const { user } = useSession();
     const qc = useQueryClient();
@@ -99,13 +99,14 @@ export default function Services() {
                 title: form.title.trim(),
                 short_description: form.short_description.trim() || null,
                 description: form.description.trim() || null,
-                price: priceNum,
+                price: form.is_free_consultation ? 0 : priceNum,
                 pricing_type: form.pricing_type,
                 duration_minutes: form.duration_minutes
                     ? Number(form.duration_minutes)
                     : null,
                 category_id: form.category_id || null,
                 cover_image: form.cover_image || null,
+                is_free_consultation: form.is_free_consultation,
             };
 
             if (editingId) {
@@ -211,6 +212,7 @@ export default function Services() {
                 s.duration_minutes != null ? String(s.duration_minutes) : "",
             category_id: s.category_id ?? "",
             cover_image: s.cover_image ?? "",
+            is_free_consultation: !!s.is_free_consultation,
         });
         setError(null);
     }
@@ -367,6 +369,11 @@ function ServiceCard({
                                     {categoryName}
                                 </span>
                             )}
+                            {s.is_free_consultation && (
+                                <span className="px-2 py-0.5 rounded-full bg-success/10 text-xs font-semibold text-success">
+                                    Free
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -422,7 +429,6 @@ function ServiceCard({
         </div>
     );
 }
-
 function ServiceSheet({
     form,
     setForm,
@@ -451,8 +457,9 @@ function ServiceSheet({
     onClose: () => void;
 }) {
     return (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col">
-            <div className="h-14 flex items-center justify-between px-4 shrink-0">
+        <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+            {/* Header — sticky so Close/title stay visible while scrolling */}
+            <div className="sticky top-0 z-10 bg-background h-14 flex items-center justify-between px-4">
                 <button
                     onClick={onClose}
                     className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted transition-colors"
@@ -466,7 +473,8 @@ function ServiceSheet({
                 <span className="w-11" />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6">
+            {/* Form content */}
+            <div className="px-4 pb-6">
                 <div className="max-w-lg mx-auto space-y-4">
                     <Field label="Title">
                         <Input
@@ -502,7 +510,6 @@ function ServiceSheet({
                             className="rounded-2xl bg-muted border-0"
                         />
                     </Field>
-
                     <div className="grid grid-cols-2 gap-3">
                         <Field label="Price (KES)">
                             <Input
@@ -512,7 +519,8 @@ function ServiceSheet({
                                 onChange={(e) =>
                                     setForm((f) => (f ? { ...f, price: e.target.value } : f))
                                 }
-                                className="h-11 rounded-2xl bg-muted border-0"
+                                disabled={form.is_free_consultation}
+                                className="h-11 rounded-2xl bg-muted border-0 disabled:opacity-60"
                             />
                         </Field>
                         <Field label="Duration (minutes)">
@@ -548,6 +556,34 @@ function ServiceSheet({
                                 </button>
                             ))}
                         </div>
+                    </Field>
+                    <Field label="Free consultation">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setForm((f) =>
+                                    f
+                                        ? {
+                                            ...f,
+                                            is_free_consultation: !f.is_free_consultation,
+                                            price: !f.is_free_consultation ? "0" : f.price,
+                                        }
+                                        : f,
+                                )
+                            }
+                            className={`h-11 w-full rounded-2xl px-4 text-sm font-semibold transition-colors inline-flex items-center justify-between ${form.is_free_consultation
+                                ? "bg-success/10 text-success"
+                                : "bg-muted text-foreground"
+                                }`}
+                        >
+                            <span>Offer as a free chat consultation</span>
+                            <span className="text-xs text-muted-foreground">
+                                {form.is_free_consultation ? "On" : "Off"}
+                            </span>
+                        </button>
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                            Clients with an accepted connection tap this and go straight to chat.
+                        </p>
                     </Field>
 
                     <Field label="Category">
@@ -636,31 +672,31 @@ function ServiceSheet({
                             <p className="text-sm text-destructive">{error}</p>
                         </div>
                     )}
-                </div>
-            </div>
 
-            <div className="shrink-0 px-4 py-4 bg-background">
-                <div className="max-w-lg mx-auto flex gap-3">
-                    <button
-                        onClick={onClose}
-                        disabled={saving}
-                        className="flex-1 h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold active:bg-secondary transition-colors disabled:opacity-60"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={onSave}
-                        disabled={saving || uploading || !form.title.trim()}
-                        className="flex-1 h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold active:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-2"
-                    >
-                        {saving ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : editing ? (
-                            "Save changes"
-                        ) : (
-                            "Create service"
-                        )}
-                    </button>
+                    {/* Buttons — end of the form, scroll with the page */}
+                    <div className="flex gap-3 pt-2"
+                        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" }}>
+                        <button
+                            onClick={onClose}
+                            disabled={saving}
+                            className="flex-1 h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold active:bg-secondary transition-colors disabled:opacity-60"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={onSave}
+                            disabled={saving || uploading || !form.title.trim()}
+                            className="flex-1 h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold active:opacity-90 transition-opacity disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                        >
+                            {saving ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : editing ? (
+                                "Save changes"
+                            ) : (
+                                "Create service"
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

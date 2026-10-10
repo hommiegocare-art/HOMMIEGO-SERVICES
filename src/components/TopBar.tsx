@@ -20,6 +20,7 @@ export function TopBar() {
                 .select("id", { count: "exact", head: true })
                 .eq("user_id", user!.id)
                 .eq("is_read", false)
+                .neq("type", "chat_message")
                 .limit(1);
             if (error) return 0;
             return count ?? 0;

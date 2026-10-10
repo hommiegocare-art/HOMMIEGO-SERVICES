@@ -16,6 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, Lock, ShieldCheck } from "lucide-react";
+import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 
 type Service = {
     id: string;
@@ -30,11 +31,13 @@ type CaregiverLite = {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
+    verified: boolean;
 };
 
 type ClientProfile = {
     address: string | null;
 };
+
 export default function BookingNew() {
     const [params] = useSearchParams();
     const navigate = useNavigate();
@@ -98,7 +101,7 @@ export default function BookingNew() {
                 return;
             }
 
-            const [cgRes, svcRes, cliRes] = await Promise.all([
+            const [cgRes, svcRes, cliRes, verifyRes] = await Promise.all([
                 supabase
                     .from("profiles")
                     .select("id,display_name,avatar_url")
@@ -117,6 +120,11 @@ export default function BookingNew() {
                     .select("address")
                     .eq("user_id", user.id)
                     .maybeSingle(),
+                supabase
+                    .from("caregiver_profiles")
+                    .select("verification_status")
+                    .eq("user_id", caregiverId)
+                    .maybeSingle(),
             ]);
 
             if (cancelled) return;
@@ -124,7 +132,13 @@ export default function BookingNew() {
                 setState({ kind: "error", message: "Caregiver not found." });
                 return;
             }
-            setState({ kind: "ok", caregiver: cgRes.data as CaregiverLite });
+            setState({
+                kind: "ok",
+                caregiver: {
+                    ...(cgRes.data as Omit<CaregiverLite, "verified">),
+                    verified: verifyRes.data?.verification_status === "verified",
+                },
+            });
             setServices((svcRes.data ?? []) as Service[]);
             setClient((cliRes.data ?? null) as ClientProfile | null);
             if (user.phone_number) setWhatsapp(user.phone_number);
@@ -147,9 +161,6 @@ export default function BookingNew() {
         [services, serviceId],
     );
 
-    // When the user picks a different service, reset the duration to that
-    // service's default. Tracked via a ref so manual edits aren't clobbered
-    // on unrelated re-renders.
     const lastServiceIdRef = useRef<string>("");
     useEffect(() => {
         if (!selectedService) return;
@@ -305,8 +316,9 @@ export default function BookingNew() {
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">
                         Booking
                     </p>
-                    <h1 className="truncate text-xl font-semibold">
+                    <h1 className="truncate text-xl font-semibold inline-flex items-center gap-1.5">
                         {cg.display_name ?? "Caregiver"}
+                        <VerifiedBadge show={cg.verified} className="w-4 h-4 shrink-0" />
                     </h1>
                 </div>
             </header>

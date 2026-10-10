@@ -1,7 +1,7 @@
 // src/components/profile/OwnProfile.tsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Pencil,
     MapPin,
@@ -11,6 +11,9 @@ import {
     Award,
     Settings2,
     ArrowRight,
+    ShieldCheck,
+    Clock,
+    Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -19,6 +22,7 @@ import { EditProfileForm } from "@/components/profile/EditProfileForm";
 import { MedicalProfileCard } from "@/components/profile/MedicalProfileCard";
 import { CaregiverCredentialsCard } from "@/components/profile/CaregiverCredentialsCard";
 import { DailyDiaryCard } from "../daily/DailyDiaryCard";
+import { VerifiedBadge } from "../brand/VerifiedBadge";
 
 async function fetchCaregiver(userId: string): Promise<CaregiverProfile | null> {
     const { data } = await supabase
@@ -40,6 +44,7 @@ async function fetchClient(userId: string): Promise<ClientProfile | null> {
 
 export function OwnProfile() {
     const { user } = useSession();
+    const qc = useQueryClient();
     const [editing, setEditing] = useState(false);
 
     const isCaregiver = user?.role === "caregiver";
@@ -62,9 +67,31 @@ export function OwnProfile() {
         queryFn: () => fetchClient(user!.id),
     });
 
+    const requestVerification = useMutation({
+        mutationFn: async () => {
+            if (!user) throw new Error("Not signed in");
+            const { error } = await supabase
+                .from("caregiver_profiles")
+                .update({ verification_status: "pending" })
+                .eq("user_id", user.id);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["profile", "caregiver", user?.id] });
+            qc.invalidateQueries({ queryKey: ["profile"] });
+        },
+        onError: (e) => {
+            alert(`Could not request verification: ${(e as Error).message}`);
+        },
+    });
+
     if (!user) return null;
 
     const location = [user.city, user.county].filter(Boolean).join(", ");
+    const status = caregiver?.verification_status;
+    const isVerified = status === "verified";
+    const isPending = status === "pending";
+    const isRejected = status === "rejected";
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
@@ -84,9 +111,7 @@ export function OwnProfile() {
                         <h1 className="text-xl font-black tracking-tight text-foreground truncate">
                             {user.display_name || "You"}
                         </h1>
-                        {caregiver?.verification_status === "verified" && (
-                            <BadgeCheck className="w-5 h-5 text-primary shrink-0" />
-                        )}
+                        <VerifiedBadge show={caregiver?.verification_status === "verified"} />
                     </div>
                     {caregiver?.professional_title && (
                         <p className="text-sm text-muted-foreground mt-0.5">
@@ -100,6 +125,16 @@ export function OwnProfile() {
                     )}
                 </div>
             </header>
+
+            {/* Verification card — caregivers only, non-verified states */}
+            {isCaregiver && caregiver && !isVerified && (
+                <VerificationCard
+                    status={status}
+                    notes={caregiver.verification_notes}
+                    isPending={requestVerification.isPending}
+                    onRequest={() => requestVerification.mutate()}
+                />
+            )}
 
             <div className="flex gap-2 mb-5">
                 <button
@@ -203,6 +238,77 @@ export function OwnProfile() {
                     {!isCaregiver && <DailyDiaryCard />}
                 </>
             )}
+        </div>
+    );
+}
+
+function VerificationCard({
+    status,
+    notes,
+    isPending,
+    onRequest,
+}: {
+    status: string | undefined;
+    notes: string | null | undefined;
+    isPending: boolean;
+    onRequest: () => void;
+}) {
+    if (status === "pending") {
+        return (
+            <div className="rounded-2xl bg-muted px-4 py-4 mb-5 flex items-start gap-3">
+                <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                    <p className="text-sm font-bold text-foreground">
+                        Verification pending
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        A reviewer is looking at your profile. You'll be notified once a
+                        decision is made.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-2xl bg-primary/10 px-4 py-4 mb-5">
+            <div className="flex items-start gap-3">
+                <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground">
+                        {status === "rejected"
+                            ? "Verification was rejected"
+                            : "You're not verified yet"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        {status === "rejected"
+                            ? "Fix the issue below, then request verification again."
+                            : "Get verified to earn client trust and appear with the verified badge."}
+                    </p>
+                    {status === "rejected" && notes && (
+                        <p className="text-xs text-destructive mt-2">
+                            Reason: {notes}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            <button
+                onClick={onRequest}
+                disabled={isPending}
+                className="mt-3 w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-2 active:opacity-90 transition-opacity disabled:opacity-60"
+            >
+                {isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                    <>
+                        <ShieldCheck className="w-4 h-4" />
+                        {status === "rejected"
+                            ? "Request verification again"
+                            : "Request verification"}
+                    </>
+                )}
+            </button>
         </div>
     );
 }
