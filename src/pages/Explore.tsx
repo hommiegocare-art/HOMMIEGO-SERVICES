@@ -1,7 +1,7 @@
 // src/pages/Explore.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router-dom";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   Search,
   Star,
@@ -9,6 +9,9 @@ import {
   Users,
   Heart,
   Home,
+  Eye,
+  MessageCircle,
+  Clock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,9 +42,7 @@ async function fetchCaregivers(
 
   const s = search.trim().replace(/[,()]/g, " ");
   if (s) {
-    q = q.or(
-      `display_name.ilike.%${s}%,professional_title.ilike.%${s}%`
-    );
+    q = q.or(`display_name.ilike.%${s}%,professional_title.ilike.%${s}%`);
   }
 
   const { data, error } = await q;
@@ -83,10 +84,30 @@ async function fetchClients(
   };
 }
 
+/* ---------- fetch: my connections (for Consult button state) ---------- */
+
+type MyConnection = {
+  id: string;
+  client_id: string;
+  caregiver_id: string;
+  status: string;
+};
+
+async function fetchMyConnections(viewerId: string): Promise<MyConnection[]> {
+  const { data, error } = await supabase
+    .from("connections")
+    .select("id, client_id, caregiver_id, status")
+    .or(`client_id.eq.${viewerId},caregiver_id.eq.${viewerId}`)
+    .is("deleted_at", null);
+  if (error) throw error;
+  return (data ?? []) as MyConnection[];
+}
+
 /* ---------- page ---------- */
 
 export default function Explore() {
   const { user } = useSession();
+  const navigate = useNavigate();
   const isCaregiver = user?.role === "caregiver";
 
   const [searchInput, setSearchInput] = useState("");
@@ -110,10 +131,49 @@ export default function Explore() {
     staleTime: 2 * 60_000,
   });
 
+  const { data: myConnections = [] } = useQuery({
+    queryKey: ["connections", "mine", user?.id],
+    enabled: !!user,
+    staleTime: 60_000,
+    queryFn: () => fetchMyConnections(user!.id),
+  });
+
+  // Map: target user id -> { id, status }. Prefer accepted > pending.
+  const connByTarget = useMemo(() => {
+    const map = new Map<string, { id: string; status: string }>();
+    if (!user) return map;
+    const rank = (s: string) => (s === "accepted" ? 3 : s === "pending" ? 2 : 1);
+    for (const c of myConnections) {
+      const otherId = c.client_id === user.id ? c.caregiver_id : c.client_id;
+      const existing = map.get(otherId);
+      if (!existing || rank(c.status) > rank(existing.status)) {
+        map.set(otherId, { id: c.id, status: c.status });
+      }
+    }
+    return map;
+  }, [myConnections, user]);
+
   const rows = useMemo(
     () => query.data?.pages.flatMap((p) => p.rows) ?? [],
     [query.data]
   );
+
+  // Split into "connected" (accepted) and "discover". Only connections that
+  // actually appear in the fetched page are shown at the top — we don't
+  // fabricate rows here.
+  const { connectedRows, discoverRows } = useMemo(() => {
+    const connected: (CaregiverDiscoveryRow | ClientDiscoveryRow)[] = [];
+    const discover: (CaregiverDiscoveryRow | ClientDiscoveryRow)[] = [];
+    for (const r of rows) {
+      const id = isCaregiver
+        ? (r as ClientDiscoveryRow).client_id
+        : (r as CaregiverDiscoveryRow).caregiver_id;
+      const conn = connByTarget.get(id);
+      if (conn?.status === "accepted") connected.push(r);
+      else discover.push(r);
+    }
+    return { connectedRows: connected, discoverRows: discover };
+  }, [rows, connByTarget, isCaregiver]);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -134,6 +194,44 @@ export default function Explore() {
     io.observe(el);
     return () => io.disconnect();
   }, [query]);
+
+  const onConsult = (targetId: string) => {
+    const existing = connByTarget.get(targetId);
+    if (existing?.status === "accepted") {
+      navigate(`/chats/${existing.id}`);
+      return;
+    }
+    if (!existing) {
+      navigate(`/profile/${targetId}?consult=1`);
+      return;
+    }
+    // pending / blocked — no-op
+  };
+
+  const renderCard = (r: CaregiverDiscoveryRow | ClientDiscoveryRow) => {
+    if (isCaregiver) {
+      const c = r as ClientDiscoveryRow;
+      return (
+        <ClientCard
+          key={c.client_id}
+          c={c}
+          conn={connByTarget.get(c.client_id) ?? null}
+          onConsult={onConsult}
+        />
+      );
+    }
+    const c = r as CaregiverDiscoveryRow;
+    return (
+      <CaregiverCard
+        key={c.caregiver_id}
+        c={c}
+        conn={connByTarget.get(c.caregiver_id) ?? null}
+        onConsult={onConsult}
+      />
+    );
+  };
+
+  const hasAnyRows = rows.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 pb-8">
@@ -166,22 +264,36 @@ export default function Explore() {
 
       {query.isLoading ? (
         <GridSkeleton />
-      ) : rows.length === 0 ? (
+      ) : !hasAnyRows ? (
         <EmptyState
           isCaregiver={isCaregiver}
           hasFilters={!!search || onlineOnly}
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-fade-in">
-            {isCaregiver
-              ? (rows as ClientDiscoveryRow[]).map((c) => (
-                <ClientCard key={c.client_id} c={c} />
-              ))
-              : (rows as CaregiverDiscoveryRow[]).map((c) => (
-                <CaregiverCard key={c.caregiver_id} c={c} />
-              ))}
-          </div>
+          {/* Connected — pinned at the top */}
+          {connectedRows.length > 0 && (
+            <section className="mb-5">
+              <SectionLabel>
+                {isCaregiver ? "My care circle" : "Your connections"}
+              </SectionLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {connectedRows.map(renderCard)}
+              </div>
+            </section>
+          )}
+
+          {/* Discover */}
+          {discoverRows.length > 0 && (
+            <section>
+              {connectedRows.length > 0 && (
+                <SectionLabel>Discover more</SectionLabel>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">
+                {discoverRows.map(renderCard)}
+              </div>
+            </section>
+          )}
 
           <div ref={sentinelRef} className="h-10" />
 
@@ -202,6 +314,14 @@ export default function Explore() {
 }
 
 /* ---------- pieces ---------- */
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mb-2 mt-1">
+      {children}
+    </p>
+  );
+}
 
 function FilterChip({
   active,
@@ -225,164 +345,260 @@ function FilterChip({
   );
 }
 
-function CaregiverCard({ c }: { c: CaregiverDiscoveryRow }) {
-  const location = [c.city, c.county].filter(Boolean).join(", ") || "Kenya";
-  const initial = c.display_name?.[0]?.toUpperCase() ?? "C";
+/* ---------- avatar ---------- */
 
+function Avatar({
+  url,
+  name,
+  online,
+}: {
+  url: string | null;
+  name: string;
+  online?: boolean;
+}) {
+  const initial = name?.[0]?.toUpperCase() ?? "?";
   return (
-    <Link
-      to={`/profile/${c.caregiver_id}`}
-      className="rounded-2xl bg-card overflow-hidden active:bg-muted transition-colors"
-    >
-      <div className="aspect-square bg-muted relative">
-        {c.avatar_url ? (
+    <div className="relative shrink-0">
+      <div className="h-20 w-20 rounded-full overflow-hidden bg-muted ring-2 ring-background">
+        {url ? (
           <img
-            src={c.avatar_url}
+            src={url}
             alt=""
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-16 w-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-black">
-              {initial}
-            </div>
-          </div>
-        )}
-
-        {c.is_available && (
-          <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background text-xs font-semibold text-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Online
+          <div className="h-full w-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-black">
+            {initial}
           </div>
         )}
       </div>
-
-      <div className="p-3 space-y-1">
-        <div className="flex items-start justify-between gap-1">
-          <p className="text-sm font-bold text-foreground line-clamp-1 flex-1">
-            {c.display_name || "Caregiver"}
-          </p>
-          <VerifiedBadge
-            show={c.verification_status === "verified"}
-            className="w-4 h-4 mt-0.5"
-          />
-        </div>
-
-        {c.professional_title && (
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            {c.professional_title}
-          </p>
-        )}
-
-        <div className="flex items-center gap-1 pt-1">
-          <Star className="w-3 h-3 fill-current text-primary" />
-          <span className="text-xs font-semibold text-foreground">
-            {c.average_rating && c.average_rating > 0
-              ? Number(c.average_rating).toFixed(1)
-              : "New"}
-          </span>
-          {c.total_reviews != null && c.total_reviews > 0 && (
-            <span className="text-xs text-muted-foreground">
-              ({c.total_reviews})
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 pt-0.5">
-          <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground truncate">
-            {location}
-          </span>
-        </div>
-      </div>
-    </Link>
+      {online && (
+        <span
+          className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-success ring-2 ring-card"
+          aria-label="Online"
+        />
+      )}
+    </div>
   );
 }
 
-function ClientCard({ c }: { c: ClientDiscoveryRow }) {
-  const location = [c.city, c.county].filter(Boolean).join(", ") || "Kenya";
-  const initial = c.display_name?.[0]?.toUpperCase() ?? "?";
-  const isAnonymous = !c.display_name || c.display_name === "Anonymous";
+/* ---------- action row ---------- */
+
+function CardActions({
+  profileHref,
+  targetId,
+  conn,
+  onConsult,
+  connected,
+}: {
+  profileHref: string;
+  targetId: string;
+  conn: { id: string; status: string } | null;
+  onConsult: (id: string) => void;
+  connected?: boolean;
+}) {
+  const status = conn?.status;
+  const accepted = status === "accepted";
+  const pending = status === "pending";
+  const blocked = status === "blocked" || status === "ended" || status === "declined";
+  const disabled = pending || blocked;
+
+  const label = pending ? "Pending" : accepted ? "Consult" : "Consult";
+  const Icon = pending ? Clock : MessageCircle;
 
   return (
-    <Link
-      to={`/profile/${c.client_id}`}
-      className="rounded-2xl bg-card overflow-hidden active:bg-muted transition-colors"
-    >
-      <div className="aspect-square bg-muted relative">
-        {c.avatar_url ? (
-          <img
-            src={c.avatar_url}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-16 w-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-black">
-              {initial}
-            </div>
+    <div className="mt-4 flex items-center justify-end gap-2">
+      {connected && (
+        <span className="mr-auto text-[11px] font-bold uppercase tracking-wider text-success">
+          Connected
+        </span>
+      )}
+      <Link
+        to={profileHref}
+        className="h-10 px-4 rounded-xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:bg-secondary transition-colors"
+      >
+        <Eye className="w-4 h-4" />
+        View
+      </Link>
+      <button
+        type="button"
+        onClick={() => onConsult(targetId)}
+        disabled={disabled}
+        className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Icon className="w-4 h-4" />
+        {label}
+      </button>
+    </div>
+  );
+}
+
+/* ---------- caregiver card ---------- */
+
+function CaregiverCard({
+  c,
+  conn,
+  onConsult,
+}: {
+  c: CaregiverDiscoveryRow;
+  conn: { id: string; status: string } | null;
+  onConsult: (id: string) => void;
+}) {
+  const location = [c.city, c.county].filter(Boolean).join(", ") || "Kenya";
+  const rating =
+    c.average_rating && c.average_rating > 0
+      ? Number(c.average_rating).toFixed(1)
+      : "New";
+  const connected = conn?.status === "accepted";
+
+  return (
+    <div className="rounded-2xl bg-card p-4 transition-colors">
+      <div className="flex items-start gap-3">
+        <Avatar
+          url={c.avatar_url}
+          name={c.display_name ?? "Caregiver"}
+          online={c.is_available}
+        />
+
+        <div className="min-w-0 flex-1 pt-1">
+          <div className="flex items-center gap-1">
+            <Link
+              to={`/profile/${c.caregiver_id}`}
+              className="text-sm font-bold text-foreground truncate hover:underline"
+            >
+              {c.display_name || "Caregiver"}
+            </Link>
+            <VerifiedBadge
+              show={c.verification_status === "verified"}
+              className="w-4 h-4 shrink-0"
+            />
           </div>
-        )}
 
-        {isAnonymous && (
-          <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background text-xs font-semibold text-foreground">
-            <Heart className="w-3 h-3 text-primary" />
-            Private
-          </div>
-        )}
-      </div>
+          {c.professional_title && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              {c.professional_title}
+            </p>
+          )}
 
-      <div className="p-3 space-y-1">
-        <p className="text-sm font-bold text-foreground line-clamp-1">
-          {c.display_name || "Anonymous"}
-        </p>
-
-        <div className="flex items-center gap-1 pt-0.5">
-          <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground truncate">
-            {location}
-          </span>
-        </div>
-
-        {c.living_situation && (
-          <div className="flex items-center gap-1 pt-0.5">
-            <Home className="w-3 h-3 text-muted-foreground shrink-0" />
-            <span className="text-xs text-muted-foreground truncate capitalize">
-              {c.living_situation.replace(/_/g, " ")}
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Star className="w-3 h-3 fill-current text-primary" />
+              <span className="font-semibold text-foreground">{rating}</span>
+              {c.total_reviews != null && c.total_reviews > 0 && (
+                <span>({c.total_reviews})</span>
+              )}
+            </span>
+            <span className="inline-flex items-center gap-1 truncate">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span className="truncate">{location}</span>
             </span>
           </div>
-        )}
-
-        {c.pref_languages && c.pref_languages.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
-            {c.pref_languages.slice(0, 2).map((lang) => (
-              <span
-                key={lang}
-                className="px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground"
-              >
-                {lang}
-              </span>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
-    </Link>
+
+      <CardActions
+        profileHref={`/profile/${c.caregiver_id}`}
+        targetId={c.caregiver_id}
+        conn={conn}
+        onConsult={onConsult}
+        connected={connected}
+      />
+    </div>
+  );
+}
+
+/* ---------- client card ---------- */
+
+function ClientCard({
+  c,
+  conn,
+  onConsult,
+}: {
+  c: ClientDiscoveryRow;
+  conn: { id: string; status: string } | null;
+  onConsult: (id: string) => void;
+}) {
+  const location = [c.city, c.county].filter(Boolean).join(", ") || "Kenya";
+  const isAnonymous = !c.display_name || c.display_name === "Anonymous";
+  const connected = conn?.status === "accepted";
+
+  return (
+    <div className="rounded-2xl bg-card p-4 transition-colors">
+      <div className="flex items-start gap-3">
+        <Avatar url={c.avatar_url} name={c.display_name ?? "Anonymous"} />
+
+        <div className="min-w-0 flex-1 pt-1">
+          <div className="flex items-center gap-1">
+            <Link
+              to={`/profile/${c.client_id}`}
+              className="text-sm font-bold text-foreground truncate hover:underline"
+            >
+              {c.display_name || "Anonymous"}
+            </Link>
+            {isAnonymous && (
+              <Heart className="w-3.5 h-3.5 text-primary shrink-0" />
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 truncate">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span className="truncate">{location}</span>
+            </span>
+            {c.living_situation && (
+              <span className="inline-flex items-center gap-1 truncate">
+                <Home className="w-3 h-3 shrink-0" />
+                <span className="truncate capitalize">
+                  {c.living_situation.replace(/_/g, " ")}
+                </span>
+              </span>
+            )}
+          </div>
+
+          {c.pref_languages && c.pref_languages.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {c.pref_languages.slice(0, 3).map((lang) => (
+                <span
+                  key={lang}
+                  className="px-2 py-0.5 rounded-full bg-muted text-[11px] font-medium text-muted-foreground"
+                >
+                  {lang}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <CardActions
+        profileHref={`/profile/${c.client_id}`}
+        targetId={c.client_id}
+        conn={conn}
+        onConsult={onConsult}
+        connected={connected}
+      />
+    </div>
   );
 }
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="rounded-2xl bg-card overflow-hidden">
-          <div className="aspect-square skeleton-shimmer" />
-          <div className="p-3 space-y-2">
-            <div className="h-3 rounded skeleton-shimmer w-3/4" />
-            <div className="h-2.5 rounded skeleton-shimmer w-1/2" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="rounded-2xl bg-card p-4">
+          <div className="flex items-start gap-3">
+            <div className="h-20 w-20 rounded-full skeleton-shimmer shrink-0" />
+            <div className="flex-1 space-y-2 pt-2">
+              <div className="h-3 rounded skeleton-shimmer w-3/4" />
+              <div className="h-2.5 rounded skeleton-shimmer w-1/2" />
+              <div className="h-2.5 rounded skeleton-shimmer w-2/3" />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-4 justify-end">
+            <div className="h-10 w-20 rounded-xl skeleton-shimmer" />
+            <div className="h-10 w-24 rounded-xl skeleton-shimmer" />
           </div>
         </div>
       ))}
