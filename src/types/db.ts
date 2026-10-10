@@ -355,7 +355,30 @@ export type CaregiverFollow = {
     followee_id: string;
     created_at: string;
 };
+export type Endorsement = {
+    id: string;
+    endorser_id: string;
+    endorsed_id: string;
+    connection_id: string;
+    skill: string;
+    note: string | null;
+    created_at: string;
+    deleted_at: string | null;
+};
 
+export type EndorsementSummary = {
+    endorsed_id: string;
+    skill: string;
+    total: number;
+    last_endorsed_at: string;
+};
+
+export type EndorsementTotals = {
+    endorsed_id: string;
+    total_endorsements: number;
+    distinct_skills: number;
+    last_endorsed_at: string;
+};
 // Discovery view row shapes
 export type CaregiverDiscoveryRow = {
     caregiver_id: string;
@@ -374,6 +397,7 @@ export type CaregiverDiscoveryRow = {
     accepting_new_clients: boolean | null;
     peer_consultation_opt_in: boolean | null;
     verification_status: VerificationStatus | null;
+    total_views: number | null;
 };
 
 export type ClientDiscoveryRow = {
@@ -393,6 +417,7 @@ export type ClientDiscoveryRow = {
     show_conditions: boolean;
     show_allergies: boolean;
     created_at: string;
+    total_views: number | null;
 };
 
 // ============================================================
@@ -964,7 +989,7 @@ export type Database = {
             cpd_events: { Row: CpdEvent; Insert: Partial<CpdEvent>; Update: Partial<CpdEvent> };
             service_milestones: { Row: ServiceMilestone; Insert: Partial<ServiceMilestone>; Update: Partial<ServiceMilestone> };
             caregiver_follows: { Row: CaregiverFollow; Insert: Partial<CaregiverFollow>; Update: Partial<CaregiverFollow> };
-
+            endorsements: { Row: Endorsement; Insert: Partial<Endorsement>; Update: Partial<Endorsement> };
             // ---- Medical ----
             client_medical_profile: { Row: ClientMedicalProfile; Insert: Partial<ClientMedicalProfile>; Update: Partial<ClientMedicalProfile> };
             medical_allergies: { Row: MedicalAllergy; Insert: Partial<MedicalAllergy>; Update: Partial<MedicalAllergy> };
@@ -998,6 +1023,8 @@ export type Database = {
             caregiver_discovery_view: { Row: CaregiverDiscoveryRow };
             client_discovery_view: { Row: ClientDiscoveryRow };
             caregiver_cpd_totals: { Row: { caregiver_id: string; cpd_points: number; cpd_hours: number; milestones_earned: number } };
+            endorsement_summary: { Row: EndorsementSummary };
+            endorsement_totals: { Row: EndorsementTotals };
         };
         Enums: {
             user_role: UserRole;

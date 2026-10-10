@@ -171,7 +171,7 @@ function MoreSheet({
     >
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-foreground/40 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
+        className={`absolute inset-0 bg-background/70 backdrop-blur-sm transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
           }`}
       />
 
@@ -180,10 +180,10 @@ function MoreSheet({
         role="dialog"
         aria-modal="true"
         aria-label="More"
-        className={`absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl shadow-xl transform transition-transform duration-250 ease-out ${open ? "translate-y-0" : "translate-y-full"
+        className={`absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl border-t border-border transition-transform duration-200 ease-out ${open ? "translate-y-0" : "translate-y-full"
           }`}
         style={{
-          transform: open ? `translateY(${dragY}px)` : "translateY(100%)",
+          transform: open ? `translateY(${dragY}px)` : undefined,
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
         onPointerDown={onPointerDown}

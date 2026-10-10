@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Pencil,
     MapPin,
-    BadgeCheck,
     Star,
     Shield,
     Award,
@@ -14,6 +13,7 @@ import {
     ShieldCheck,
     Clock,
     Loader2,
+    Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -90,8 +90,6 @@ export function OwnProfile() {
     const location = [user.city, user.county].filter(Boolean).join(", ");
     const status = caregiver?.verification_status;
     const isVerified = status === "verified";
-    const isPending = status === "pending";
-    const isRejected = status === "rejected";
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
@@ -126,7 +124,6 @@ export function OwnProfile() {
                 </div>
             </header>
 
-            {/* Verification card — caregivers only, non-verified states */}
             {isCaregiver && caregiver && !isVerified && (
                 <VerificationCard
                     status={status}
@@ -182,13 +179,16 @@ export function OwnProfile() {
                                 />
                             </div>
 
+                            {/* Public-facing stats */}
+                            <ProfileViewsCard userId={user.id} />
+                            <EndorsementsCard userId={user.id} />
+
                             {caregiver.bio && (
                                 <p className="text-sm text-foreground leading-relaxed mb-5">
                                     {caregiver.bio}
                                 </p>
                             )}
 
-                            {/* Preview of what clients see — public media only */}
                             <OwnGallery userId={user.id} />
 
                             <CaregiverCredentialsCard />
@@ -241,6 +241,8 @@ export function OwnProfile() {
         </div>
     );
 }
+
+/* ---------- verification card (unchanged) ---------- */
 
 function VerificationCard({
     status,
@@ -313,11 +315,122 @@ function VerificationCard({
     );
 }
 
-/**
- * Read-only gallery. Same query as PublicProfile — the client's view of what
- * others will see. Only shows 'gallery' and 'hospital' kinds; ID documents
- * stay private and are visible only when editing.
- */
+/* ---------- profile views card (NEW) ---------- */
+
+function ProfileViewsCard({ userId }: { userId: string }) {
+    const { data } = useQuery({
+        queryKey: ["profile-views", userId],
+        staleTime: 60_000,
+        queryFn: async () => {
+            const { data } = await supabase
+                .from("profile_view_counts")
+                .select("total_views, views_7d, views_24h")
+                .eq("target_id", userId)
+                .maybeSingle();
+            return (
+                data ?? { total_views: 0, views_7d: 0, views_24h: 0 }
+            ) as { total_views: number; views_7d: number; views_24h: number };
+        },
+    });
+
+    if (!data) return null;
+    // Hide until there's at least something to show
+    if (data.total_views === 0) return null;
+
+    return (
+        <div className="rounded-2xl bg-card px-4 py-4 mb-3">
+            <div className="flex items-center gap-2 mb-3">
+                <Eye className="w-4 h-4 text-primary" />
+                <p className="text-sm font-bold text-foreground">Profile views</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                    <p className="text-lg font-black text-foreground">
+                        {data.views_24h}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Today
+                    </p>
+                </div>
+                <div>
+                    <p className="text-lg font-black text-foreground">
+                        {data.views_7d}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        This week
+                    </p>
+                </div>
+                <div>
+                    <p className="text-lg font-black text-foreground">
+                        {data.total_views}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        All time
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ---------- endorsements card (NEW) ---------- */
+
+type EndorsementChip = { skill: string; total: number };
+
+function EndorsementsCard({ userId }: { userId: string }) {
+    const { data } = useQuery({
+        queryKey: ["endorsements", "summary", userId],
+        staleTime: 60_000,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("endorsement_summary")
+                .select("skill, total")
+                .eq("endorsed_id", userId)
+                .order("total", { ascending: false })
+                .limit(8);
+            if (error) return [] as EndorsementChip[];
+            return (data ?? []) as EndorsementChip[];
+        },
+    });
+
+    if (!data || data.length === 0) return null;
+
+    const totalEndorsements = data.reduce((sum, e) => sum + e.total, 0);
+
+    return (
+        <div className="rounded-2xl bg-card px-4 py-4 mb-3">
+            <div className="flex items-center gap-2 mb-3">
+                <Award className="w-4 h-4 text-primary" />
+                <p className="text-sm font-bold text-foreground">
+                    Endorsed for
+                </p>
+                <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {totalEndorsements} total
+                </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+                {data.map((e) => (
+                    <span
+                        key={e.skill}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                    >
+                        {e.skill}
+                        <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold">
+                            {e.total}
+                        </span>
+                    </span>
+                ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+                Endorsements come from people you're connected to. They help new clients
+                see what you're known for.
+            </p>
+        </div>
+    );
+}
+
+/* ---------- gallery (unchanged) ---------- */
+
 function OwnGallery({ userId }: { userId: string }) {
     const { data } = useQuery({
         queryKey: ["own-gallery", userId],

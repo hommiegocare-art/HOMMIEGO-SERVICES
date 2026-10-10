@@ -26,10 +26,9 @@ import { ChildCard } from "./ChildCard";
 type Tab = "timeline" | "heatmap" | "trends";
 
 // ------------------------------------------------------------
-// Helpers
+// Helpers (unchanged)
 // ------------------------------------------------------------
 
-/** Today as yyyy-mm-dd in local time (not UTC). */
 function todayLocal(): string {
     const d = new Date();
     const y = d.getFullYear();
@@ -38,7 +37,6 @@ function todayLocal(): string {
     return `${y}-${m}-${day}`;
 }
 
-/** Yesterday as yyyy-mm-dd. */
 function yesterdayLocal(): string {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -48,25 +46,16 @@ function yesterdayLocal(): string {
     return `${y}-${m}-${day}`;
 }
 
-/**
- * Consecutive-days streak ending today or yesterday.
- * Iterates the set of "has an entry on this day" from `daysSet`.
- */
 function computeStreak(daysSet: Set<string>): number {
     if (daysSet.size === 0) return 0;
-
     const today = todayLocal();
     const yesterday = yesterdayLocal();
-
-    // Streak can start from today OR yesterday (in case user hasn't logged yet today)
     let cursor: Date | null = null;
     if (daysSet.has(today)) cursor = new Date();
     else if (daysSet.has(yesterday)) {
         cursor = new Date();
         cursor.setDate(cursor.getDate() - 1);
-    } else {
-        return 0;
-    }
+    } else return 0;
 
     let streak = 0;
     while (cursor) {
@@ -81,7 +70,6 @@ function computeStreak(daysSet: Set<string>): number {
     return streak;
 }
 
-/** Human-friendly "time ago" for a timestamp. */
 function timeAgo(iso: string): string {
     const t = new Date(iso).getTime();
     if (isNaN(t)) return "";
@@ -98,7 +86,6 @@ function timeAgo(iso: string): string {
     return mo === 1 ? "1 month ago" : `${mo} months ago`;
 }
 
-/** Days since a given date string. */
 function daysSince(iso: string): number {
     const t = new Date(iso).getTime();
     if (isNaN(t)) return 0;
@@ -129,7 +116,6 @@ export function DailyDiaryCard({
 
     const diary = useDailyDiary(clientId, range);
 
-    // Patient sex — determines whether pregnancy UI shows at all.
     const patientSex = useQuery({
         queryKey: ["patient-sex", clientId],
         enabled: !!clientId,
@@ -149,13 +135,11 @@ export function DailyDiaryCard({
         return g === "female" || g === "f";
     }, [patientSex.data]);
 
-    // ---- Derived: streak, last-logged, empty state ----
     const daysSet = useMemo(() => new Set(diary.days), [diary.days]);
     const streak = useMemo(() => computeStreak(daysSet), [daysSet]);
 
     const lastEntry = useMemo(() => {
         if (diary.entries.length === 0) return null;
-        // entries are already newest-first
         return diary.entries[0];
     }, [diary.entries]);
 
@@ -175,23 +159,26 @@ export function DailyDiaryCard({
 
     return (
         <>
-            <div className="rounded-2xl bg-card px-4 py-4 mb-3">
+            {/*
+                Card is now edge-to-edge capable: no px-4 on the wrapper.
+                Each section provides its own px-4, EXCEPT the EmptyCTA
+                which is a full-width tappable row.
+            */}
+            <div className="rounded-2xl bg-card py-4 mb-3 overflow-hidden">
                 {/* ---------- Header ---------- */}
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 px-4">
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
                         <HeartPulse className="w-4 h-4 text-primary shrink-0" />
                         <p className="text-sm font-bold text-foreground truncate">
                             Daily health diary
                         </p>
 
-                        {/* Streak chip — only when 2+ consecutive days */}
                         {streak >= 2 && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 px-2 py-0.5 text-[10px] font-semibold shrink-0">
                                 <Flame className="w-3 h-3" /> {streak} days
                             </span>
                         )}
 
-                        {/* Entry count — only when there's something to count */}
                         {!isEmpty && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold shrink-0">
                                 {diary.totals.total} entries
@@ -222,7 +209,7 @@ export function DailyDiaryCard({
 
                 {/* ---------- Last-logged line ---------- */}
                 {lastEntry && (
-                    <div className="flex items-center gap-1.5 mb-3 text-[11px]">
+                    <div className="flex items-center gap-1.5 mb-3 text-[11px] px-4">
                         <Clock className={`w-3 h-3 ${lastColor}`} />
                         <span className={lastColor}>
                             {diary.isOwner ? "Last logged " : "Last entry: "}
@@ -231,13 +218,13 @@ export function DailyDiaryCard({
                     </div>
                 )}
 
-                {/* ---------- Empty state CTA (owner only) ---------- */}
+                {/* ---------- Empty state CTA — EDGE TO EDGE ---------- */}
                 {isEmpty && diary.isOwner && (
                     <EmptyCTA onLog={() => navigate("/health/log")} />
                 )}
 
                 {/* ---------- Range chips ---------- */}
-                <div className="flex gap-1.5 mb-3 flex-wrap">
+                <div className="flex gap-1.5 mt-4 mb-3 flex-wrap px-4">
                     {[
                         { label: "7 days", days: 7 },
                         { label: "30 days", days: 30 },
@@ -256,8 +243,8 @@ export function DailyDiaryCard({
                     ))}
                 </div>
 
-                {/* ---------- Tabs ---------- */}
-                <div className="-mx-4 px-4 mb-4 overflow-x-auto">
+                {/* ---------- Tabs (edge-to-edge scroll) ---------- */}
+                <div className="px-4 mb-4 overflow-x-auto">
                     <div className="flex gap-1 min-w-max">
                         {(["timeline", "heatmap", "trends"] as Tab[]).map((t) => (
                             <button
@@ -275,87 +262,61 @@ export function DailyDiaryCard({
                 </div>
 
                 {/* ---------- Bodies ---------- */}
-                {tab === "timeline" && (
-                    <DiaryTimeline clientId={clientId} range={range} />
-                )}
+                <div className="px-4">
+                    {tab === "timeline" && (
+                        <DiaryTimeline clientId={clientId} range={range} />
+                    )}
 
-                {tab === "heatmap" && (
-                    <HeatmapTab
-                        range={range}
-                        byDay={diary.byDay}
-                        isLoading={diary.isLoading}
-                    />
-                )}
+                    {tab === "heatmap" && (
+                        <HeatmapTab
+                            range={range}
+                            byDay={diary.byDay}
+                            isLoading={diary.isLoading}
+                        />
+                    )}
 
-                {tab === "trends" && (
-                    <TrendsTab
-                        entries={diary.entries}
-                        totals={diary.totals}
-                        isLoading={diary.isLoading}
-                    />
-                )}
+                    {tab === "trends" && (
+                        <TrendsTab
+                            entries={diary.entries}
+                            totals={diary.totals}
+                            isLoading={diary.isLoading}
+                        />
+                    )}
+                </div>
             </div>
 
-            {/* Pregnancy — only for female patients */}
             {isFemale && <PregnancyCard clientId={clientId} />}
-            {/* Children — only for female patients who've added a child */}
             {isFemale && <ChildCard motherId={clientId} />}
         </>
     );
 }
 
 // ------------------------------------------------------------
-// Empty state CTA
+// Empty state CTA — native-feeling, full-width, tappable
 // ------------------------------------------------------------
 function EmptyCTA({ onLog }: { onLog: () => void }) {
-    const examples = [
-        { label: "Headache", icon: "🤕" },
-        { label: "Took medication", icon: "💊" },
-        { label: "Feeling okay", icon: "🙂" },
-    ];
-
     return (
-        <div className="rounded-2xl bg-primary/5 border-none px-4 py-4 mb-4">
-            <div className="flex items-start gap-3">
-                <span className="h-10 w-10 rounded-xl bg-primary/10 text-primary inline-flex items-center justify-center shrink-0">
-                    <Sparkles className="w-5 h-5" />
-                </span>
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground">
-                        Start your health diary
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                        Log symptoms, medications, or how you feel. It takes 10
-                        seconds and helps your caregiver know how you're doing.
-                    </p>
+        <button
+            type="button"
+            onClick={onLog}
+            className="w-full flex items-center gap-3 px-4 py-3 bg-primary/5 active:bg-primary/10 transition-colors text-left"
+        >
 
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                        {examples.map((e) => (
-                            <button
-                                key={e.label}
-                                onClick={onLog}
-                                className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-background border border-border text-xs font-medium text-foreground active:bg-muted"
-                            >
-                                <span>{e.icon}</span> {e.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    <Button
-                        onClick={onLog}
-                        size="sm"
-                        className="mt-3 h-9 rounded-2xl"
-                    >
-                        <Plus className="w-3.5 h-3.5 mr-1" /> Log first entry
-                    </Button>
-                </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">
+                    Start your health diary
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    Log symptoms, meds, or how you feel.
+                </p>
             </div>
-        </div>
+            <Plus className="w-4 h-4 text-primary shrink-0" />
+        </button>
     );
 }
 
 // ============================================================
-// Heatmap — one square per day, dark = more entries
+// Heatmap
 // ============================================================
 function HeatmapTab({
     range,
@@ -393,9 +354,7 @@ function HeatmapTab({
             </div>
             <div
                 className="grid gap-1"
-                style={{
-                    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-                }}
+                style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
             >
                 {days.map((day) => {
                     const count = byDay.get(day)?.length ?? 0;
@@ -420,7 +379,7 @@ function HeatmapTab({
 }
 
 // ============================================================
-// Trends — simple counts per category + top symptoms
+// Trends
 // ============================================================
 function TrendsTab({
     entries,

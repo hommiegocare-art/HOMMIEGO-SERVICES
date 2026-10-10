@@ -1,4 +1,5 @@
 // src/components/profile/PublicProfile.tsx
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -16,6 +17,9 @@ import {
     History,
     HeartPulse,
     ShieldAlert,
+    Award,
+    X,
+    Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -29,6 +33,11 @@ import type {
 import { VerifiedBadge } from "../brand/VerifiedBadge";
 
 type Media = { id: string; url: string; kind: string };
+
+type EndorsementChip = {
+    skill: string;
+    total: number;
+};
 
 type Target = {
     profile: Profile;
@@ -72,8 +81,6 @@ async function fetchTarget(targetId: string, viewerId: string): Promise<Target |
             .limit(20);
         services = (svc ?? []) as Service[];
 
-        // Public media only. RLS also enforces this, but we filter
-        // client-side to avoid pulling rows we can't render.
         const { data: mediaRows } = await supabase
             .from("profile_media")
             .select("id, url, kind")
@@ -94,13 +101,8 @@ async function fetchTarget(targetId: string, viewerId: string): Promise<Target |
 
     let existingConnection: Connection | null = null;
     if (p.role === "caregiver" || p.role === "client") {
-        // Determine who is the client and who is the caregiver in this pair.
-        //  - If the target is a caregiver, *I* am the client.
-        //  - If the target is a client, the caregiver is *me* (only if I'm a caregiver).
-        const clientId =
-            p.role === "caregiver" ? viewerId : targetId;
-        const caregiverId =
-            p.role === "caregiver" ? targetId : viewerId;
+        const clientId = p.role === "caregiver" ? viewerId : targetId;
+        const caregiverId = p.role === "caregiver" ? targetId : viewerId;
 
         const { data: conn } = await supabase
             .from("connections")
@@ -117,9 +119,56 @@ async function fetchTarget(targetId: string, viewerId: string): Promise<Target |
     return { profile: p, caregiver, client, services, existingConnection, media };
 }
 
+/* ---------- endorsements fetch ---------- */
+
+async function fetchEndorsementChips(endorsedId: string): Promise<EndorsementChip[]> {
+    const { data, error } = await supabase
+        .from("endorsement_summary")
+        .select("skill, total")
+        .eq("endorsed_id", endorsedId)
+        .order("total", { ascending: false })
+        .limit(6);
+    if (error) return [];
+    return (data ?? []) as EndorsementChip[];
+}
+
+async function fetchMyEndorsementSkills(
+    endorserId: string,
+    endorsedId: string
+): Promise<string[]> {
+    const { data, error } = await supabase
+        .from("endorsements")
+        .select("skill")
+        .eq("endorser_id", endorserId)
+        .eq("endorsed_id", endorsedId)
+        .is("deleted_at", null)
+        .limit(50);
+    if (error) return [];
+    return (data ?? []).map((r) => r.skill as string);
+}
+async function fetchViewCount(
+    targetId: string
+): Promise<{ total_views: number; views_7d: number; views_24h: number }> {
+    const { data, error } = await supabase
+        .from("profile_view_counts")
+        .select("total_views, views_7d, views_24h")
+        .eq("target_id", targetId)
+        .maybeSingle();
+    if (error || !data) {
+        return { total_views: 0, views_7d: 0, views_24h: 0 };
+    }
+    return {
+        total_views: Number(data.total_views ?? 0),
+        views_7d: Number(data.views_7d ?? 0),
+        views_24h: Number(data.views_24h ?? 0),
+    };
+}
+/* ---------- public component ---------- */
+
 export function PublicProfile({ userId }: { userId: string }) {
     const { user } = useSession();
     const qc = useQueryClient();
+    const [endorseOpen, setEndorseOpen] = useState(false);
 
     const { data, isLoading } = useQuery({
         queryKey: ["profile", "public", userId, user?.id],
@@ -130,13 +179,65 @@ export function PublicProfile({ userId }: { userId: string }) {
         queryFn: () => fetchTarget(userId, user!.id),
     });
 
+    // Fire-and-forget profile view tracking
+    useEffect(() => {
+        if (!user || user.id === userId) return;
+        const t = setTimeout(() => {
+            supabase
+                .rpc("record_profile_view", {
+                    p_target_id: userId,
+                    p_source: "direct",
+                })
+                .then(
+                    () => undefined,
+                    () => undefined
+                );
+        }, 1500);
+        return () => clearTimeout(t);
+    }, [user, userId]);
+
+    const { data: endorsements = [] } = useQuery({
+        queryKey: ["endorsements", "summary", userId],
+        enabled: !!userId,
+        staleTime: 60_000,
+        queryFn: () => fetchEndorsementChips(userId),
+    });
+
+    const { data: myEndorsedSkills = [] } = useQuery({
+        queryKey: ["endorsements", "mine", userId, user?.id],
+        enabled: !!user && !!userId && user.id !== userId,
+        staleTime: 30_000,
+        queryFn: () => fetchMyEndorsementSkills(user!.id, userId),
+    });
+    const { data: viewCount } = useQuery({
+        queryKey: ["profile-view-count", userId],
+        enabled: !!userId,
+        staleTime: 60_000,
+        queryFn: () => fetchViewCount(userId),
+    });
+
     const requestConnection = useMutation({
         mutationFn: async () => {
             if (!user || !data) return;
             const target = data.profile;
-
             const clientId = target.role === "caregiver" ? user.id : target.id;
             const caregiverId = target.role === "caregiver" ? target.id : user.id;
+
+            // If an "ended" row already exists, resurrect it instead of inserting.
+            if (existingConnection && existingConnection.status === "ended") {
+                const { error } = await supabase
+                    .from("connections")
+                    .update({
+                        status: "pending",
+                        initiated_by: user.id,
+                        ended_at: null,
+                        ended_reason: null,
+                        declined_at: null,
+                    })
+                    .eq("id", existingConnection.id);
+                if (error) throw error;
+                return;
+            }
 
             const { error } = await supabase.from("connections").insert({
                 client_id: clientId,
@@ -144,14 +245,9 @@ export function PublicProfile({ userId }: { userId: string }) {
                 status: "pending",
                 initiated_by: user.id,
             });
-            if (error) {
-                console.error("[connections] insert failed:", error);
-                throw error;
-            }
+            if (error) throw error;
         },
-        onError: (e) => {
-            alert(`Could not send request: ${(e as Error).message}`);
-        },
+        onError: (e) => alert(`Could not send request: ${(e as Error).message}`),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["profile", "public"] });
             qc.invalidateQueries({ queryKey: ["connections"] });
@@ -179,7 +275,6 @@ export function PublicProfile({ userId }: { userId: string }) {
     const { profile, caregiver, client, services, existingConnection, media } = data;
     const location = [profile.city, profile.county].filter(Boolean).join(", ");
 
-    // Client viewing client — no connection allowed
     const canConnect =
         user &&
         user.id !== profile.id &&
@@ -187,26 +282,36 @@ export function PublicProfile({ userId }: { userId: string }) {
             (user.role === "caregiver" && profile.role === "client"));
 
     const connStatus = existingConnection?.status;
+    const isConnected = connStatus === "accepted";
 
-    // Caregiver viewing an accepted client — show medical entry card
     const showMedicalEntry =
         !!user &&
         user.role === "caregiver" &&
         profile.role === "client" &&
-        connStatus === "accepted";
+        isConnected;
 
-    // Not-verified banner — only for caregivers who are not verified.
-    // Hidden from the caregiver themselves (they see the action card on
-    // their own profile instead).
     const isViewingSelf = user?.id === profile.id;
     const isUnverifiedCaregiver =
         profile.role === "caregiver" &&
         caregiver?.verification_status !== "verified";
 
+    const endorsableSkills =
+        profile.role === "caregiver" && caregiver?.specialties?.length
+            ? caregiver.specialties.slice(0, 20)
+            : [
+                "Clear communication",
+                "Prepared home",
+                "Cooperative",
+                "Consistent",
+                "Kind",
+            ];
+
+    const canEndorse = !!user && !isViewingSelf && isConnected && !!existingConnection;
+
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
             <header className="flex items-start gap-4 mb-5">
-                <span className="w-20 h-20 rounded-full bg-primary/10 overflow-hidden shrink-0 flex items-center justify-center">
+                <span className="w-20 h-20 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
                     {profile.avatar_url ? (
                         <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -228,17 +333,25 @@ export function PublicProfile({ userId }: { userId: string }) {
                             {caregiver.professional_title}
                         </p>
                     )}
-                    {location && (
-                        <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> {location}
-                        </p>
-                    )}
+                    <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                        {location && (
+                            <span className="inline-flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> {location}
+                            </span>
+                        )}
+                        {viewCount && viewCount.total_views > 0 && (
+                            <span className="inline-flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                {viewCount.total_views.toLocaleString()}{" "}
+                                {viewCount.total_views === 1 ? "view" : "views"}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </header>
 
-            {/* Not-verified notice — read-only for viewers, hidden from self */}
             {isUnverifiedCaregiver && !isViewingSelf && (
-                <div className="rounded-2xl bg-muted px-4 py-3 mb-5 flex items-start gap-3">
+                <div className="rounded-2xl bg-card px-4 py-3 mb-5 flex items-start gap-3">
                     <ShieldAlert className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -272,18 +385,32 @@ export function PublicProfile({ userId }: { userId: string }) {
                         </button>
                     )}
                     {connStatus === "pending" && (
-                        <div className="w-full h-12 rounded-2xl bg-muted text-foreground font-semibold text-sm inline-flex items-center justify-center gap-2">
+                        <div className="w-full h-12 rounded-2xl bg-card text-foreground font-semibold text-sm inline-flex items-center justify-center gap-2">
                             <Clock className="w-4 h-4" />
                             {existingConnection?.initiated_by === user.id
                                 ? "Request sent"
                                 : "Request pending your review"}
                         </div>
                     )}
-                    {connStatus === "accepted" && (
+                    {isConnected && (
                         <div className="w-full h-12 rounded-2xl bg-success/10 text-success font-semibold text-sm inline-flex items-center justify-center gap-2">
                             <Check className="w-4 h-4" />
                             You're connected
                         </div>
+                    )}
+                    {connStatus === "ended" && (
+                        <button
+                            onClick={() => requestConnection.mutate()}
+                            disabled={requestConnection.isPending}
+                            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-bold text-sm inline-flex items-center justify-center gap-2 active:opacity-90 transition-opacity disabled:opacity-60"
+                        >
+                            {requestConnection.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <UserPlus className="w-4 h-4" />
+                            )}
+                            Reconnect
+                        </button>
                     )}
                 </div>
             )}
@@ -307,6 +434,29 @@ export function PublicProfile({ userId }: { userId: string }) {
                 </div>
             )}
 
+            {/* ENDORSEMENTS STRIP */}
+            {endorsements.length > 0 && (
+                <section className="mb-5">
+                    <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2 inline-flex items-center gap-1.5">
+                        <Award className="w-3.5 h-3.5" />
+                        Endorsed for
+                    </h2>
+                    <div className="flex flex-wrap gap-1.5">
+                        {endorsements.map((e) => (
+                            <span
+                                key={e.skill}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                            >
+                                {e.skill}
+                                <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold">
+                                    {e.total}
+                                </span>
+                            </span>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             {caregiver?.bio && (
                 <p className="text-sm text-foreground leading-relaxed mb-5">{caregiver.bio}</p>
             )}
@@ -316,7 +466,7 @@ export function PublicProfile({ userId }: { userId: string }) {
                     {caregiver.specialties.map((s) => (
                         <span
                             key={s}
-                            className="px-3 py-1 rounded-full bg-muted text-xs font-medium text-foreground"
+                            className="px-3 py-1 rounded-full bg-card text-xs font-medium text-foreground"
                         >
                             {s}
                         </span>
@@ -324,7 +474,6 @@ export function PublicProfile({ userId }: { userId: string }) {
                 </div>
             )}
 
-            {/* PUBLIC PHOTOS — gallery + hospital, never ID docs */}
             {media.length > 0 && (
                 <section className="mb-5">
                     <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
@@ -337,7 +486,7 @@ export function PublicProfile({ userId }: { userId: string }) {
                                     href={m.url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="block aspect-square overflow-hidden rounded-xl bg-muted"
+                                    className="block aspect-square overflow-hidden rounded-xl bg-card"
                                 >
                                     <img
                                         src={m.url}
@@ -359,11 +508,9 @@ export function PublicProfile({ userId }: { userId: string }) {
                     </h2>
                     <div className="space-y-2">
                         {services.map((s) => {
-                            const isFree = s.is_free_consultation;
-                            const canChat =
-                                isFree &&
-                                connStatus === "accepted" &&
-                                !!existingConnection?.id;
+                            const isFree = (s as Service & { is_free_consultation?: boolean })
+                                .is_free_consultation;
+                            const canChat = isFree && isConnected && !!existingConnection?.id;
 
                             const inner = (
                                 <div className="flex items-center gap-3">
@@ -416,7 +563,7 @@ export function PublicProfile({ userId }: { userId: string }) {
                             );
                         })}
                     </div>
-                    {connStatus === "accepted" && (
+                    {isConnected && (
                         <Link
                             to={`/bookings/new?caregiver=${profile.id}`}
                             className="mt-3 inline-flex items-center gap-1 text-xs text-primary font-semibold h-11"
@@ -427,13 +574,30 @@ export function PublicProfile({ userId }: { userId: string }) {
                 </section>
             )}
 
-            {/* MEDICAL ENTRY — caregiver viewing an accepted client */}
+            {/* ENDORSE ACTION */}
+            {canEndorse && (
+                <section className="mb-5">
+                    <button
+                        onClick={() => setEndorseOpen(true)}
+                        className="w-full h-11 rounded-2xl bg-muted text-foreground text-sm font-semibold inline-flex items-center justify-center gap-2 active:bg-secondary transition-colors"
+                    >
+                        <Award className="w-4 h-4" />
+                        Endorse {profile.display_name?.split(" ")[0] ?? "this person"}
+                        {myEndorsedSkills.length > 0 && (
+                            <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-bold px-1.5 py-0.5">
+                                {myEndorsedSkills.length}
+                            </span>
+                        )}
+                    </button>
+                </section>
+            )}
+
             {showMedicalEntry && <MedicalEntryCard clientId={profile.id} />}
 
             {client && (
-                <div className="rounded-2xl bg-muted px-4 py-3 mb-5">
+                <div className="rounded-2xl bg-card px-4 py-3 mb-5">
                     <p className="text-xs text-muted-foreground">
-                        {connStatus === "accepted"
+                        {isConnected
                             ? "You're connected. Use the links above to view the patient's history or record an examination."
                             : "This is a client profile. Their medical details are private and only shared with connected caregivers."}
                     </p>
@@ -447,16 +611,159 @@ export function PublicProfile({ userId }: { userId: string }) {
                     </p>
                 </div>
             )}
+
+            {/* ENDORSE MODAL */}
+            {endorseOpen && existingConnection && (
+                <EndorseModal
+                    endorserId={user.id}
+                    endorsedId={profile.id}
+                    connectionId={existingConnection.id}
+                    endorsedName={profile.display_name ?? "this person"}
+                    skills={endorsableSkills}
+                    existing={myEndorsedSkills}
+                    onClose={() => setEndorseOpen(false)}
+                />
+            )}
         </div>
     );
 }
 
-// ============================================================
-// Medical entry card — for caregivers viewing accepted clients
-// ============================================================
+/* ---------- endorsement modal ---------- */
+
+function EndorseModal({
+    endorserId,
+    endorsedId,
+    connectionId,
+    endorsedName,
+    skills,
+    existing,
+    onClose,
+}: {
+    endorserId: string;
+    endorsedId: string;
+    connectionId: string;
+    endorsedName: string;
+    skills: string[];
+    existing: string[];
+    onClose: () => void;
+}) {
+    const qc = useQueryClient();
+    const [selected, setSelected] = useState<string[]>(existing);
+    const [error, setError] = useState<string | null>(null);
+
+    const toggle = (skill: string) => {
+        setSelected((prev) =>
+            prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+        );
+    };
+
+    const save = useMutation({
+        mutationFn: async () => {
+            const toAdd = selected.filter((s) => !existing.includes(s));
+            const toRemove = existing.filter((s) => !selected.includes(s));
+
+            if (toAdd.length > 0) {
+                const { error: insErr } = await supabase.from("endorsements").insert(
+                    toAdd.map((skill) => ({
+                        endorser_id: endorserId,
+                        endorsed_id: endorsedId,
+                        connection_id: connectionId,
+                        skill,
+                    }))
+                );
+                if (insErr) throw insErr;
+            }
+
+            if (toRemove.length > 0) {
+                const { error: delErr } = await supabase
+                    .from("endorsements")
+                    .delete()
+                    .eq("endorser_id", endorserId)
+                    .eq("endorsed_id", endorsedId)
+                    .in("skill", toRemove);
+                if (delErr) throw delErr;
+            }
+        },
+        onError: (e) => setError(e instanceof Error ? e.message : "Save failed"),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["endorsements"] });
+            onClose();
+        },
+    });
+
+    return (
+        <div className="fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm flex items-end sm:items-center justify-center">
+            <div className="w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl max-h-[85dvh] overflow-y-auto border border-border pb-[calc(env(safe-area-inset-bottom)+64px)] sm:pb-0">
+                <div className="sticky top-0 bg-card h-14 flex items-center justify-between px-4">
+                    <button
+                        onClick={onClose}
+                        className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
+                        aria-label="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                    <p className="text-sm font-bold">Endorse {endorsedName.split(" ")[0]}</p>
+                    <span className="w-11" />
+                </div>
+
+                <div className="px-4 pb-6 space-y-4">
+                    <p className="text-xs text-muted-foreground">
+                        Tap the skills you trust them with. Tap again to remove. Only
+                        connected people can endorse.
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5">
+                        {skills.map((skill) => {
+                            const active = selected.includes(skill);
+                            return (
+                                <button
+                                    key={skill}
+                                    type="button"
+                                    onClick={() => toggle(skill)}
+                                    className={`h-9 px-3 rounded-full text-xs font-medium transition-colors ${active
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-foreground"
+                                        }`}
+                                >
+                                    {skill}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {error && (
+                        <p className="rounded-2xl bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                            {error}
+                        </p>
+                    )}
+
+                    <div className="flex gap-2 pt-2">
+                        <button
+                            onClick={onClose}
+                            disabled={save.isPending}
+                            className="flex-1 h-11 rounded-2xl bg-muted text-foreground text-sm font-semibold active:bg-secondary disabled:opacity-60"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => save.mutate()}
+                            disabled={save.isPending}
+                            className="flex-1 h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-bold active:opacity-90 disabled:opacity-60"
+                        >
+                            {save.isPending ? "Saving…" : "Save endorsements"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ---------- medical entry card ---------- */
+
 function MedicalEntryCard({ clientId }: { clientId: string }) {
     return (
-        <div className="rounded-2xl bg-card border border-border px-4 py-4 mb-5">
+        <div className="rounded-2xl bg-card px-4 py-4 mb-5">
             <div className="flex items-center gap-2 mb-3">
                 <HeartPulse className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">Medical profile</p>
