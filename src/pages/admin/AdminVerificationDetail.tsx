@@ -15,6 +15,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useAdmin } from "@/hooks/useAdmin";
+import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 
 type Action = "approve" | "reject" | "revoke" | "unreject";
 
@@ -188,7 +189,8 @@ export default function AdminVerificationDetail() {
                         <h1 className="text-lg font-black tracking-tight text-foreground truncate">
                             {name}
                         </h1>
-                        <VerifiedBadge show={caregiver?.verification_status === "verified"} />
+                        {/* correct */}
+                        <VerifiedBadge show={data.verification_status === "verified"} />
                     </div>
                     {data.professional_title && (
                         <p className="text-sm text-muted-foreground mt-0.5">
