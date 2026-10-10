@@ -57,7 +57,7 @@ export function MessageActions({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end bg-foreground/40 animate-fade-in"
+            className="fixed inset-0 z-30 flex items-end bg-foreground/40 animate-fade-in"
             onClick={onClose}
         >
             <div

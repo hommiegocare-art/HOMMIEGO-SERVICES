@@ -144,9 +144,16 @@ export default function BookingNew() {
             if (user.phone_number) setWhatsapp(user.phone_number);
             if (cliRes.data?.address) setAddress(cliRes.data.address);
             if (svcRes.data && svcRes.data.length > 0) {
-                setServiceId(svcRes.data[0].id);
-                if (svcRes.data[0].duration_minutes != null) {
-                    setDuration(String(svcRes.data[0].duration_minutes));
+                // Prefer the service the user tapped (from the ?service= param).
+                // Only fall back to the first service if the requested one isn't valid.
+                const requested = params.get("service");
+                const picked =
+                    (requested && svcRes.data.find((s) => s.id === requested)) ||
+                    svcRes.data[0];
+
+                setServiceId(picked.id);
+                if (picked.duration_minutes != null) {
+                    setDuration(String(picked.duration_minutes));
                 }
             }
         })();
@@ -154,7 +161,7 @@ export default function BookingNew() {
         return () => {
             cancelled = true;
         };
-    }, [user, caregiverId]);
+    }, [user, caregiverId, params]);
 
     const selectedService = useMemo(
         () => services?.find((s) => s.id === serviceId) ?? null,

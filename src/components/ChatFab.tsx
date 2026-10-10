@@ -17,8 +17,8 @@ export function ChatFab() {
             to="/chats"
             aria-label={unread > 0 ? `Chats, ${unread} unread` : "Chats"}
             className={cn(
-                "fixed right-4 z-40",
-                "bottom-24 lg:bottom-6", // clears the mobile bottom nav
+                "fixed right-5 z-40",
+                "bottom-20 lg:bottom-6", // clears the mobile bottom nav
                 "flex h-14 w-14 items-center justify-center rounded-full",
                 "bg-primary text-primary-foreground",
                 "transition-colors active:opacity-90",

@@ -11,6 +11,7 @@ import {
     X,
     Loader2,
     Briefcase,
+    Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import type { Service } from "@/types/db";
+
 type FormState = {
     title: string;
     short_description: string;
@@ -42,6 +44,7 @@ const EMPTY: FormState = {
     cover_image: "",
     is_free_consultation: false,
 };
+
 export default function Services() {
     const { user } = useSession();
     const qc = useQueryClient();
@@ -50,6 +53,7 @@ export default function Services() {
     const [form, setForm] = useState<FormState | null>(null);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [detailService, setDetailService] = useState<Service | null>(null);
 
     const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -247,8 +251,8 @@ export default function Services() {
 
             {servicesQ.isLoading ? (
                 <div className="space-y-3">
-                    <div className="h-28 rounded-2xl skeleton-shimmer" />
-                    <div className="h-28 rounded-2xl skeleton-shimmer" />
+                    <div className="h-64 rounded-2xl skeleton-shimmer" />
+                    <div className="h-64 rounded-2xl skeleton-shimmer" />
                 </div>
             ) : services.length === 0 ? (
                 <div className="rounded-2xl bg-card px-4 py-14 text-center">
@@ -266,18 +270,25 @@ export default function Services() {
                     </Button>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                     {services.map((s) => (
                         <ServiceCard
                             key={s.id}
                             s={s}
-                            categoryName={categories.find((c) => c.id === s.category_id)?.name ?? null}
+                            categoryName={
+                                categories.find((c) => c.id === s.category_id)?.name ?? null
+                            }
+                            onPreview={() => setDetailService(s)}
                             onEdit={() => openEdit(s)}
                             onToggle={() =>
                                 toggleActive.mutate({ id: s.id, next: !s.is_active })
                             }
                             onDelete={() => {
-                                if (confirm(`Delete "${s.title}"? This hides it from clients.`))
+                                if (
+                                    confirm(
+                                        `Delete "${s.title}"? This hides it from clients.`
+                                    )
+                                )
                                     softDelete.mutate(s.id);
                             }}
                         />
@@ -305,21 +316,40 @@ export default function Services() {
                     }}
                 />
             )}
+
+            {/* PREVIEW OVERLAY — what clients see */}
+            {detailService && (
+                <ServiceDetail
+                    service={detailService}
+                    categoryName={
+                        categories.find((c) => c.id === detailService.category_id)?.name ??
+                        null
+                    }
+                    onEdit={() => {
+                        const s = detailService;
+                        setDetailService(null);
+                        if (s) openEdit(s);
+                    }}
+                    onClose={() => setDetailService(null)}
+                />
+            )}
         </div>
     );
 }
 
-/* ---------- pieces ---------- */
+/* ---------- service card (matches public profile) ---------- */
 
 function ServiceCard({
     s,
     categoryName,
+    onPreview,
     onEdit,
     onToggle,
     onDelete,
 }: {
     s: Service;
     categoryName: string | null;
+    onPreview: () => void;
     onEdit: () => void;
     onToggle: () => void;
     onDelete: () => void;
@@ -332,96 +362,284 @@ function ServiceCard({
                 : "visit";
 
     return (
-        <div className="rounded-2xl bg-card px-4 py-4">
-            <div className="flex gap-4">
-                <div className="w-20 h-20 rounded-2xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                    {s.cover_image ? (
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={onPreview}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onPreview();
+                }
+            }}
+            className="w-full text-left rounded-2xl bg-card overflow-hidden active:bg-muted/60 transition-colors cursor-pointer"
+        >
+            {/* Cover — full width banner */}
+            <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center relative">
+                {s.cover_image ? (
+                    <img
+                        src={s.cover_image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                )}
+
+                {/* Status chips overlay */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    {!s.is_active && (
+                        <span className="px-2 py-0.5 rounded-full bg-background/90 backdrop-blur text-[10px] font-bold text-muted-foreground">
+                            Paused
+                        </span>
+                    )}
+                    {s.is_free_consultation && (
+                        <span className="px-2 py-0.5 rounded-full bg-success/90 backdrop-blur text-[10px] font-bold text-white">
+                            Free
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <div className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-bold text-foreground line-clamp-2">
+                                {s.title}
+                            </h3>
+                            {categoryName && (
+                                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-[10px] font-bold text-primary shrink-0">
+                                    {categoryName}
+                                </span>
+                            )}
+                        </div>
+                        {s.short_description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                                {s.short_description}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-foreground">
+                            {s.is_free_consultation
+                                ? "Free"
+                                : `KES ${Number(s.price).toLocaleString()}`}
+                        </p>
+                        {!s.is_free_consultation && (
+                            <p className="text-[10px] text-muted-foreground">
+                                / {priceSuffix}
+                            </p>
+                        )}
+                        {s.duration_minutes != null && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {s.duration_minutes} min
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Action row */}
+                <div className="mt-3 flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onPreview();
+                        }}
+                        className="h-10 w-10 shrink-0 rounded-2xl bg-muted text-foreground active:bg-secondary transition-colors inline-flex items-center justify-center"
+                        aria-label="Preview"
+                        title="Preview as clients see it"
+                    >
+                        <Eye className="w-4 h-4" />
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit();
+                        }}
+                        className="flex-1 h-10 rounded-2xl bg-muted text-foreground text-xs font-semibold active:bg-secondary transition-colors inline-flex items-center justify-center gap-1.5"
+                    >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Edit
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggle();
+                        }}
+                        className="flex-1 h-10 rounded-2xl bg-muted text-foreground text-xs font-semibold active:bg-secondary transition-colors inline-flex items-center justify-center gap-1.5"
+                    >
+                        {s.is_active ? (
+                            <>
+                                <Pause className="w-3.5 h-3.5" />
+                                Pause
+                            </>
+                        ) : (
+                            <>
+                                <Play className="w-3.5 h-3.5" />
+                                Activate
+                            </>
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                        className="h-10 w-10 shrink-0 rounded-2xl text-destructive active:bg-destructive/10 transition-colors inline-flex items-center justify-center"
+                        aria-label="Delete"
+                        title="Delete"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ---------- preview overlay — what clients see ---------- */
+
+function ServiceDetail({
+    service,
+    categoryName,
+    onEdit,
+    onClose,
+}: {
+    service: Service;
+    categoryName: string | null;
+    onEdit: () => void;
+    onClose: () => void;
+}) {
+    const priceSuffix =
+        service.pricing_type === "hourly"
+            ? "hour"
+            : service.pricing_type === "daily"
+                ? "day"
+                : "visit";
+
+    const isFree = service.is_free_consultation;
+
+    return (
+        <div className="fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm flex items-end sm:items-center justify-center">
+            <div
+                className="
+                    w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl
+                    max-h-[90dvh] overflow-y-auto border border-border
+                    pb-[calc(env(safe-area-inset-bottom)+72px)] sm:pb-0
+                "
+            >
+                {/* Sticky header */}
+                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-4">
+                    <button
+                        onClick={onClose}
+                        className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
+                        aria-label="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                    <p className="text-sm font-bold truncate">Preview</p>
+                    <span className="w-11" />
+                </div>
+
+                {/* Cover */}
+                <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center">
+                    {service.cover_image ? (
                         <img
-                            src={s.cover_image}
+                            src={service.cover_image}
                             alt=""
                             className="w-full h-full object-cover"
                         />
                     ) : (
-                        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                        <Briefcase className="w-8 h-8 text-muted-foreground" />
                     )}
                 </div>
 
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
+                <div className="px-4 pt-4 pb-6 space-y-4">
+                    {/* Title + price */}
+                    <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                            <h3 className="text-sm font-bold text-foreground truncate">
-                                {s.title}
-                            </h3>
-                            {s.short_description && (
-                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                    {s.short_description}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-base font-black text-foreground">
+                                    {service.title}
+                                </h2>
+                                {isFree && (
+                                    <span className="px-2 py-0.5 rounded-full bg-success/10 text-[10px] font-bold text-success">
+                                        Free
+                                    </span>
+                                )}
+                                {!service.is_active && (
+                                    <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                                        Paused
+                                    </span>
+                                )}
+                            </div>
+                            {categoryName && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    {categoryName}
                                 </p>
                             )}
                         </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                            {!s.is_active && (
-                                <span className="px-2 py-0.5 rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                                    Paused
-                                </span>
+
+                        <div className="shrink-0 text-right">
+                            <p className="text-lg font-black text-foreground">
+                                {isFree
+                                    ? "Free"
+                                    : `KES ${Number(service.price).toLocaleString()}`}
+                            </p>
+                            {!isFree && (
+                                <p className="text-[10px] text-muted-foreground">
+                                    per {priceSuffix}
+                                </p>
                             )}
-                            {categoryName && (
-                                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                    {categoryName}
-                                </span>
-                            )}
-                            {s.is_free_consultation && (
-                                <span className="px-2 py-0.5 rounded-full bg-success/10 text-xs font-semibold text-success">
-                                    Free
-                                </span>
+                            {service.duration_minutes != null && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    {service.duration_minutes} min
+                                </p>
                             )}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-2 text-xs">
-                        <span className="font-bold text-foreground">
-                            KES {Number(s.price).toLocaleString()}
-                            <span className="text-muted-foreground font-normal">
-                                {" "}
-                                / {priceSuffix}
-                            </span>
-                        </span>
-                        {s.duration_minutes != null && (
-                            <span className="text-muted-foreground">
-                                {s.duration_minutes} min
-                            </span>
-                        )}
-                    </div>
+                    {/* Description */}
+                    {service.description && (
+                        <div>
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">
+                                About this service
+                            </p>
+                            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+                                {service.description}
+                            </p>
+                        </div>
+                    )}
 
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    {service.short_description && !service.description && (
+                        <p className="text-sm text-foreground leading-relaxed">
+                            {service.short_description}
+                        </p>
+                    )}
+
+                    {/* Owner actions */}
+                    <div className="pt-2 flex gap-2">
+                        <button
+                            onClick={onClose}
+                            className="flex-1 h-12 rounded-2xl bg-muted text-foreground text-sm font-semibold active:bg-secondary transition-colors"
+                        >
+                            Close
+                        </button>
                         <button
                             onClick={onEdit}
-                            className="h-11 px-3 rounded-2xl bg-muted text-foreground text-xs font-semibold inline-flex items-center gap-1.5 active:bg-secondary transition-colors"
+                            className="flex-1 h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold active:opacity-90 transition-opacity inline-flex items-center justify-center gap-2"
                         >
-                            <Pencil className="w-3.5 h-3.5" />
-                            Edit
-                        </button>
-                        <button
-                            onClick={onToggle}
-                            className="h-11 px-3 rounded-2xl bg-muted text-foreground text-xs font-semibold inline-flex items-center gap-1.5 active:bg-secondary transition-colors"
-                        >
-                            {s.is_active ? (
-                                <>
-                                    <Pause className="w-3.5 h-3.5" />
-                                    Pause
-                                </>
-                            ) : (
-                                <>
-                                    <Play className="w-3.5 h-3.5" />
-                                    Activate
-                                </>
-                            )}
-                        </button>
-                        <button
-                            onClick={onDelete}
-                            className="h-11 px-3 rounded-2xl text-destructive text-xs font-semibold inline-flex items-center gap-1.5 active:bg-destructive/10 transition-colors"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete
+                            <Pencil className="w-4 h-4" />
+                            Edit service
                         </button>
                     </div>
                 </div>
@@ -429,6 +647,9 @@ function ServiceCard({
         </div>
     );
 }
+
+/* ---------- editor sheet (unchanged) ---------- */
+
 function ServiceSheet({
     form,
     setForm,
@@ -474,7 +695,7 @@ function ServiceSheet({
             </div>
 
             {/* Form content */}
-            <div className="px-4 pb-6">
+            <div className="px-4 pb-32">
                 <div className="max-w-lg mx-auto space-y-4">
                     <Field label="Title">
                         <Input
@@ -510,6 +731,7 @@ function ServiceSheet({
                             className="rounded-2xl bg-muted border-0"
                         />
                     </Field>
+
                     <div className="grid grid-cols-2 gap-3">
                         <Field label="Price (KES)">
                             <Input
@@ -552,11 +774,16 @@ function ServiceSheet({
                                         : "bg-muted text-foreground"
                                         }`}
                                 >
-                                    {t === "flat" ? "Per visit" : t === "hourly" ? "Hourly" : "Daily"}
+                                    {t === "flat"
+                                        ? "Per visit"
+                                        : t === "hourly"
+                                            ? "Hourly"
+                                            : "Daily"}
                                 </button>
                             ))}
                         </div>
                     </Field>
+
                     <Field label="Free consultation">
                         <button
                             type="button"
@@ -582,7 +809,8 @@ function ServiceSheet({
                             </span>
                         </button>
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
-                            Clients with an accepted connection tap this and go straight to chat.
+                            Clients with an accepted connection tap this and go straight to
+                            chat.
                         </p>
                     </Field>
 
@@ -649,8 +877,10 @@ function ServiceSheet({
                             >
                                 {uploading ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : form.cover_image ? (
+                                    "Replace"
                                 ) : (
-                                    form.cover_image ? "Replace" : "Upload"
+                                    "Upload"
                                 )}
                             </button>
                             {form.cover_image && (
@@ -674,8 +904,10 @@ function ServiceSheet({
                     )}
 
                     {/* Buttons — end of the form, scroll with the page */}
-                    <div className="flex gap-3 pt-2"
-                        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" }}>
+                    <div
+                        className="flex gap-3 pt-2"
+                        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" }}
+                    >
                         <button
                             onClick={onClose}
                             disabled={saving}

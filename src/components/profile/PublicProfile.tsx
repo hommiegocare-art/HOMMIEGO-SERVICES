@@ -169,6 +169,7 @@ export function PublicProfile({ userId }: { userId: string }) {
     const { user } = useSession();
     const qc = useQueryClient();
     const [endorseOpen, setEndorseOpen] = useState(false);
+    const [detailService, setDetailService] = useState<Service | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ["profile", "public", userId, user?.id],
@@ -223,7 +224,6 @@ export function PublicProfile({ userId }: { userId: string }) {
             const clientId = target.role === "caregiver" ? user.id : target.id;
             const caregiverId = target.role === "caregiver" ? target.id : user.id;
 
-            // If an "ended" row already exists, resurrect it instead of inserting.
             if (existingConnection && existingConnection.status === "ended") {
                 const { error } = await supabase
                     .from("connections")
@@ -506,60 +506,26 @@ export function PublicProfile({ userId }: { userId: string }) {
                     <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
                         Services
                     </h2>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {services.map((s) => {
                             const isFree = (s as Service & { is_free_consultation?: boolean })
                                 .is_free_consultation;
                             const canChat = isFree && isConnected && !!existingConnection?.id;
 
-                            const inner = (
-                                <div className="flex items-center gap-3">
-                                    <span className="w-12 h-12 rounded-2xl bg-muted shrink-0 overflow-hidden flex items-center justify-center">
-                                        {s.cover_image ? (
-                                            <img src={s.cover_image} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Briefcase className="w-5 h-5 text-muted-foreground" />
-                                        )}
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-bold text-foreground truncate">
-                                                {s.title}
-                                            </p>
-                                            {isFree && (
-                                                <span className="px-2 py-0.5 rounded-full bg-success/10 text-[10px] font-bold text-success shrink-0">
-                                                    Free
-                                                </span>
-                                            )}
-                                        </div>
-                                        {s.short_description && (
-                                            <p className="text-xs text-muted-foreground truncate">
-                                                {s.short_description}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <p className="text-sm font-bold text-foreground shrink-0">
-                                        {isFree
-                                            ? "Chat"
-                                            : s.price != null
-                                                ? `KES ${Math.round(s.price).toLocaleString()}`
-                                                : "Ask"}
-                                    </p>
-                                </div>
-                            );
-
-                            return canChat ? (
-                                <Link
+                            return (
+                                <ServiceCard
                                     key={s.id}
-                                    to={`/chats/${existingConnection!.id}`}
-                                    className="block rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
-                                >
-                                    {inner}
-                                </Link>
-                            ) : (
-                                <div key={s.id} className="rounded-2xl bg-card px-4 py-3">
-                                    {inner}
-                                </div>
+                                    service={s}
+                                    canChat={canChat}
+                                    isConnected={isConnected}
+                                    profileId={profile.id}
+                                    chatHref={
+                                        existingConnection
+                                            ? `/chats/${existingConnection.id}`
+                                            : undefined
+                                    }
+                                    onOpenDetails={() => setDetailService(s)}
+                                />
                             );
                         })}
                     </div>
@@ -624,6 +590,317 @@ export function PublicProfile({ userId }: { userId: string }) {
                     onClose={() => setEndorseOpen(false)}
                 />
             )}
+
+            {/* SERVICE DETAIL OVERLAY */}
+            {detailService && (
+                <ServiceDetail
+                    service={detailService}
+                    caregiverName={profile.display_name ?? "Caregiver"}
+                    profileId={profile.id}
+                    isConnected={isConnected}
+                    chatHref={
+                        existingConnection ? `/chats/${existingConnection.id}` : undefined
+                    }
+                    isFreeConsultation={
+                        !!(detailService as Service & { is_free_consultation?: boolean })
+                            .is_free_consultation
+                    }
+                    onClose={() => setDetailService(null)}
+                />
+            )}
+        </div>
+    );
+}
+
+/* ---------- service card ---------- */
+
+function ServiceCard({
+    service,
+    canChat,
+    isConnected,
+    profileId,
+    chatHref,
+    onOpenDetails,
+}: {
+    service: Service;
+    canChat: boolean;
+    isConnected: boolean;
+    profileId: string;
+    chatHref?: string;
+    onOpenDetails: () => void;
+}) {
+    const isFree = (service as Service & { is_free_consultation?: boolean })
+        .is_free_consultation;
+
+    const priceSuffix =
+        service.pricing_type === "hourly"
+            ? "hr"
+            : service.pricing_type === "daily"
+                ? "day"
+                : "visit";
+
+    const bookHref = `/bookings/new?caregiver=${profileId}&service=${service.id}`;
+
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={onOpenDetails}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpenDetails();
+                }
+            }}
+            className="w-full text-left rounded-2xl bg-card overflow-hidden active:bg-muted/60 transition-colors cursor-pointer"
+        >
+            {/* Cover — full width */}
+            <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center">
+                {service.cover_image ? (
+                    <img
+                        src={service.cover_image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <Briefcase className="w-6 h-6 text-muted-foreground" />
+                )}
+            </div>
+
+            <div className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-bold text-foreground line-clamp-2">
+                                {service.title}
+                            </h3>
+                            {isFree && (
+                                <span className="px-2 py-0.5 rounded-full bg-success/10 text-[10px] font-bold text-success shrink-0">
+                                    Free
+                                </span>
+                            )}
+                        </div>
+                        {service.short_description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+                                {service.short_description}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                        <p className="text-sm font-bold text-foreground">
+                            {isFree
+                                ? "Free"
+                                : `KES ${Math.round(Number(service.price)).toLocaleString()}`}
+                        </p>
+                        {!isFree && (
+                            <p className="text-[10px] text-muted-foreground">
+                                / {priceSuffix}
+                            </p>
+                        )}
+                        {service.duration_minutes != null && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {service.duration_minutes} min
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Action row */}
+                <div className="mt-3 flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenDetails();
+                        }}
+                        className="flex-1 h-10 rounded-2xl bg-muted text-foreground text-xs font-semibold active:bg-secondary transition-colors inline-flex items-center justify-center gap-1.5"
+                    >
+                        Details
+                    </button>
+
+                    {isFree && canChat && chatHref ? (
+                        <Link
+                            to={chatHref}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 h-10 rounded-2xl bg-primary text-primary-foreground text-xs font-bold active:opacity-90 transition-opacity inline-flex items-center justify-center gap-1.5"
+                        >
+                            Chat
+                        </Link>
+                    ) : (
+                        <Link
+                            to={bookHref}
+                            onClick={(e) => {
+                                if (!isConnected) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                } else {
+                                    e.stopPropagation();
+                                }
+                            }}
+                            className={
+                                "flex-1 h-10 rounded-2xl text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-opacity " +
+                                (isConnected
+                                    ? "bg-primary text-primary-foreground active:opacity-90"
+                                    : "bg-primary text-primary-foreground opacity-50 pointer-events-none")
+                            }
+                        >
+                            Book
+                        </Link>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ---------- service detail overlay ---------- */
+
+function ServiceDetail({
+    service,
+    caregiverName,
+    profileId,
+    isConnected,
+    chatHref,
+    isFreeConsultation,
+    onClose,
+}: {
+    service: Service;
+    caregiverName: string;
+    profileId: string;
+    isConnected: boolean;
+    chatHref?: string;
+    isFreeConsultation: boolean;
+    onClose: () => void;
+}) {
+    const priceSuffix =
+        service.pricing_type === "hourly"
+            ? "hour"
+            : service.pricing_type === "daily"
+                ? "day"
+                : "visit";
+
+    const bookHref = `/bookings/new?caregiver=${profileId}&service=${service.id}`;
+
+    return (
+        <div className="fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm flex items-end sm:items-center justify-center">
+            <div
+                className="
+                    w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl
+                    max-h-[90dvh] overflow-y-auto border border-border
+                    pb-[calc(env(safe-area-inset-bottom)+72px)] sm:pb-0
+                "
+            >
+                {/* Sticky header */}
+                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-4">
+                    <button
+                        onClick={onClose}
+                        className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
+                        aria-label="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                    <p className="text-sm font-bold truncate">{service.title}</p>
+                    <span className="w-11" />
+                </div>
+
+                {/* Cover */}
+                <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center">
+                    {service.cover_image ? (
+                        <img
+                            src={service.cover_image}
+                            alt=""
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <Briefcase className="w-8 h-8 text-muted-foreground" />
+                    )}
+                </div>
+
+                <div className="px-4 pt-4 pb-6 space-y-4">
+                    {/* Title + price */}
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h2 className="text-base font-black text-foreground">
+                                    {service.title}
+                                </h2>
+                                {isFreeConsultation && (
+                                    <span className="px-2 py-0.5 rounded-full bg-success/10 text-[10px] font-bold text-success">
+                                        Free
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                by {caregiverName}
+                            </p>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                            <p className="text-lg font-black text-foreground">
+                                {isFreeConsultation
+                                    ? "Free"
+                                    : `KES ${Math.round(Number(service.price)).toLocaleString()}`}
+                            </p>
+                            {!isFreeConsultation && (
+                                <p className="text-[10px] text-muted-foreground">
+                                    per {priceSuffix}
+                                </p>
+                            )}
+                            {service.duration_minutes != null && (
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    {service.duration_minutes} min
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Description */}
+                    {service.description && (
+                        <div>
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">
+                                About this service
+                            </p>
+                            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+                                {service.description}
+                            </p>
+                        </div>
+                    )}
+
+                    {service.short_description && !service.description && (
+                        <p className="text-sm text-foreground leading-relaxed">
+                            {service.short_description}
+                        </p>
+                    )}
+
+                    {/* Book / Chat CTA */}
+                    {isFreeConsultation && isConnected && chatHref ? (
+                        <Link
+                            to={chatHref}
+                            onClick={onClose}
+                            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-2 active:opacity-90"
+                        >
+                            Open chat
+                        </Link>
+                    ) : isConnected ? (
+                        <Link
+                            to={bookHref}
+                            onClick={onClose}
+                            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-2 active:opacity-90"
+                        >
+                            <Check className="w-4 h-4" />
+                            Book this service
+                        </Link>
+                    ) : (
+                        <button
+                            disabled
+                            className="w-full h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold opacity-50 cursor-not-allowed inline-flex items-center justify-center gap-2"
+                        >
+                            Connect first to book
+                        </button>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
@@ -693,7 +970,7 @@ function EndorseModal({
 
     return (
         <div className="fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm flex items-end sm:items-center justify-center">
-            <div className="w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl max-h-[85dvh] overflow-y-auto border border-border pb-[calc(env(safe-area-inset-bottom)+64px)] sm:pb-0">
+            <div className="w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl max-h-[85dvh] overflow-y-auto border border-border pb-[calc(env(safe-area-inset-bottom)+72px)] sm:pb-0">
                 <div className="sticky top-0 bg-card h-14 flex items-center justify-between px-4">
                     <button
                         onClick={onClose}
@@ -720,8 +997,7 @@ function EndorseModal({
                                     key={skill}
                                     type="button"
                                     onClick={() => toggle(skill)}
-                                    className={`h-9 px-3 rounded-full text-xs font-medium transition-colors ${active
-                                        ? "bg-primary text-primary-foreground"
+                                    className={`h-9 px-3 rounded-full text-xs font-medium transition-colors ${active ? "bg-primary text-primary-foreground"
                                         : "bg-muted text-foreground"
                                         }`}
                                 >
