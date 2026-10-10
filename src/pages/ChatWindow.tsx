@@ -13,6 +13,7 @@ import {
     ArrowLeft,
     Check,
     CheckCheck,
+    ChevronLeft,
     Clock,
     CornerUpLeft,
     Loader2,
@@ -805,7 +806,7 @@ export default function ChatWindow() {
                         aria-label="Back"
                         className="flex h-11 w-11 items-center justify-center rounded-2xl transition-colors active:bg-muted"
                     >
-                        <ArrowLeft className="h-5 w-5 text-foreground" />
+                        <ChevronLeft className="h-5 w-5 text-foreground" />
                     </button>
 
                     {metaLoading ? (
