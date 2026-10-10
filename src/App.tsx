@@ -41,6 +41,11 @@ import LogEntry from "./pages/LogEntry";
 import HealthPrint from "./pages/HealthPrint";
 import { IosInstallBanner } from "./components/IosInstallBanner";
 
+// 👇 NEW
+import { useNotificationReactor } from "@/hooks/useNotificationReactor";
+import { NotificationToastHost } from "@/components/notifications/NotificationToastHost";
+import { unlockNotificationSound } from "@/lib/notificationSound";
+
 // Chat module
 import Chats from "@/pages/Chats";
 import { ChatFab } from "@/components/ChatFab";
@@ -49,6 +54,13 @@ import ChatWindow from "./pages/ChatWindow";
 // Admin / verification
 import AdminVerifications from "@/pages/admin/AdminVerifications";
 import AdminVerificationDetail from "@/pages/admin/AdminVerificationDetail";
+
+// 👇 NEW — unlock audio on the very first user gesture (browser autoplay policy)
+if (typeof window !== "undefined") {
+  const unlock = () => unlockNotificationSound();
+  window.addEventListener("pointerdown", unlock, { once: true });
+  window.addEventListener("keydown", unlock, { once: true });
+}
 
 const HOME_FOR: Record<"client" | "caregiver", string> = {
   client: "/dashboard",
@@ -87,6 +99,7 @@ function Shell() {
   const { pathname } = useLocation();
   const { user, loading } = useSession();
   usePresence();
+  useNotificationReactor();   // 👈 NEW
 
   if (loading) {
     return (
@@ -191,6 +204,7 @@ function Shell() {
         </main>
         <BottomNav />
         <ChatFab />
+        <NotificationToastHost />   {/* 👈 NEW */}
       </div>
     </div>
   );

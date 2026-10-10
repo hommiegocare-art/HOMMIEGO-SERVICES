@@ -1,5 +1,12 @@
 // src/pages/ChatWindow.tsx
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,6 +15,7 @@ import {
     CheckCheck,
     Clock,
     CornerUpLeft,
+    Loader2,
     MoreVertical,
     Paperclip,
     Pencil,
@@ -52,6 +60,10 @@ const TTL_OPTIONS: { value: TtlOption; label: string; short: string }[] = [
 ];
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+// How close to the top (in px) the user has to scroll before we
+// start loading older messages. 400 gives a comfortable buffer.
+const TOP_SCROLL_TRIGGER_PX = 400;
 
 function shortTtl(ttl: TtlOption | null): string {
     if (ttl === null) return "auto";
@@ -321,11 +333,6 @@ function TtlSheet({
     );
 }
 
-/**
- * Fetch the "other" user's verification status in a chat.
- * - If the other is a caregiver → check caregiver_profiles.
- * - If the other is a client → no badge (clients are never verified).
- */
 function useOtherVerification(
     otherUserId: string | null | undefined,
     otherRole: string | null | undefined,
@@ -371,6 +378,13 @@ export default function ChatWindow() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const composerRef = useRef<HTMLTextAreaElement>(null);
 
+    // Refs used for scroll anchoring when older messages are prepended.
+    const prevFirstIdRef = useRef<string | null>(null);
+    const prevLastIdRef = useRef<string | null>(null);
+    const prevScrollHeightRef = useRef<number>(0);
+    const prevScrollTopRef = useRef<number>(0);
+    const anchoredRef = useRef(false);
+
     const {
         meta,
         metaLoading,
@@ -386,6 +400,9 @@ export default function ChatWindow() {
         replyTo,
         setReplyTo,
         clearReplyTo,
+        hasMoreOlder,
+        loadingOlder,
+        loadOlder,
     } = useChatWindow(connectionId, focused);
 
     const { otherTyping, signalTyping, stopTyping } = useChatTyping(
@@ -393,10 +410,7 @@ export default function ChatWindow() {
         focused,
     );
 
-    const otherVerified = useOtherVerification(
-        meta?.otherUserId,
-        meta?.otherRole,
-    );
+    const otherVerified = useOtherVerification(meta?.otherUserId, meta?.otherRole);
     const showVerifiedBadge = otherVerified.data === "verified";
 
     useEffect(() => {
@@ -405,11 +419,71 @@ export default function ChatWindow() {
         return () => document.removeEventListener("visibilitychange", onVis);
     }, []);
 
-    useEffect(() => {
+    // Track scroll position continuously so we can compute an anchor
+    // delta after prepending older messages.
+    const handleScroll = useCallback(() => {
         const el = scrollRef.current;
         if (!el) return;
-        el.scrollTop = el.scrollHeight;
-    }, [messages.length]);
+
+        prevScrollHeightRef.current = el.scrollHeight;
+        prevScrollTopRef.current = el.scrollTop;
+
+        // Near the top? Ask for older messages.
+        if (
+            el.scrollTop < TOP_SCROLL_TRIGGER_PX &&
+            hasMoreOlder &&
+            !loadingOlder
+        ) {
+            anchoredRef.current = true;
+            void loadOlder();
+        }
+    }, [hasMoreOlder, loadingOlder, loadOlder]);
+
+    // After messages change, either:
+    //   - if anchored (we just loaded older), restore the viewport
+    //   - if a new message arrived at the bottom, jump to bottom
+    useLayoutEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const first = messages.length > 0 ? messages[0].id : null;
+        const last =
+            messages.length > 0 ? messages[messages.length - 1].id : null;
+
+        const isInitial = prevLastIdRef.current === null;
+        const gotOlder =
+            first !== prevFirstIdRef.current &&
+            last === prevLastIdRef.current;
+        const gotNewer = last !== prevLastIdRef.current;
+
+        if (isInitial) {
+            el.scrollTop = el.scrollHeight;
+            anchoredRef.current = false;
+        } else if (anchoredRef.current && gotOlder) {
+            // Prepend case. Restore by offsetting scrollTop by the
+            // delta in scrollHeight that occurred since the fetch
+            // started.
+            const delta = el.scrollHeight - prevScrollHeightRef.current;
+            if (delta > 0) {
+                el.scrollTop = prevScrollTopRef.current + delta;
+            }
+            anchoredRef.current = false;
+        } else if (gotNewer) {
+            // New message arrived at the bottom (send or realtime).
+            // Only auto-scroll if the user was already near the bottom;
+            // if they're reading older messages, leave their viewport
+            // alone.
+            const distanceFromBottom =
+                el.scrollHeight - el.scrollTop - el.clientHeight;
+            if (distanceFromBottom < 200) {
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+
+        prevFirstIdRef.current = first;
+        prevLastIdRef.current = last;
+        prevScrollHeightRef.current = el.scrollHeight;
+    }, [messages]);
 
     useEffect(() => {
         if (!focused || !user) return;
@@ -503,12 +577,15 @@ export default function ChatWindow() {
         await deleteMessage(t.id);
     };
 
-    const onAddAttachment = useCallback((item: { file: File; kind: AttachmentKind }) => {
-        setPending((prev) => {
-            if (prev.length >= MAX_ATTACHMENTS_PER_MESSAGE) return prev;
-            return [...prev, makePendingAttachment(item.file, item.kind)];
-        });
-    }, []);
+    const onAddAttachment = useCallback(
+        (item: { file: File; kind: AttachmentKind }) => {
+            setPending((prev) => {
+                if (prev.length >= MAX_ATTACHMENTS_PER_MESSAGE) return prev;
+                return [...prev, makePendingAttachment(item.file, item.kind)];
+            });
+        },
+        [],
+    );
 
     const onRemoveAttachment = useCallback((id: string) => {
         setPending((prev) => {
@@ -620,9 +697,7 @@ export default function ChatWindow() {
             : 0;
 
     return (
-        // Outer: full viewport height, three stacked regions.
         <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
-            {/* ============ PINNED HEADER ============ */}
             <header className="relative z-30 shrink-0 bg-background">
                 <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
                     <button
@@ -728,10 +803,13 @@ export default function ChatWindow() {
                 )}
             </header>
 
-            {/* ============ SCROLLABLE MESSAGES ============ */}
-            <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            {/* SCROLLABLE MESSAGES */}
+            <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
+            >
                 <div className="mx-auto max-w-3xl">
-                    {/* Privacy nudge sits at the top of the scroll region, scrolls away */}
                     <div className="mb-3 mt-2">
                         <div className="flex items-start gap-2 rounded-2xl bg-success/10 px-3 py-2">
                             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
@@ -741,6 +819,33 @@ export default function ChatWindow() {
                             </p>
                         </div>
                     </div>
+
+                    {/* Older-messages loading / no-more pill */}
+                    {messages.length > 0 ? (
+                        <div className="my-3 flex justify-center">
+                            {loadingOlder ? (
+                                <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    Loading earlier messages
+                                </span>
+                            ) : hasMoreOlder ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        anchoredRef.current = true;
+                                        void loadOlder();
+                                    }}
+                                    className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-secondary"
+                                >
+                                    Load earlier messages
+                                </button>
+                            ) : (
+                                <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                    Start of conversation
+                                </span>
+                            )}
+                        </div>
+                    ) : null}
 
                     <div className="space-y-2">
                         {messagesLoading && (
@@ -786,7 +891,7 @@ export default function ChatWindow() {
                 </div>
             </div>
 
-            {/* ============ PINNED COMPOSE ============ */}
+            {/* PINNED COMPOSE */}
             <div className="relative z-30 shrink-0 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                 <div className="mx-auto max-w-3xl px-4 pt-2">
                     {connectionClosed ? (
@@ -802,7 +907,6 @@ export default function ChatWindow() {
                         </div>
                     ) : (
                         <>
-                            {/* Edit chip */}
                             {editing ? (
                                 <div className="mb-2 flex items-center gap-2 rounded-2xl bg-muted px-3 py-2">
                                     <Pencil className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -825,7 +929,6 @@ export default function ChatWindow() {
                                 </div>
                             ) : null}
 
-                            {/* Reply banner */}
                             {!editing && replyParent ? (
                                 <div className="mb-2 flex items-center gap-2 rounded-2xl bg-muted px-3 py-2">
                                     <CornerUpLeft className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -853,7 +956,6 @@ export default function ChatWindow() {
                                 </div>
                             ) : null}
 
-                            {/* Pending attachments strip */}
                             {!editing ? (
                                 <ComposeAttachments
                                     disabled={connectionClosed || sendingAttachments}
@@ -878,9 +980,7 @@ export default function ChatWindow() {
                                 </div>
                             ) : null}
 
-                            {/* One container row: [ + ] [ textarea ] [ TTL ] [ Send ] */}
                             <div className="flex items-end gap-2">
-                                {/* Attach button — inside the input container */}
                                 <div className="flex flex-1 items-end gap-1 rounded-2xl bg-card px-1.5 py-1.5">
                                     <button
                                         type="button"
@@ -931,7 +1031,6 @@ export default function ChatWindow() {
                                     </button>
                                 </div>
 
-                                {/* Send button — distinct circle, outside the container */}
                                 <button
                                     type="button"
                                     onClick={() => void onSend()}

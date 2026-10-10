@@ -13,7 +13,7 @@ export type TtlOption =
     | 21600
     | 86400
     | 604800
-    | -1; // -1 == "until read + 5m"
+    | -1;
 
 export type AttachmentKind = "image" | "video";
 
@@ -50,14 +50,8 @@ export interface ChatMessage {
         senderId: string;
         body: string | null;
     } | null;
-    /**
-     * Cloudinary-backed attachments, ordered by position ascending.
-     * Empty array for text-only messages.
-     */
     attachments: ChatAttachment[];
-    /** Optimistic-only flag; not a DB column. */
     pending?: boolean;
-    /** Optimistic-only flag; not a DB column. */
     failed?: boolean;
 }
 
@@ -73,7 +67,7 @@ export interface ChatWindowMeta {
     disappearingEnabled: boolean;
 }
 
-const PAGE_LIMIT = 50;
+const PAGE_SIZE = 50;
 const UNTIL_READ_TTL = 300;
 
 const MESSAGE_SELECT = `
@@ -176,6 +170,18 @@ export interface PendingAttachmentInput {
     kind: AttachmentKind;
 }
 
+/**
+ * The messages query caches ALL loaded pages in a single array.
+ * A separate "meta" query tracks whether more pages exist older than
+ * the currently loaded window. This is the classic cursor-pagination
+ * shape without pulling in @tanstack/react-query's infinite queries,
+ * because we want a custom scroll-anchor when prepending.
+ */
+interface MessagesPage {
+    messages: ChatMessage[];
+    hasMoreOlder: boolean;
+}
+
 export function useChatWindow(
     connectionId: string | undefined,
     enabled: boolean,
@@ -184,6 +190,7 @@ export function useChatWindow(
     const qc = useQueryClient();
     const [optimistic, setOptimistic] = useState<ChatMessage[]>([]);
     const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+    const [loadingOlder, setLoadingOlder] = useState(false);
     const channelRef = useRef<RealtimeChannel | null>(null);
     const sendingRef = useRef(false);
 
@@ -239,10 +246,13 @@ export function useChatWindow(
         },
     });
 
-    const messagesQuery = useQuery<ChatMessage[]>({
+    // Initial page: newest PAGE_SIZE, sorted ascending in the returned array.
+    const messagesQuery = useQuery<MessagesPage>({
         queryKey: ["chat-messages", connectionId],
         enabled: !!user && !!connectionId,
-        staleTime: 5_000,
+        // Chat is live — always refetch on mount, but keep cache warm during
+        // a session. Realtime keeps the newest messages fresh on top of this.
+        staleTime: 0,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from("chat_messages")
@@ -250,24 +260,83 @@ export function useChatWindow(
                 .eq("connection_id", connectionId!)
                 .eq("tombstoned", false)
                 .gt("expires_at", new Date().toISOString())
-                .order("created_at", { ascending: true })
-                .limit(PAGE_LIMIT);
+                .order("created_at", { ascending: false })
+                .limit(PAGE_SIZE);
 
             if (error) throw error;
-            return (data ?? []).map(rowToMessage);
+            const rows = (data ?? []).map(rowToMessage);
+            // Reverse for ascending display order.
+            rows.reverse();
+            return {
+                messages: rows,
+                hasMoreOlder: rows.length === PAGE_SIZE,
+            };
         },
     });
 
+    const serverMessages: ChatMessage[] = messagesQuery.data?.messages ?? [];
+    const hasMoreOlder = messagesQuery.data?.hasMoreOlder ?? false;
+
+    /**
+     * Fetch the previous PAGE_SIZE messages older than the given cursor.
+     * Prepends to the cached page array. Cursor is the oldest currently
+     * loaded message's createdAt.
+     */
+    const loadOlder = useCallback(async () => {
+        if (!connectionId) return;
+        if (loadingOlder) return;
+        if (!hasMoreOlder) return;
+
+        const current = qc.getQueryData<MessagesPage>(["chat-messages", connectionId]);
+        if (!current || current.messages.length === 0) return;
+
+        const oldest = current.messages[0];
+        setLoadingOlder(true);
+
+        try {
+            const { data, error } = await supabase
+                .from("chat_messages")
+                .select(MESSAGE_SELECT)
+                .eq("connection_id", connectionId)
+                .eq("tombstoned", false)
+                .gt("expires_at", new Date().toISOString())
+                .lt("created_at", oldest.createdAt)
+                .order("created_at", { ascending: false })
+                .limit(PAGE_SIZE);
+
+            if (error) throw error;
+
+            const older = (data ?? []).map(rowToMessage);
+            older.reverse();
+
+            qc.setQueryData<MessagesPage>(
+                ["chat-messages", connectionId],
+                (prev) => {
+                    if (!prev) return prev;
+                    const existingIds = new Set(prev.messages.map((m) => m.id));
+                    const deduped = older.filter((m) => !existingIds.has(m.id));
+                    return {
+                        messages: [...deduped, ...prev.messages],
+                        hasMoreOlder: older.length === PAGE_SIZE,
+                    };
+                },
+            );
+        } catch {
+            // Silent. The user can retry by scrolling again.
+        } finally {
+            setLoadingOlder(false);
+        }
+    }, [connectionId, hasMoreOlder, loadingOlder, qc]);
+
     const messages = useMemo(() => {
-        const server = messagesQuery.data ?? [];
-        const serverIds = new Set(server.map((m) => m.id));
+        const serverIds = new Set(serverMessages.map((m) => m.id));
         const stillPending = optimistic.filter((m) => !serverIds.has(m.id));
-        const merged = [...server, ...stillPending].sort(
+        const merged = [...serverMessages, ...stillPending].sort(
             (a, b) =>
                 new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
         return attachReplyPreviews(merged);
-    }, [messagesQuery.data, optimistic]);
+    }, [serverMessages, optimistic]);
 
     const markDelivered = useCallback(
         async (ids: string[]) => {
@@ -300,9 +369,6 @@ export function useChatWindow(
         [user, qc],
     );
 
-    /**
-     * Text-only send. Unchanged from before.
-     */
     const send = useCallback(
         async (body: string, ttl: TtlOption | null, replyToId?: string | null) => {
             if (!user || !connectionId) return;
@@ -337,7 +403,7 @@ export function useChatWindow(
             ).toISOString();
 
             const parent = replyToId
-                ? (messagesQuery.data ?? []).find((m) => m.id === replyToId) ?? null
+                ? serverMessages.find((m) => m.id === replyToId) ?? null
                 : null;
             const optimisticReplyPreview = parent
                 ? { id: parent.id, senderId: parent.senderId, body: parent.body }
@@ -387,17 +453,20 @@ export function useChatWindow(
                 }
 
                 setOptimistic((prev) => prev.filter((m) => m.id !== tempId));
-                qc.setQueryData<ChatMessage[]>(
+                qc.setQueryData<MessagesPage>(
                     ["chat-messages", connectionId],
                     (old) => {
-                        const next = old ? [...old] : [];
+                        if (!old) return old;
                         const real = rowToMessage(data);
-                        if (!next.some((m) => m.id === real.id)) next.push(real);
-                        return next.sort(
-                            (a, b) =>
-                                new Date(a.createdAt).getTime() -
-                                new Date(b.createdAt).getTime(),
-                        );
+                        if (old.messages.some((m) => m.id === real.id)) return old;
+                        return {
+                            ...old,
+                            messages: [...old.messages, real].sort(
+                                (a, b) =>
+                                    new Date(a.createdAt).getTime() -
+                                    new Date(b.createdAt).getTime(),
+                            ),
+                        };
                     },
                 );
                 qc.invalidateQueries({ queryKey: ["chat-list"] });
@@ -405,14 +474,9 @@ export function useChatWindow(
                 sendingRef.current = false;
             }
         },
-        [user, connectionId, metaQuery.data?.defaultTtlSeconds, qc, messagesQuery.data],
+        [user, connectionId, metaQuery.data?.defaultTtlSeconds, qc, serverMessages],
     );
 
-    /**
-     * Send with one or more attachments. Uploads all to Cloudinary in
-     * parallel, then inserts one message and N attachment rows.
-     * Positions are 0..N-1 in pick order.
-     */
     const sendAttachments = useCallback(
         async (
             items: PendingAttachmentInput[],
@@ -423,10 +487,7 @@ export function useChatWindow(
             if (!user || !connectionId) return;
             if (sendingRef.current) return;
             if (items.length === 0) return;
-            if (items.length > MAX_ATTACHMENTS_PER_MESSAGE) {
-                // Defense in depth. The UI caps at 10 already.
-                return;
-            }
+            if (items.length > MAX_ATTACHMENTS_PER_MESSAGE) return;
 
             if (
                 metaQuery.data &&
@@ -455,13 +516,12 @@ export function useChatWindow(
             ).toISOString();
 
             const parent = replyToId
-                ? (messagesQuery.data ?? []).find((m) => m.id === replyToId) ?? null
+                ? serverMessages.find((m) => m.id === replyToId) ?? null
                 : null;
             const optimisticReplyPreview = parent
                 ? { id: parent.id, senderId: parent.senderId, body: parent.body }
                 : null;
 
-            // Local preview URLs for the optimistic bubble.
             const localPreviews = items.map((it) => URL.createObjectURL(it.file));
             const optimisticAttachments: ChatAttachment[] = items.map((it, idx) => ({
                 id: `temp-att-${crypto.randomUUID()}`,
@@ -501,7 +561,6 @@ export function useChatWindow(
             };
 
             try {
-                // 1. Upload all files in parallel.
                 const uploads = await Promise.all(
                     items.map((it) =>
                         uploadToCloudinary(it.file, {
@@ -511,7 +570,6 @@ export function useChatWindow(
                     ),
                 );
 
-                // 2. Insert the message.
                 const { data: msgData, error: msgErr } = await supabase
                     .from("chat_messages")
                     .insert({
@@ -529,7 +587,6 @@ export function useChatWindow(
                     throw msgErr ?? new Error("message insert failed");
                 }
 
-                // 3. Bulk insert attachments.
                 const attRows = items.map((it, idx) => ({
                     message_id: msgData.id,
                     connection_id: connectionId,
@@ -549,11 +606,8 @@ export function useChatWindow(
                     .from("chat_attachments")
                     .insert(attRows);
 
-                if (attErr) {
-                    throw attErr;
-                }
+                if (attErr) throw attErr;
 
-                // 4. Fetch the joined row so the cache has everything.
                 const { data: joined } = await supabase
                     .from("chat_messages")
                     .select(MESSAGE_SELECT)
@@ -564,17 +618,20 @@ export function useChatWindow(
                 setOptimistic((prev) => prev.filter((m) => m.id !== tempId));
 
                 if (joined) {
-                    qc.setQueryData<ChatMessage[]>(
+                    qc.setQueryData<MessagesPage>(
                         ["chat-messages", connectionId],
                         (old) => {
-                            const next = old ? [...old] : [];
+                            if (!old) return old;
                             const real = rowToMessage(joined);
-                            if (!next.some((m) => m.id === real.id)) next.push(real);
-                            return next.sort(
-                                (a, b) =>
-                                    new Date(a.createdAt).getTime() -
-                                    new Date(b.createdAt).getTime(),
-                            );
+                            if (old.messages.some((m) => m.id === real.id)) return old;
+                            return {
+                                ...old,
+                                messages: [...old.messages, real].sort(
+                                    (a, b) =>
+                                        new Date(a.createdAt).getTime() -
+                                        new Date(b.createdAt).getTime(),
+                                ),
+                            };
                         },
                     );
                 }
@@ -590,7 +647,7 @@ export function useChatWindow(
                 sendingRef.current = false;
             }
         },
-        [user, connectionId, metaQuery.data?.defaultTtlSeconds, qc, messagesQuery.data],
+        [user, connectionId, metaQuery.data?.defaultTtlSeconds, qc, serverMessages],
     );
 
     const editMessage = useCallback(
@@ -599,15 +656,22 @@ export function useChatWindow(
             const trimmed = newBody.trim();
             if (!trimmed) return;
 
-            const prev = qc.getQueryData<ChatMessage[]>(["chat-messages", connectionId]);
+            const prev = qc.getQueryData<MessagesPage>(["chat-messages", connectionId]);
             if (prev) {
-                qc.setQueryData<ChatMessage[]>(
+                qc.setQueryData<MessagesPage>(
                     ["chat-messages", connectionId],
-                    prev.map((m) =>
-                        m.id === id
-                            ? { ...m, body: trimmed, editedAt: new Date().toISOString() }
-                            : m,
-                    ),
+                    {
+                        ...prev,
+                        messages: prev.messages.map((m) =>
+                            m.id === id
+                                ? {
+                                    ...m,
+                                    body: trimmed,
+                                    editedAt: new Date().toISOString(),
+                                }
+                                : m,
+                        ),
+                    },
                 );
             }
 
@@ -625,9 +689,17 @@ export function useChatWindow(
                 qc.invalidateQueries({ queryKey: ["chat-messages", connectionId] });
                 return;
             }
-            qc.setQueryData<ChatMessage[]>(
+            qc.setQueryData<MessagesPage>(
                 ["chat-messages", connectionId],
-                (old) => (old ?? []).map((m) => (m.id === id ? rowToMessage(data) : m)),
+                (old) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        messages: old.messages.map((m) =>
+                            m.id === id ? rowToMessage(data) : m,
+                        ),
+                    };
+                },
             );
             qc.invalidateQueries({ queryKey: ["chat-list"] });
         },
@@ -637,18 +709,25 @@ export function useChatWindow(
     const deleteMessage = useCallback(
         async (id: string) => {
             if (!user) return;
-
             const nowIso = new Date().toISOString();
 
-            const prev = qc.getQueryData<ChatMessage[]>(["chat-messages", connectionId]);
+            const prev = qc.getQueryData<MessagesPage>(["chat-messages", connectionId]);
             if (prev) {
-                qc.setQueryData<ChatMessage[]>(
+                qc.setQueryData<MessagesPage>(
                     ["chat-messages", connectionId],
-                    prev.map((m) =>
-                        m.id === id
-                            ? { ...m, body: null, tombstoned: true, deletedAt: nowIso }
-                            : m,
-                    ),
+                    {
+                        ...prev,
+                        messages: prev.messages.map((m) =>
+                            m.id === id
+                                ? {
+                                    ...m,
+                                    body: null,
+                                    tombstoned: true,
+                                    deletedAt: nowIso,
+                                }
+                                : m,
+                        ),
+                    },
                 );
             }
 
@@ -667,9 +746,17 @@ export function useChatWindow(
                 qc.invalidateQueries({ queryKey: ["chat-messages", connectionId] });
                 return;
             }
-            qc.setQueryData<ChatMessage[]>(
+            qc.setQueryData<MessagesPage>(
                 ["chat-messages", connectionId],
-                (old) => (old ?? []).map((m) => (m.id === id ? rowToMessage(data) : m)),
+                (old) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        messages: old.messages.map((m) =>
+                            m.id === id ? rowToMessage(data) : m,
+                        ),
+                    };
+                },
             );
             qc.invalidateQueries({ queryKey: ["chat-list"] });
         },
@@ -717,20 +804,22 @@ export function useChatWindow(
                     const raw = payload.new as any;
                     const incoming = rowToMessage(raw);
 
-                    qc.setQueryData<ChatMessage[]>(
+                    qc.setQueryData<MessagesPage>(
                         ["chat-messages", connectionId],
                         (old) => {
-                            const next = old ? [...old] : [];
-                            if (!next.some((m) => m.id === incoming.id)) next.push(incoming);
-                            return next.sort(
-                                (a, b) =>
-                                    new Date(a.createdAt).getTime() -
-                                    new Date(b.createdAt).getTime(),
-                            );
+                            if (!old) return old;
+                            if (old.messages.some((m) => m.id === incoming.id)) return old;
+                            return {
+                                ...old,
+                                messages: [...old.messages, incoming].sort(
+                                    (a, b) =>
+                                        new Date(a.createdAt).getTime() -
+                                        new Date(b.createdAt).getTime(),
+                                ),
+                            };
                         },
                     );
 
-                    // Fetch the joined row once to pull the attachments.
                     void supabase
                         .from("chat_messages")
                         .select(MESSAGE_SELECT)
@@ -739,12 +828,17 @@ export function useChatWindow(
                         .then(({ data }) => {
                             if (!data) return;
                             const joined = rowToMessage(data);
-                            qc.setQueryData<ChatMessage[]>(
+                            qc.setQueryData<MessagesPage>(
                                 ["chat-messages", connectionId],
-                                (old) =>
-                                    (old ?? []).map((m) =>
-                                        m.id === joined.id ? joined : m,
-                                    ),
+                                (old) => {
+                                    if (!old) return old;
+                                    return {
+                                        ...old,
+                                        messages: old.messages.map((m) =>
+                                            m.id === joined.id ? joined : m,
+                                        ),
+                                    };
+                                },
                             );
                         });
 
@@ -761,13 +855,18 @@ export function useChatWindow(
                 },
                 (payload) => {
                     const updated = rowToMessage(payload.new);
-                    qc.setQueryData<ChatMessage[]>(
+                    qc.setQueryData<MessagesPage>(
                         ["chat-messages", connectionId],
-                        (old) =>
-                            (old ?? []).map((m) => {
-                                if (m.id !== updated.id) return m;
-                                return { ...updated, attachments: m.attachments };
-                            }),
+                        (old) => {
+                            if (!old) return old;
+                            return {
+                                ...old,
+                                messages: old.messages.map((m) => {
+                                    if (m.id !== updated.id) return m;
+                                    return { ...updated, attachments: m.attachments };
+                                }),
+                            };
+                        },
                     );
                     qc.invalidateQueries({ queryKey: ["chat-list"] });
                 },
@@ -798,6 +897,9 @@ export function useChatWindow(
         messagesLoading: messagesQuery.isLoading,
         messagesError: messagesQuery.error as Error | null,
         refetchMessages: messagesQuery.refetch,
+        hasMoreOlder,
+        loadingOlder,
+        loadOlder,
         send,
         sendAttachments,
         editMessage,
