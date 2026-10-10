@@ -48,7 +48,7 @@ import {
     makePendingAttachment,
     type PendingAttachment,
 } from "@/components/chat/ComposeAttachments";
-
+import { createPortal } from "react-dom";
 const TTL_OPTIONS: { value: TtlOption; label: string; short: string }[] = [
     { value: 300, label: "5 minutes", short: "5m" },
     { value: 1800, label: "30 minutes", short: "30m" },
@@ -332,7 +332,106 @@ function TtlSheet({
         </div>
     );
 }
+function PrivacyInfoButton({
+    meta,
+}: {
+    meta: ReturnType<typeof useChatWindow>["meta"];
+}) {
+    const [open, setOpen] = useState(false);
 
+    // Auto-close after 4 seconds
+    useEffect(() => {
+        if (!open) return;
+        const t = window.setTimeout(() => setOpen(false), 4000);
+        return () => window.clearTimeout(t);
+    }, [open]);
+
+    const ttlSeconds = meta?.defaultTtlSeconds ?? 86400;
+    const ttlLabel = (() => {
+        const found = TTL_OPTIONS.find((o) => o.value === (ttlSeconds as TtlOption));
+        return found?.label ?? "24 hours";
+    })();
+
+    return (
+        <div className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-label="Privacy details"
+                aria-expanded={open}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl text-success transition-colors active:opacity-90 bg-success/10"
+            >
+                <ShieldCheck className="h-5 w-5" />
+            </button>
+
+            {open &&
+                createPortal(
+                    <>
+                        <div
+                            aria-hidden
+                            onPointerDown={(e) => {
+                                const el = e.target as HTMLElement;
+                                if (el.closest("[data-privacy-tooltip]")) return;
+                                setOpen(false);
+                            }}
+                            className="fixed inset-0 z-[9998]"
+                        />
+
+                        <div
+                            data-privacy-tooltip
+                            role="tooltip"
+                            className="fixed z-[9999] right-4 left-4 top-16 sm:left-auto sm:right-4 sm:w-80 rounded-2xl border border-border bg-popover p-4 text-left shadow-lg"
+                        >
+                            <div className="flex items-center gap-2 mb-2">
+                                <ShieldCheck className="h-4 w-4 text-success" />
+                                <p className="text-sm font-bold text-foreground">
+                                    Private & disappearing
+                                </p>
+                            </div>
+
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                                Messages in this conversation disappear after{" "}
+                                <span className="font-semibold text-foreground">
+                                    {ttlLabel}
+                                </span>{" "}
+                                by default. You can pick a different timer per message
+                                in the composer before sending.
+                            </p>
+
+                            <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
+                                    <span>Screenshots can't be detected.</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
+                                    <span>
+                                        Deleted messages show as “This message was
+                                        deleted”.
+                                    </span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
+                                    <span>Keep health details between you two.</span>
+                                </li>
+                            </ul>
+
+                            <button
+                                type="button"
+                                onClick={() => setOpen(false)}
+                                className="mt-4 w-full h-9 rounded-2xl bg-muted text-foreground text-xs font-semibold active:bg-secondary transition-colors"
+                            >
+                                Got it
+                            </button>
+                        </div>
+                    </>,
+                    document.body,
+                )}
+        </div>
+    );
+
+
+}
 function useOtherVerification(
     otherUserId: string | null | undefined,
     otherRole: string | null | undefined,
@@ -755,22 +854,7 @@ export default function ChatWindow() {
                             )}
                         </p>
                     </div>
-
-                    <button
-                        type="button"
-                        onClick={onToggleDisappearing}
-                        aria-label="Toggle disappearing messages"
-                        className={cn(
-                            "flex h-11 items-center gap-1.5 rounded-2xl px-3 text-xs font-bold transition-colors active:opacity-90",
-                            meta?.disappearingEnabled
-                                ? "bg-success/10 text-success"
-                                : "bg-muted text-muted-foreground",
-                        )}
-                    >
-                        <Timer className="h-4 w-4" />
-                        {meta?.disappearingEnabled ? "On" : "Off"}
-                    </button>
-
+                    <PrivacyInfoButton meta={meta} />
                     <button
                         type="button"
                         onClick={() => setMenuOpen((v) => !v)}

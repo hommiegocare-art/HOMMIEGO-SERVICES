@@ -197,7 +197,36 @@ export default function Services() {
             setUploading(false);
         }
     }
+    function ServiceCardSkeleton() {
+        return (
+            <div className="w-full rounded-2xl bg-card overflow-hidden">
+                {/* Cover banner — matches aspect-[16/7] */}
+                <div className="w-full aspect-[16/7] bg-muted skeleton-shimmer" />
 
+                <div className="px-4 py-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1 space-y-2">
+                            <div className="h-4 w-3/4 rounded-md skeleton-shimmer" />
+                            <div className="h-3 w-full rounded-md skeleton-shimmer" />
+                            <div className="h-3 w-5/6 rounded-md skeleton-shimmer" />
+                        </div>
+                        <div className="shrink-0 space-y-1.5">
+                            <div className="h-4 w-16 rounded-md skeleton-shimmer ml-auto" />
+                            <div className="h-3 w-10 rounded-md skeleton-shimmer ml-auto" />
+                        </div>
+                    </div>
+
+                    {/* Action row — matches the real one */}
+                    <div className="mt-3 flex items-center gap-2">
+                        <div className="h-10 w-10 shrink-0 rounded-2xl skeleton-shimmer" />
+                        <div className="flex-1 h-10 rounded-2xl skeleton-shimmer" />
+                        <div className="flex-1 h-10 rounded-2xl skeleton-shimmer" />
+                        <div className="h-10 w-10 shrink-0 rounded-2xl skeleton-shimmer" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
     function openCreate() {
         setEditingId(null);
         setForm({ ...EMPTY });
@@ -250,9 +279,10 @@ export default function Services() {
             )}
 
             {servicesQ.isLoading ? (
-                <div className="space-y-3">
-                    <div className="h-64 rounded-2xl skeleton-shimmer" />
-                    <div className="h-64 rounded-2xl skeleton-shimmer" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <ServiceCardSkeleton key={i} />
+                    ))}
                 </div>
             ) : services.length === 0 ? (
                 <div className="rounded-2xl bg-card px-4 py-14 text-center">
