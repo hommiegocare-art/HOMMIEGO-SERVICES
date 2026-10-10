@@ -21,6 +21,7 @@ import {
 } from "@/lib/kenya";
 import type { CaregiverProfile, ClientProfile } from "@/types/db";
 import { useSession, refreshSession } from "@/hooks/useSession";
+import { friendlyError } from "@/lib/friendlyError";
 
 const LANGUAGE_LABELS = KENYA_LANGUAGES.map((l) => l.label);
 
@@ -425,7 +426,7 @@ export function EditProfileForm({
             {save.isError && (
                 <div className="rounded-2xl bg-destructive/10 px-4 py-3">
                     <p className="text-sm text-destructive">
-                        {(save.error as any)?.message ?? "Could not save"}
+                        {friendlyError(save.error)}
                     </p>
                 </div>
             )}
