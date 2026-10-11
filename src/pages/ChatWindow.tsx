@@ -6,6 +6,7 @@ import {
     useMemo,
     useRef,
     useState,
+    type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -20,10 +21,12 @@ import {
     MoreVertical,
     Paperclip,
     Pencil,
+    Reply,
     Send,
     ShieldAlert,
     ShieldCheck,
     Timer,
+    Palette,
     X,
 } from "lucide-react";
 import {
@@ -50,7 +53,29 @@ import {
     type PendingAttachment,
 } from "@/components/chat/ComposeAttachments";
 import { createPortal } from "react-dom";
+// add to your lucide imports
+import { WallpaperSheet } from "@/components/chat/WallpaperSheet";
+import {
+    loadWallpaper,
+    saveWallpaper,
+    wallpaperToStyle,
+    wallpaperDimOpacity,
+    wallpaperIsLight,
+    usesLocalBlob,
+    type ChatWallpaper,
+} from "@/lib/chatWallpapers";
+import {
+    getWallpaperObjectUrl,
+    deleteWallpaperImage,
+} from "@/lib/wallpaperStore";
 import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
+function haptic(ms = 10) {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        (navigator as Navigator & { vibrate?: (p: number | number[]) => boolean })
+            .vibrate?.(ms);
+    }
+}
+
 const TTL_OPTIONS: { value: TtlOption; label: string; short: string }[] = [
     { value: 300, label: "5 minutes", short: "5m" },
     { value: 1800, label: "30 minutes", short: "30m" },
@@ -161,21 +186,31 @@ function ReplyPreview({
         </div>
     );
 }
-
 function Bubble({
     m,
     mine,
     otherName,
     onLongPress,
+    onReply,
     onOpenAttachment,
 }: {
     m: ChatMessage;
     mine: boolean;
     otherName: string;
     onLongPress: (m: ChatMessage) => void;
+    onReply: (m: ChatMessage) => void;
     onOpenAttachment: (messageId: string, index: number) => void;
 }) {
     const longPressTimer = useRef<number | null>(null);
+
+    // ---- swipe-to-reply state ----
+    const SWIPE_MAX = 72;
+    const SWIPE_THRESHOLD = 56;
+    const [dragX, setDragX] = useState(0);
+    const [dragging, setDragging] = useState(false);
+    const pointerStart = useRef<{ x: number; y: number; id: number } | null>(null);
+    const swipeDirection = mine ? -1 : 1;
+    // -----------------------------
 
     if (m.tombstoned) {
         return <TombstoneBubble mine={mine} />;
@@ -195,21 +230,103 @@ function Bubble({
         }, 450);
     };
 
+    // ---- pointer handlers for swipe + long-press coexistence ----
+    const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+        setDragging(false);
+        setDragX(0);
+        startLongPress();
+    };
+
+    const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+        if (!pointerStart.current || pointerStart.current.id !== e.pointerId) return;
+        const dx = e.clientX - pointerStart.current.x;
+        const dy = e.clientY - pointerStart.current.y;
+
+        if (!dragging && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+            clearTimer();
+            pointerStart.current = null;
+            return;
+        }
+
+        const directed = swipeDirection > 0 ? Math.max(0, dx) : Math.min(0, dx);
+
+        if (Math.abs(directed) > 6) {
+            clearTimer();
+            setDragging(true);
+            const clamped =
+                Math.abs(directed) <= SWIPE_MAX
+                    ? directed
+                    : swipeDirection *
+                    (SWIPE_MAX + (Math.abs(directed) - SWIPE_MAX) * 0.2);
+            setDragX(clamped);
+            e.currentTarget.setPointerCapture?.(e.pointerId);
+        }
+    };
+
+    const endSwipe = (e: ReactPointerEvent<HTMLDivElement>) => {
+        clearTimer();
+        const committed = Math.abs(dragX) >= SWIPE_THRESHOLD;
+        pointerStart.current = null;
+        setDragging(false);
+        setDragX(0);
+
+        if (committed) {
+            haptic(10);
+            e.preventDefault();
+            onReply(m);
+        }
+    };
+
+    const cancelSwipe = () => {
+        clearTimer();
+        pointerStart.current = null;
+        setDragging(false);
+        setDragX(0);
+    };
+    // -----------------------------------------------------------
+
+    const progress = Math.min(Math.abs(dragX) / SWIPE_THRESHOLD, 1);
+
     return (
-        <div className={cn("flex w-full", mine ? "justify-end" : "justify-start")}>
+        <div
+            className={cn(
+                "relative flex w-full",
+                mine ? "justify-end" : "justify-start",
+            )}
+        >
+            {/* Reply affordance behind the bubble */}
+            <div
+                aria-hidden
+                className={cn(
+                    "pointer-events-none absolute inset-y-0 flex items-center justify-center text-muted-foreground",
+                    mine ? "right-0 pr-3" : "left-0 pl-3",
+                )}
+                style={{
+                    opacity: progress,
+                    transform: `scale(${0.7 + progress * 0.3})`,
+                }}
+            >
+                <Reply className="h-5 w-5" />
+            </div>
+
             <div
                 onContextMenu={(e) => {
                     e.preventDefault();
                     onLongPress(m);
                 }}
-                onTouchStart={startLongPress}
-                onTouchEnd={clearTimer}
-                onTouchMove={clearTimer}
-                onMouseDown={startLongPress}
-                onMouseUp={clearTimer}
-                onMouseLeave={clearTimer}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endSwipe}
+                onPointerCancel={cancelSwipe}
+                style={{
+                    transform: `translateX(${dragX}px)`,
+                    transition: dragging ? "none" : "transform 180ms ease-out",
+                    touchAction: "pan-y",
+                }}
                 className={cn(
-                    "max-w-[82%] sm:max-w-[78%] cursor-pointer select-none rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5",
+                    "relative z-10 max-w-[82%] sm:max-w-[78%] cursor-pointer select-none rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5",
                     mine
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground",
@@ -361,7 +478,7 @@ function PrivacyInfoButton({
                 onClick={() => setOpen((v) => !v)}
                 aria-label="Privacy details"
                 aria-expanded={open}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl text-success transition-colors active:opacity-90 bg-success/10"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl text-success transition-colors active:bg-muted"
             >
                 <ShieldCheck className="h-5 w-5" />
             </button>
@@ -485,7 +602,61 @@ export default function ChatWindow() {
     const prevScrollHeightRef = useRef<number>(0);
     const prevScrollTopRef = useRef<number>(0);
     const anchoredRef = useRef(false);
+    const [wallpaperSheetOpen, setWallpaperSheetOpen] = useState(false);
+    const [wallpaperBlobUrl, setWallpaperBlobUrl] = useState<string | null>(null);
 
+    // Read the wallpaper descriptor synchronously on first render so we
+    // never paint the default before the user's choice.
+    const [wallpaper, setWallpaper] = useState<ChatWallpaper>(() =>
+        connectionId ? loadWallpaper(connectionId) : { kind: "default" },
+    );
+
+    // If the user navigates to a different chat (connectionId changes),
+    // re-read synchronously *before* the next paint by comparing ids.
+    const lastConnectionIdRef = useRef<string | undefined>(connectionId);
+    if (lastConnectionIdRef.current !== connectionId) {
+        lastConnectionIdRef.current = connectionId;
+        const next = connectionId ? loadWallpaper(connectionId) : ({ kind: "default" } as ChatWallpaper);
+        // Only update if it actually differs, to avoid a needless re-render
+        if (JSON.stringify(next) !== JSON.stringify(wallpaper)) {
+            setWallpaper(next);
+        }
+    }
+
+    const applyWallpaper = useCallback(
+        (wp: ChatWallpaper) => {
+            setWallpaper(wp);
+            if (connectionId) {
+                saveWallpaper(connectionId, wp);
+                // If the new choice no longer uses a local blob, free the old one.
+                if (!usesLocalBlob(wp)) {
+                    void deleteWallpaperImage(connectionId).catch(() => {
+                        /* non-fatal */
+                    });
+                }
+            }
+        },
+        [connectionId],
+    );
+    // Resolve the custom wallpaper's blob URL from IndexedDB.
+    const wallpaperCustomDim = wallpaper.kind === "custom" ? wallpaper.dim : null;
+    useEffect(() => {
+        let cancelled = false;
+
+        if (wallpaper.kind !== "custom" || !connectionId) {
+            setWallpaperBlobUrl(null);
+            return;
+        }
+
+        (async () => {
+            const url = await getWallpaperObjectUrl(connectionId);
+            if (!cancelled) setWallpaperBlobUrl(url);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [wallpaper.kind, wallpaperCustomDim, connectionId]);
     const {
         meta,
         metaLoading,
@@ -855,6 +1026,14 @@ export default function ChatWindow() {
                             )}
                         </p>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setWallpaperSheetOpen(true)}
+                        aria-label="Chat wallpaper"
+                        className="flex h-11 w-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors active:bg-muted"
+                    >
+                        <Palette className="h-5 w-5" />
+                    </button>
                     <PrivacyInfoButton meta={meta} />
                     <button
                         type="button"
@@ -889,93 +1068,119 @@ export default function ChatWindow() {
             </header>
 
             {/* SCROLLABLE MESSAGES */}
-            <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
-            >
-                <div className="mx-auto max-w-3xl">
-                    <div className="mb-3 mt-2">
-                        <div className="flex items-start gap-2 rounded-2xl bg-success/10 px-3 py-2">
-                            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
-                            <p className="text-[11px] text-success">
-                                Private and ephemeral. Screenshots can't be detected —
-                                keep health details between you and your caregiver.
-                            </p>
+            {/* SCROLLABLE MESSAGES */}
+            {/* SCROLLABLE MESSAGES */}
+            <div className="relative min-h-0 flex-1">
+                {/* Wallpaper layer (does not scroll) */}
+                {/* Wallpaper layer (does not scroll) */}
+                <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={wallpaperToStyle(wallpaper, wallpaperBlobUrl)}
+                />
+                {/* Dim overlay (only for custom) */}
+                {/* Dim overlay (custom + default) */}
+                {(wallpaper.kind === "custom" || wallpaper.kind === "default") &&
+                    wallpaperDimOpacity(wallpaper) > 0 && (
+                        <div
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 bg-black"
+                            style={{ opacity: wallpaperDimOpacity(wallpaper) }}
+                        />
+                    )}
+                {/* Scroll container sits above the wallpaper */}
+                <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="relative h-full overflow-y-auto px-4 pb-4"
+                >
+                    <div className="relative z-10 mx-auto max-w-3xl">
+                        <div className="mb-3 mt-2">
+                            <div className="flex items-start gap-2 rounded-2xl bg-success/10 px-3 py-2">
+                                <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                                <p className="text-[11px] text-success">
+                                    Private and ephemeral. Screenshots can't be detected —
+                                    keep health details between you and your caregiver.
+                                </p>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Older-messages loading / no-more pill */}
-                    {messages.length > 0 ? (
-                        <div className="my-3 flex justify-center">
-                            {loadingOlder ? (
-                                <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Loading earlier messages
-                                </span>
-                            ) : hasMoreOlder ? (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        anchoredRef.current = true;
-                                        void loadOlder();
-                                    }}
-                                    className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-secondary"
-                                >
-                                    Load earlier messages
-                                </button>
-                            ) : (
-                                <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                    Start of conversation
-                                </span>
+                        {/* Older-messages loading / no-more pill */}
+                        {messages.length > 0 ? (
+                            <div className="my-3 flex justify-center">
+                                {loadingOlder ? (
+                                    <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        Loading earlier messages
+                                    </span>
+                                ) : hasMoreOlder ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            anchoredRef.current = true;
+                                            void loadOlder();
+                                        }}
+                                        className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-colors active:bg-secondary"
+                                    >
+                                        Load earlier messages
+                                    </button>
+                                ) : (
+                                    <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                        Start of conversation
+                                    </span>
+                                )}
+                            </div>
+                        ) : null}
+
+                        <div className="space-y-2">
+                            {messagesLoading && (
+                                <>
+                                    <SkeletonBubble mine={false} />
+                                    <SkeletonBubble mine={true} />
+                                    <SkeletonBubble mine={false} />
+                                </>
                             )}
-                        </div>
-                    ) : null}
 
-                    <div className="space-y-2">
-                        {messagesLoading && (
-                            <>
-                                <SkeletonBubble mine={false} />
-                                <SkeletonBubble mine={true} />
-                                <SkeletonBubble mine={false} />
-                            </>
-                        )}
-
-                        {!messagesLoading && messages.length === 0 && (
-                            <div className="flex flex-col items-center justify-center py-16 text-center">
-                                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                                    <ShieldCheck className="h-6 w-6 text-muted-foreground" />
+                            {!messagesLoading && messages.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                                        <ShieldCheck className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-sm font-bold text-foreground">
+                                        No messages yet
+                                    </p>
+                                    <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+                                        Say hello. Messages disappear based on the timer you set.
+                                    </p>
                                 </div>
-                                <p className="text-sm font-bold text-foreground">
-                                    No messages yet
-                                </p>
-                                <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                                    Say hello. Messages disappear based on the timer you set.
-                                </p>
-                            </div>
-                        )}
+                            )}
 
-                        {grouped.map(({ day, items }) => (
-                            <div key={day} className="space-y-2">
-                                <DayDivider label={day} />
-                                {items.map((m) => (
-                                    <Bubble
-                                        key={m.id}
-                                        m={m}
-                                        mine={m.senderId === user?.id}
-                                        otherName={meta?.otherDisplayName ?? "Them"}
-                                        onLongPress={openActions}
-                                        onOpenAttachment={(messageId, index) =>
-                                            setViewerState({ messageId, index })
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        ))}
+                            {grouped.map(({ day, items }) => (
+                                <div key={day} className="space-y-2">
+                                    <DayDivider label={day} />
+                                    {items.map((m) => (
+                                        <Bubble
+                                            key={m.id}
+                                            m={m}
+                                            mine={m.senderId === user?.id}
+                                            otherName={meta?.otherDisplayName ?? "Them"}
+                                            onLongPress={openActions}
+                                            onReply={(mm) => {
+                                                if (mm.tombstoned) return;
+                                                setReplyTo(mm);
+                                                composerRef.current?.focus();
+                                            }}
+                                            onOpenAttachment={(messageId, index) =>
+                                                setViewerState({ messageId, index })
+                                            }
+                                        />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
-
             {/* PINNED COMPOSE */}
             <div className="relative z-30 shrink-0 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                 <div className="mx-auto max-w-3xl px-2 sm:px-4 pt-1.5 sm:pt-2">
@@ -1141,7 +1346,15 @@ export default function ChatWindow() {
                 current={perMessageTtl}
                 onPick={(v) => setPerMessageTtl(v)}
             />
-
+            {connectionId ? (
+                <WallpaperSheet
+                    open={wallpaperSheetOpen}
+                    onClose={() => setWallpaperSheetOpen(false)}
+                    connectionId={connectionId}
+                    current={wallpaper}
+                    onPick={applyWallpaper}
+                />
+            ) : null}
             <AttachmentViewer
                 attachments={viewerAttachments}
                 index={viewerIndex}
