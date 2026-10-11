@@ -54,6 +54,7 @@ import ChatWindow from "./pages/ChatWindow";
 // Admin / verification
 import AdminVerifications from "@/pages/admin/AdminVerifications";
 import AdminVerificationDetail from "@/pages/admin/AdminVerificationDetail";
+import HealthInsights from "./pages/HealthInsights";
 
 // 👇 NEW — unlock audio on the very first user gesture (browser autoplay policy)
 if (typeof window !== "undefined") {
@@ -166,7 +167,7 @@ function Shell() {
             <Route path="/health/print/:childId" element={<HealthPrint />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/connections" element={<Connections />} />
-
+            <Route path="/health/insights" element={<HealthInsights />} />
             {/* Chat list — detail pages render bare (see isBareAppRoute). */}
             <Route path="/chats" element={<Chats />} />
 
