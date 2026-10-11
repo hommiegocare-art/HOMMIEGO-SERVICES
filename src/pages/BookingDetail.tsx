@@ -22,6 +22,7 @@ import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { QRDisplay } from "@/components/booking/QRDisplay";
 import { QRScanner } from "@/components/booking/QRScanner";
 import { PayButton } from "@/components/booking/PayButton";
+import { PaymentReactionOverlay } from "@/components/booking/PaymentReactionOverlay";
 import { VisitNotesList } from "@/components/VisitNotesList";
 import RatingPanel from "@/components/RatingPanel";
 import type {
@@ -80,7 +81,6 @@ async function fetchBooking(id: string): Promise<BookingFull | null> {
 
     const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-    // Check caregiver verification (batched single query)
     const { data: cg } = await supabase
         .from("caregiver_profiles")
         .select("verification_status")
@@ -109,30 +109,23 @@ async function fetchHistory(id: string): Promise<BookingStatusHistory[]> {
 async function fetchQrToken(
     bookingId: string
 ): Promise<{ token: string; expiresAt: string } | null> {
-    const { data } = await supabase
-        .from("booking_qr_tokens")
-        .select("token, expires_at, consumed_at")
-        .eq("booking_id", bookingId)
-        .maybeSingle();
-
-    if (data && !data.consumed_at && new Date(data.expires_at) > new Date()) {
-        return { token: data.token as string, expiresAt: data.expires_at as string };
-    }
-
-    const { data: fresh, error } = await supabase.rpc("ensure_qr_token", {
+    const { data: token, error } = await supabase.rpc("ensure_qr_token", {
         p_booking_id: bookingId,
     });
-    if (error || !fresh) return null;
+    if (error) throw error;
+    if (!token || typeof token !== "string") return null;
 
-    const { data: reread } = await supabase
+    const { data: row } = await supabase
         .from("booking_qr_tokens")
-        .select("token, expires_at")
+        .select("expires_at")
         .eq("booking_id", bookingId)
         .maybeSingle();
-    if (!reread) return null;
+
     return {
-        token: reread.token as string,
-        expiresAt: reread.expires_at as string,
+        token,
+        expiresAt:
+            row?.expires_at ??
+            new Date(Date.now() + 12 * 3600_000).toISOString(),
     };
 }
 
@@ -144,6 +137,9 @@ export default function BookingDetail() {
     const { user } = useSession();
     const qc = useQueryClient();
     const [scanOpen, setScanOpen] = useState(false);
+
+    // 🎉 Fires when the real M-Pesa payment succeeds.
+    const [celebrate, setCelebrate] = useState<{ amountLabel: string } | null>(null);
 
     const bookingQ = useQuery({
         queryKey: ["booking", id],
@@ -159,8 +155,15 @@ export default function BookingDetail() {
 
     const qrQ = useQuery({
         queryKey: ["booking", id, "qr"],
-        enabled: !!id && !!bookingQ.data,
+        enabled:
+            !!id &&
+            !!bookingQ.data &&
+            !!user &&
+            user.id === bookingQ.data.client_id &&
+            (bookingQ.data.status === "accepted" ||
+                bookingQ.data.status === "en_route"),
         queryFn: () => fetchQrToken(id!),
+        retry: false,
     });
 
     const update = useMutation({
@@ -219,8 +222,6 @@ export default function BookingDetail() {
     const otherName =
         other?.display_name || (role === "caregiver" ? "Client" : "Caregiver");
 
-    // Only show the verified badge when the viewer is the client
-    // (i.e., the counterparty is a caregiver).
     const showBadge = role === "client" && b.caregiverVerified;
 
     const canCancel =
@@ -229,6 +230,13 @@ export default function BookingDetail() {
 
     const showScanButton =
         role === "caregiver" && (b.status === "accepted" || b.status === "en_route");
+
+    const canAddNotes =
+        role === "caregiver" &&
+        ["arrived", "in_progress", "completed"].includes(b.status);
+
+    const canSeeNotes =
+        ["arrived", "in_progress", "completed"].includes(b.status);
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
@@ -324,12 +332,22 @@ export default function BookingDetail() {
 
             <StatusTimeline current={b.status} />
 
-            {/* PAY BUTTON — only for the client, only while awaiting payment */}
+            {/* PAY BUTTON — fires the celebration overlay on real M-Pesa success */}
             {role === "client" && b.status === "pending_payment" && (
                 <PayButton
                     bookingId={b.id}
                     defaultPhone={b.whatsapp_number ?? null}
                     amount={Number(b.total_amount ?? 0)}
+                    onPaid={() => {
+                        // 🎉 M-Pesa confirmed → play the reaction overlay
+                        setCelebrate({
+                            amountLabel: `KES ${Math.round(b.total_amount ?? 0).toLocaleString()}`,
+                        });
+                        // Refresh booking so status shows paid_escrow immediately
+                        qc.invalidateQueries({ queryKey: ["booking", id] });
+                        qc.invalidateQueries({ queryKey: ["booking", id, "history"] });
+                        qc.invalidateQueries({ queryKey: ["bookings"] });
+                    }}
                 />
             )}
 
@@ -343,15 +361,17 @@ export default function BookingDetail() {
                 </div>
             )}
 
-            {role === "client" && (
+            {canSeeNotes && (
                 <div className="mb-4">
                     <VisitNotesList bookingId={b.id} />
                 </div>
             )}
 
-            {role === "client" && b.status === "accepted" && qrQ.data && (
-                <QRDisplay token={qrQ.data.token} expiresAt={qrQ.data.expiresAt} />
-            )}
+            {role === "client" &&
+                (b.status === "accepted" || b.status === "en_route") &&
+                qrQ.data && (
+                    <QRDisplay token={qrQ.data.token} expiresAt={qrQ.data.expiresAt} />
+                )}
 
             {showScanButton && (
                 <button
@@ -363,16 +383,15 @@ export default function BookingDetail() {
                 </button>
             )}
 
-            {role === "caregiver" &&
-                (b.status === "in_progress" || b.status === "completed") && (
-                    <Link
-                        to={`/bookings/${b.id}/notes`}
-                        className="w-full h-14 rounded-2xl bg-secondary text-secondary-foreground font-bold text-base mb-4 inline-flex items-center justify-center gap-2 active:opacity-90 transition-opacity"
-                    >
-                        <FileText className="w-5 h-5" />
-                        Add visit note
-                    </Link>
-                )}
+            {canAddNotes && (
+                <Link
+                    to={`/bookings/${b.id}/notes`}
+                    className="w-full h-14 rounded-2xl bg-secondary text-secondary-foreground font-bold text-base mb-4 inline-flex items-center justify-center gap-2 active:opacity-90 transition-opacity"
+                >
+                    <FileText className="w-5 h-5" />
+                    Add visit note
+                </Link>
+            )}
 
             <ActionBar
                 role={role}
@@ -422,6 +441,15 @@ export default function BookingDetail() {
                         qc.invalidateQueries({ queryKey: ["booking", id, "history"] });
                         qc.invalidateQueries({ queryKey: ["bookings"] });
                     }}
+                />
+            )}
+
+            {/* 🎉 Payment success reaction overlay — plays over this page */}
+            {celebrate && (
+                <PaymentReactionOverlay
+                    open={!!celebrate}
+                    amountLabel={celebrate.amountLabel}
+                    onDone={() => setCelebrate(null)}
                 />
             )}
         </div>

@@ -274,3 +274,108 @@ body,
   content-visibility: auto;
   contain-intrinsic-size: 0 500px;
 }
+
+/* === Payment reaction overlay animations === */
+@keyframes reaction-float {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.6);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+    transform: translate3d(calc(var(--drift) * 0.1), -10vh, 0) rotate(calc(var(--rot) * 0.1)) scale(1);
+  }
+
+  100% {
+    transform: translate3d(var(--drift), -110vh, 0) rotate(var(--rot)) scale(1.15);
+    opacity: 0;
+  }
+}
+
+.reaction-float {
+  animation-name: reaction-float;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes reaction-ring {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+.reaction-ring {
+  animation: reaction-ring 1.6s ease-out forwards;
+}
+
+@keyframes reaction-spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reaction-spin-slow {
+  animation: reaction-spin-slow 6s linear infinite;
+}
+
+@keyframes reaction-spin-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.reaction-spin-reverse {
+  animation: reaction-spin-reverse 2.2s linear infinite;
+}
+
+@keyframes reaction-twinkle {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+}
+
+.reaction-twinkle {
+  animation: reaction-twinkle 1.4s ease-in-out infinite;
+}
+
+@keyframes reaction-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.reaction-pop {
+  animation: reaction-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.reaction-pop-settled {
+  transform: scale(1);
+  opacity: 1;
+}

@@ -26,16 +26,20 @@ export function PayButton({
     bookingId,
     defaultPhone,
     amount,
+    onPaid,
 }: {
     bookingId: string;
     defaultPhone?: string | null;
     amount: number;
+    /** Fires ONCE when M-Pesa confirms the payment succeeded. */
+    onPaid?: () => void;
 }) {
     const { user } = useSession();
     const qc = useQueryClient();
     const [phase, setPhase] = useState<Phase>({ kind: "idle" });
     const [phone, setPhone] = useState(defaultPhone ?? "");
     const pollRef = useRef<number | null>(null);
+    const paidFiredRef = useRef(false);
 
     // Clean up polling on unmount
     useEffect(() => {
@@ -65,11 +69,17 @@ export function PayButton({
                 .maybeSingle();
 
             if (error || !data) return;
-
-            if (data.status === "paid_escrow" || data.payment_status === "paid") {
+            if (data.status === "paid_escrow") {
                 setPhase({ kind: "paid" });
                 qc.invalidateQueries({ queryKey: ["booking", bookingId] });
+                qc.invalidateQueries({ queryKey: ["booking", bookingId, "history"] });
                 qc.invalidateQueries({ queryKey: ["bookings"] });
+
+                // 🎉 Fire parent callback exactly once
+                if (!paidFiredRef.current) {
+                    paidFiredRef.current = true;
+                    onPaid?.();
+                }
                 return;
             }
 

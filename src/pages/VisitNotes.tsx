@@ -20,9 +20,10 @@ import { ChevronLeft, FileText, Stethoscope } from "lucide-react";
 
 type VisitType =
     | "routine"
+    | "emergency"
     | "follow_up"
-    | "urgent"
     | "assessment"
+    | "therapy"
     | "post_op"
     | "other";
 
@@ -120,6 +121,7 @@ export default function VisitNotes() {
 
         const { error: e } = await supabase.from("visit_notes").insert({
             booking_id: bookingId,
+            client_id: booking.client_id,
             caregiver_id: user.id,
             visit_type: visitType,
             chief_complaint: chiefComplaint.trim() || null,
@@ -130,7 +132,6 @@ export default function VisitNotes() {
             follow_up_required: followUpRequired,
             follow_up_date: followUpRequired && followUpDate ? followUpDate : null,
         });
-
         setSaving(false);
         if (e) {
             setError(e.message);
@@ -143,7 +144,7 @@ export default function VisitNotes() {
 
     if (!user || !booking) {
         return (
-            <main className="mx-auto max-w-2xl px-6 py-20 text-center">
+            <main className="mx-auto max-w-2xl px-1 py-20 text-center">
                 <h1 className="text-2xl font-semibold">Booking not found</h1>
                 <Button asChild variant="outline" className="mt-4">
                     <Link to="/bookings">Back to bookings</Link>
@@ -157,7 +158,7 @@ export default function VisitNotes() {
 
     if (!isAssigned || !statusOk) {
         return (
-            <main className="mx-auto max-w-2xl px-6 py-20 text-center">
+            <main className="mx-auto max-w-2xl px-1 py-20 text-center">
                 <h1 className="text-2xl font-semibold">Not available</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                     {!isAssigned
@@ -172,16 +173,18 @@ export default function VisitNotes() {
     }
 
     return (
-        <main className="mx-auto max-w-2xl px-6 py-6 animate-fade-in">
+        <main className="mx-auto max-w-2xl px-1 py-6 animate-fade-in">
             <button
                 onClick={() => navigate(-1)}
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-2 mb-4 h-11"
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-1 mb-3 h-10 sm:h-11"
             >
                 <ChevronLeft className="h-4 w-4" /> Back
             </button>
 
-            <header className="mb-6">
-                <h1 className="text-2xl font-semibold tracking-tight">Add visit note</h1>
+            <header className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
+                    Add visit note
+                </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
                     Document this visit for the client's record.
                 </p>
@@ -203,8 +206,9 @@ export default function VisitNotes() {
                             <SelectContent>
                                 <SelectItem value="routine">Routine</SelectItem>
                                 <SelectItem value="follow_up">Follow-up</SelectItem>
-                                <SelectItem value="urgent">Urgent</SelectItem>
+                                <SelectItem value="emergency">Emergency</SelectItem>
                                 <SelectItem value="assessment">Assessment</SelectItem>
+                                <SelectItem value="therapy">Therapy</SelectItem>
                                 <SelectItem value="post_op">Post-op</SelectItem>
                                 <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
@@ -260,7 +264,7 @@ export default function VisitNotes() {
                 <CardHeader>
                     <CardTitle className="text-base font-medium">Vitals</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-3 gap-3">
+                <CardContent className="grid grid-cols-3 gap-2 sm:gap-3">
                     <div className="grid gap-2">
                         <Label htmlFor="bp">BP</Label>
                         <Input
@@ -349,7 +353,7 @@ export default function VisitNotes() {
 
 function PageSkeleton() {
     return (
-        <main className="mx-auto max-w-2xl px-6 py-10">
+        <main className="mx-auto max-w-2xl px-1 py-6">
             <Skeleton className="h-9 w-40" />
             <Skeleton className="mt-6 h-64 rounded-2xl" />
             <Skeleton className="mt-4 h-24 rounded-2xl" />
