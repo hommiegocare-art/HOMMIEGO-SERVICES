@@ -257,7 +257,7 @@ export default function Services() {
     const categories = categoriesQ.data ?? [];
 
     return (
-        <div className="max-w-4xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+        <div className="max-w-4xl mx-auto px-2  sm:px-2  py-4 sm:py-6 animate-fade-in">
             <div className="flex items-start sm:items-end justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
                 <div className="min-w-0">
                     <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
@@ -273,7 +273,7 @@ export default function Services() {
                 </Button>
             </div>
             {error && !form && (
-                <div className="rounded-2xl bg-destructive/10 px-3 py-1 sm:px-1 mb-3 sm:mb-4">
+                <div className="rounded-2xl bg-destructive/10 px-3 py-1 sm:px-2  mb-3 sm:mb-4">
                     <p className="text-sm text-destructive">{error}</p>
                 </div>
             )}
@@ -285,7 +285,7 @@ export default function Services() {
                     ))}
                 </div>
             ) : services.length === 0 ? (
-                <div className="rounded-2xl bg-card px-1 py-12 sm:px-1 sm:py-14 text-center">
+                <div className="rounded-2xl bg-card px-2  py-12 sm:px-2  sm:py-14 text-center">
                     <Briefcase className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground">
                         No services yet. Create one to start receiving bookings.
@@ -565,7 +565,7 @@ function ServiceDetail({
                 "
             >
                 {/* Sticky header */}
-                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-1 sm:px-1">
+                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-2  sm:px-1">
                     <button
                         onClick={onClose}
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
@@ -703,7 +703,7 @@ function ServiceSheet({
     return (
         <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
             {/* Header — sticky so Close/title stay visible while scrolling */}
-            <div className="sticky top-0 z-10 bg-background h-14 flex items-center justify-between px-1 sm:px-1">
+            <div className="sticky top-0 z-10 bg-background h-14 flex items-center justify-between px-2  sm:px-1">
                 <button
                     onClick={onClose}
                     className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted transition-colors"
@@ -718,7 +718,7 @@ function ServiceSheet({
             </div>
 
             {/* Form content */}
-            <div className="px-1 sm:px-1 pb-32">
+            <div className="px-2  sm:px-2  pb-32">
                 <div className="max-w-lg mx-auto space-y-4">
                     <Field label="Title">
                         <Input

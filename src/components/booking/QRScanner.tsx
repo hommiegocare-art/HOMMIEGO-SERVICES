@@ -24,8 +24,6 @@ export function QRScanner({
     const [state, setState] = useState<State>({ kind: "scanning" });
     const [manualCode, setManualCode] = useState("");
 
-    // Track the last mode the user was in, so the error screen's
-    // "Try again" button can send them back to the right place.
     const lastModeRef = useRef<"scan" | "manual">("scan");
 
     const verify = async (token: string, from: "scan" | "manual") => {
@@ -60,7 +58,6 @@ export function QRScanner({
         }, 1200);
     };
 
-    // Camera lifecycle. Runs once on mount; stops on unmount.
     useEffect(() => {
         const reader = new BrowserMultiFormatReader();
         let cancelled = false;
@@ -110,7 +107,7 @@ export function QRScanner({
     const inError = state.kind === "error";
 
     return (
-        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        <div className="fixed inset-x-0 top-0 z-50 h-[100dvh] bg-background flex flex-col">
             {/* Header */}
             <div className="h-14 flex items-center justify-between px-4 shrink-0">
                 <button
@@ -127,25 +124,26 @@ export function QRScanner({
             </div>
 
             {/* Body */}
-            <div className="flex-1 relative overflow-hidden">
-                {/* The video element stays mounted so the camera stream is not
-                    restarted every time we switch modes. It's just hidden
-                    behind the manual overlay when in manual mode. */}
+            <div className="flex-1 relative overflow-hidden min-h-0">
                 <video
                     ref={videoRef}
                     className="absolute inset-0 w-full h-full object-cover"
                     muted
                     playsInline
                 />
-
-                {/* Scanning frame */}
                 {state.kind === "scanning" && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 pb-12 pointer-events-none">
                         <div className="w-64 h-64 rounded-2xl border-2 border-primary/70" />
+
+                        <button
+                            onClick={() => setState({ kind: "manual" })}
+                            className="pointer-events-auto text-xs text-white/90 font-semibold inline-flex items-center gap-1.5 underline drop-shadow-md"
+                        >
+                            <Keyboard className="w-3 h-3" />
+                            Enter code manually instead
+                        </button>
                     </div>
                 )}
-
-                {/* Manual entry */}
                 {inManual && (
                     <div className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-6 px-8 animate-fade-in">
                         <p className="text-sm text-muted-foreground text-center max-w-xs">
@@ -179,7 +177,6 @@ export function QRScanner({
                     </div>
                 )}
 
-                {/* Verifying overlay */}
                 {inVerifying && (
                     <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-3">
                         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -187,7 +184,6 @@ export function QRScanner({
                     </div>
                 )}
 
-                {/* Success */}
                 {inSuccess && (
                     <div className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-3 animate-fade-in">
                         <CheckCircle2 className="w-14 h-14 text-success" />
@@ -195,7 +191,6 @@ export function QRScanner({
                     </div>
                 )}
 
-                {/* Error */}
                 {inError && state.kind === "error" && (
                     <div className="absolute inset-0 bg-background flex flex-col items-center justify-center gap-3 px-8 text-center animate-fade-in">
                         <AlertTriangle className="w-12 h-12 text-destructive" />
@@ -215,12 +210,28 @@ export function QRScanner({
                         >
                             Try again
                         </button>
+                        {/* Escape hatch for camera failures — jumps straight to
+                            manual entry, no need to hunt for the footer link. */}
+                        {state.from === "scan" && (
+                            <button
+                                onClick={() => setState({ kind: "manual" })}
+                                className="mt-1 h-11 px-5 rounded-2xl bg-muted text-foreground text-sm font-semibold"
+                            >
+                                Enter code manually
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
 
-            {/* Footer */}
-            <div className="px-4 py-5 text-center shrink-0">
+            {/* Footer — shows the manual-entry link in scanning AND error
+                states, so a broken camera never traps the user. */}
+            <div
+                className="px-4 pt-5 text-center shrink-0"
+                style={{
+                    paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))",
+                }}
+            >
                 {state.kind === "manual" ? (
                     <button
                         onClick={() => {
@@ -232,12 +243,14 @@ export function QRScanner({
                         <CameraOff className="w-3 h-3" />
                         Back to camera
                     </button>
-                ) : state.kind === "scanning" ? (
+                ) : state.kind === "scanning" || state.kind === "error" ? (
                     <div className="flex flex-col items-center gap-2">
-                        <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
-                            <CameraOff className="w-3 h-3" />
-                            Point at the client's QR code
-                        </p>
+                        {state.kind === "scanning" && (
+                            <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+                                <CameraOff className="w-3 h-3" />
+                                Point at the client's QR code
+                            </p>
+                        )}
                         <button
                             onClick={() => setState({ kind: "manual" })}
                             className="text-xs text-primary font-semibold inline-flex items-center gap-1.5 underline"

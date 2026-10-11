@@ -16,7 +16,7 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="max-w-3xl mx-auto px-1 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-2  py-6 space-y-4">
                 <div className="h-8 w-48 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="grid grid-cols-2 gap-3">
@@ -33,7 +33,7 @@ export default function Dashboard() {
     const greeting = `${greetingFor(new Date())}, ${user.display_name || "friend"}`;
 
     return (
-        <div className="max-w-3xl mx-auto px-1 py-6">
+        <div className="max-w-3xl mx-auto px-2  py-6">
             <h1 className="text-2xl font-black tracking-tight text-foreground mb-5">
                 {greeting}
             </h1>

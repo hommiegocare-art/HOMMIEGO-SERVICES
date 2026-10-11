@@ -399,7 +399,13 @@ export type CaregiverDiscoveryRow = {
     verification_status: VerificationStatus | null;
     total_views: number | null;
 };
-
+export type MilestoneServiceBreakdown = {
+    booking_id: string;
+    service_id: string | null;
+    service_title: string;
+    short_description: string | null;
+    completed_at: string;
+};
 export type ClientDiscoveryRow = {
     client_id: string;
     display_name: string;

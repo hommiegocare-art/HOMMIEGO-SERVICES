@@ -971,7 +971,7 @@ export default function ChatWindow() {
     return (
         <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
             <header className="relative z-30 shrink-0 bg-background">
-                <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-1 sm:px-1 py-2.5 sm:py-3">
+                <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-2  sm:px-2  py-2.5 sm:py-3">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
@@ -1301,7 +1301,7 @@ export default function ChatWindow() {
                                         }}
                                         rows={1}
                                         placeholder={editing ? "Edit message…" : "Message"}
-                                        className="max-h-32 min-h-[36px] w-full flex-1 resize-none bg-transparent px-1 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                                        className="max-h-32 min-h-[36px] w-full flex-1 resize-none bg-transparent px-2  py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                                     />
 
                                     <button

@@ -86,7 +86,7 @@ export default function AdminVerifications() {
     if (!isVerifier && !adminLoading) return <Navigate to="/" replace />;
 
     return (
-        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6">
+        <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6">
             <header className="flex items-center gap-2 mb-3 sm:mb-4">
                 <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
                 <h1 className="text-lg font-black tracking-tight text-foreground">

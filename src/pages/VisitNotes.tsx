@@ -144,7 +144,7 @@ export default function VisitNotes() {
 
     if (!user || !booking) {
         return (
-            <main className="mx-auto max-w-2xl px-1 py-20 text-center">
+            <main className="mx-auto max-w-2xl px-2  py-20 text-center">
                 <h1 className="text-2xl font-semibold">Booking not found</h1>
                 <Button asChild variant="outline" className="mt-4">
                     <Link to="/bookings">Back to bookings</Link>
@@ -158,7 +158,7 @@ export default function VisitNotes() {
 
     if (!isAssigned || !statusOk) {
         return (
-            <main className="mx-auto max-w-2xl px-1 py-20 text-center">
+            <main className="mx-auto max-w-2xl px-2  py-20 text-center">
                 <h1 className="text-2xl font-semibold">Not available</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
                     {!isAssigned
@@ -173,7 +173,7 @@ export default function VisitNotes() {
     }
 
     return (
-        <main className="mx-auto max-w-2xl px-1 py-6 animate-fade-in">
+        <main className="mx-auto max-w-2xl px-2  py-6 animate-fade-in">
             <button
                 onClick={() => navigate(-1)}
                 className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-1 mb-3 h-10 sm:h-11"
@@ -353,7 +353,7 @@ export default function VisitNotes() {
 
 function PageSkeleton() {
     return (
-        <main className="mx-auto max-w-2xl px-1 py-6">
+        <main className="mx-auto max-w-2xl px-2  py-6">
             <Skeleton className="h-9 w-40" />
             <Skeleton className="mt-6 h-64 rounded-2xl" />
             <Skeleton className="mt-4 h-24 rounded-2xl" />

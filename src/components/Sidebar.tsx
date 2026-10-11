@@ -14,6 +14,7 @@ import {
     BriefcaseBusiness,
     Settings,
     ShieldCheck,
+    GraduationCap,
 } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -41,6 +42,7 @@ export function Sidebar() {
                 { to: "/services", label: "Services", icon: Briefcase },
                 { to: "/earnings", label: "Earnings", icon: Wallet },
                 { to: "/cpd", label: "CPD", icon: Award },
+                { to: "/certificates", label: "Certificates", icon: GraduationCap },
             ]
             : [{ to: "/bookings", label: "Bookings", icon: CalendarCheck }]),
 

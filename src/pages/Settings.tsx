@@ -195,7 +195,7 @@ export default function Settings() {
     if (sessionLoading) return <PageSkeleton />;
     if (!user) {
         return (
-            <main className="mx-auto max-w-3xl px-1 sm:px-1 py-20 text-center">
+            <main className="mx-auto max-w-3xl px-2  sm:px-2  py-20 text-center">
                 <h1 className="text-2xl font-semibold">Sign in required</h1>
             </main>
         );
@@ -206,7 +206,7 @@ export default function Settings() {
     const pushAvailable = pushSupported();
 
     return (
-        <main className="mx-auto max-w-2xl px-1 sm:px-1 py-6 sm:py-10">
+        <main className="mx-auto max-w-2xl px-2  sm:px-2  py-6 sm:py-10">
             <header className="mb-4 sm:mb-6">
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Settings</h1>
 
@@ -541,7 +541,7 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
 
 function PageSkeleton() {
     return (
-        <main className="mx-auto max-w-2xl px-1 sm:px-1 py-6 sm:py-10">
+        <main className="mx-auto max-w-2xl px-2  sm:px-2  py-6 sm:py-10">
             <Skeleton className="h-9 w-32" />
             <Skeleton className="mt-6 h-32 rounded-2xl" />
             <Skeleton className="mt-6 h-24 rounded-2xl" />

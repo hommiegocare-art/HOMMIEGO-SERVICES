@@ -379,3 +379,151 @@ body,
   transform: scale(1);
   opacity: 1;
 }
+
+/* === Completion reaction overlay animations === */
+@keyframes completion-confetti {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(var(--drift), 115vh, 0) rotate(var(--spin)) scale(0.9);
+    opacity: 0.9;
+  }
+}
+
+.completion-confetti {
+  animation-name: completion-confetti;
+  animation-timing-function: cubic-bezier(0.22, 0.9, 0.32, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes completion-glow {
+
+  0%,
+  100% {
+    background: radial-gradient(closest-side, hsl(var(--primary) / 0.28), transparent 70%);
+    transform: scale(1);
+  }
+
+  50% {
+    background: radial-gradient(closest-side, hsl(var(--primary) / 0.45), transparent 70%);
+    transform: scale(1.08);
+  }
+}
+
+.completion-glow {
+  animation: completion-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes completion-ring {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.completion-ring {
+  animation: completion-ring 1.8s ease-out forwards;
+}
+
+@keyframes completion-rays {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: rotate(180deg);
+    opacity: 0;
+  }
+}
+
+.completion-rays {
+  background: conic-gradient(from 0deg,
+      transparent 0deg 18deg, hsl(150 80% 55% / 0.5) 18deg 24deg,
+      transparent 24deg 42deg, hsl(150 80% 55% / 0.4) 42deg 48deg,
+      transparent 48deg 66deg, hsl(150 80% 55% / 0.5) 66deg 72deg,
+      transparent 72deg 90deg, hsl(150 80% 55% / 0.4) 90deg 96deg,
+      transparent 96deg 114deg, hsl(150 80% 55% / 0.5) 114deg 120deg,
+      transparent 120deg 138deg, hsl(150 80% 55% / 0.4) 138deg 144deg,
+      transparent 144deg 162deg, hsl(150 80% 55% / 0.5) 162deg 168deg,
+      transparent 168deg 186deg, hsl(150 80% 55% / 0.4) 186deg 192deg,
+      transparent 192deg 210deg, hsl(150 80% 55% / 0.5) 210deg 216deg,
+      transparent 216deg 234deg, hsl(150 80% 55% / 0.4) 234deg 240deg,
+      transparent 240deg 258deg, hsl(150 80% 55% / 0.5) 258deg 264deg,
+      transparent 264deg 282deg, hsl(150 80% 55% / 0.4) 282deg 288deg,
+      transparent 288deg 306deg, hsl(150 80% 55% / 0.5) 306deg 312deg,
+      transparent 312deg 330deg, hsl(150 80% 55% / 0.4) 330deg 336deg,
+      transparent 336deg 354deg, hsl(150 80% 55% / 0.5) 354deg 360deg);
+  border-radius: 9999px;
+  animation: completion-rays 2.6s linear infinite;
+  filter: blur(1px);
+}
+
+@keyframes completion-twinkle {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.5) rotate(15deg);
+    opacity: 0.6;
+  }
+}
+
+.completion-twinkle {
+  animation: completion-twinkle 1.3s ease-in-out infinite;
+}
+
+@keyframes completion-pop {
+  0% {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.completion-pop {
+  animation: completion-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.completion-pop-settled {
+  transform: scale(1);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .completion-confetti,
+  .completion-glow,
+  .completion-ring,
+  .completion-rays,
+  .completion-twinkle,
+  .completion-pop {
+    animation: none !important;
+  }
+}

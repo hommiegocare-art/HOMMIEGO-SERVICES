@@ -151,7 +151,7 @@ function ToggleRow({
     onChange: () => void;
 }) {
     return (
-        <div className="rounded-2xl bg-card px-1 py-3 sm:px- flex items-center justify-between gap-2.5 sm:gap-3">
+        <div className="rounded-2xl bg-card px-2  py-3 sm:px- flex items-center justify-between gap-2.5 sm:gap-3">
             <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>

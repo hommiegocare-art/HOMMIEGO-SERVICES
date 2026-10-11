@@ -155,7 +155,7 @@ export default function Notifications() {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-3 sm:space-y-4">
+            <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 space-y-3 sm:space-y-4">
                 <div className="h-8 w-40 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
@@ -165,7 +165,7 @@ export default function Notifications() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3 sm:mb-5">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                     Notifications

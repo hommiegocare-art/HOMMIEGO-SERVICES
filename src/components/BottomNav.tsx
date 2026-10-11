@@ -17,6 +17,7 @@ import {
   BriefcaseBusiness,
   ShieldCheck,
   X,
+  GraduationCap,
 } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -59,6 +60,7 @@ export function BottomNav() {
       ? [
         { to: "/earnings", label: "Earnings", icon: Wallet },
         { to: "/cpd", label: "CPD", icon: Award },
+        { to: "/certificates", label: "Certificates", icon: GraduationCap },
       ]
       : []),
 

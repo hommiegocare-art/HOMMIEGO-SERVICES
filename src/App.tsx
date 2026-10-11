@@ -55,6 +55,7 @@ import ChatWindow from "./pages/ChatWindow";
 import AdminVerifications from "@/pages/admin/AdminVerifications";
 import AdminVerificationDetail from "@/pages/admin/AdminVerificationDetail";
 import HealthInsights from "./pages/HealthInsights";
+import Certificates from "./pages/Certificates";
 
 // 👇 NEW — unlock audio on the very first user gesture (browser autoplay policy)
 if (typeof window !== "undefined") {
@@ -183,6 +184,7 @@ function Shell() {
 
             <Route path="/services" element={<Services />} />
             <Route path="/cpd" element={<Cpd />} />
+            <Route path="/certificates" element={<Certificates />} />
             <Route path="/earnings" element={<Earnings />} />
             <Route path="/jobs" element={<Bookings />} />
 

@@ -195,12 +195,12 @@ export default function Bookings() {
     }, [query]);
 
     return (
-        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 animate-fade-in">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground mb-3 sm:mb-4">
                 {role === "caregiver" ? "Jobs" : "Bookings"}
             </h1>
 
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 sm:-mx-4 sm:px-1 mb-3 sm:mb-4">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 sm:-mx-4 sm:px-2  mb-3 sm:mb-4">
                 {(["all", "active", "completed", "cancelled"] as Bucket[]).map((b) => (
                     <BucketChip
                         key={b}

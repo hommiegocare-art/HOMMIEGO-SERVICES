@@ -221,7 +221,7 @@ export default function Cpd() {
     if (sessionLoading) return <PageSkeleton />;
     if (!user) {
         return (
-            <main className="mx-auto max-w-3xl px-1 sm:px-1 py-20 text-center">
+            <main className="mx-auto max-w-3xl px-2  sm:px-2  py-20 text-center">
                 <h1 className="text-2xl font-semibold">Sign in required</h1>
                 <p className="mt-2 text-muted-foreground">Please sign in to view your CPD.</p>
             </main>
@@ -229,7 +229,7 @@ export default function Cpd() {
     }
 
     return (
-        <main className="mx-auto max-w-4xl px-1 sm:px-1 py-6 sm:py-10">
+        <main className="mx-auto max-w-4xl px-2  sm:px-2  py-6 sm:py-10">
             <header className="mb-4 sm:mb-6 flex items-start sm:items-end justify-between gap-3 sm:gap-4">
                 <div className="min-w-0">
                     <h1 className="text-2xl sm:text-3xl font-black tracking-tight">CPD</h1>
@@ -588,7 +588,7 @@ function TotalsCard({
 
 function PageSkeleton() {
     return (
-        <main className="mx-auto max-w-4xl px-1 sm:px-1 py-6 sm:py-10">
+        <main className="mx-auto max-w-4xl px-2  sm:px-2  py-6 sm:py-10">
             <Skeleton className="h-9 w-32" />
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Skeleton className="h-24 rounded-2xl" />

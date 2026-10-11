@@ -47,7 +47,7 @@ export function TopBar() {
                     >
                         <Bell className="w-5 h-5 text-foreground" />
                         {unread > 0 && (
-                            <span className="absolute top-2 right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                            <span className="absolute top-2 right-2 min-w-[18px] h-[18px] px-2  rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                                 {unread > 9 ? "9+" : unread}
                             </span>
                         )}

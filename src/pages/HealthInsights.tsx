@@ -127,7 +127,7 @@ export default function HealthInsights() {
     const showChildrenTab = isFemale && children.length > 0;
 
     return (
-        <div className="max-w-3xl mx-auto px-1 py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2  py-6 animate-fade-in">
             <header className="mb-5">
                 <div className="flex items-center gap-2 mb-1">
                     <Link
@@ -412,7 +412,7 @@ export default function HealthInsights() {
 function Card({ children }: { children: React.ReactNode }) {
     return (
         <div className="rounded-2xl bg-card py-4 mb-3 overflow-hidden">
-            <div className="px-1 space-y-3">{children}</div>
+            <div className="px-2  space-y-3">{children}</div>
         </div>
     );
 }

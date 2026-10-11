@@ -55,7 +55,7 @@ export default function Earnings() {
     if (!user) return null;
 
     return (
-        <div className="max-w-4xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+        <div className="max-w-4xl mx-auto px-2  sm:px-2  py-4 sm:py-6 animate-fade-in">
             <div className="mb-4 sm:mb-5">
                 <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                     Earnings

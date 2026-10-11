@@ -94,7 +94,7 @@ export function OwnProfile() {
     const isVerified = status === "verified";
 
     return (
-        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 animate-fade-in">
             <header className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
                 <InitialsAvatar
                     url={user.avatar_url}
@@ -337,7 +337,7 @@ function ProfileViewsCard({ userId }: { userId: string }) {
     if (data.total_views === 0) return null;
 
     return (
-        <div className="rounded-2xl bg-card px-1 py-3 sm:px-1 sm:py-4 mb-2.5 sm:mb-3">
+        <div className="rounded-2xl bg-card px-2  py-3 sm:px-2  sm:py-4 mb-2.5 sm:mb-3">
             <div className="flex items-center gap-2 mb-3">
                 <Eye className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">Profile views</p>
@@ -397,7 +397,7 @@ function EndorsementsCard({ userId }: { userId: string }) {
     const totalEndorsements = data.reduce((sum, e) => sum + e.total, 0);
 
     return (
-        <div className="rounded-2xl bg-card px-1 py-3 sm:px-1 sm:py-4 mb-2.5 sm:mb-3">
+        <div className="rounded-2xl bg-card px-2  py-3 sm:px-2  sm:py-4 mb-2.5 sm:mb-3">
             <div className="flex items-center gap-2 mb-3">
                 <Award className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">

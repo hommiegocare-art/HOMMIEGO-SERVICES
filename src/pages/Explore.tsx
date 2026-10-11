@@ -354,7 +354,7 @@ export default function Explore() {
   const hasAnyRows = rows.length > 0;
 
   return (
-    <div className="max-w-6xl mx-auto px-1 sm:px-1 pb-6 sm:pb-8">
+    <div className="max-w-6xl mx-auto px-2  sm:px-2  pb-6 sm:pb-8">
       <div className="sticky top-14 z-20 bg-background pt-2 pb-2 px-2 -mx-2 sm:pt-3 sm:pb-3 sm:px-0 sm:mx-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -540,7 +540,7 @@ function CardActions({
       )}
       <Link
         to={profileHref}
-        className="h-10 px-1 rounded-xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:bg-secondary transition-colors"
+        className="h-10 px-2  rounded-xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:bg-secondary transition-colors"
       >
         <Eye className="w-4 h-4" />
         View
@@ -549,7 +549,7 @@ function CardActions({
         type="button"
         onClick={() => onConsult(targetId, targetName, avatarUrl)}
         disabled={disabled}
-        className="h-10 px-1 rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 px-2  rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Icon className="w-4 h-4" />
         {label}
@@ -801,7 +801,7 @@ function MessagePreviewDrawer({
           <span className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
         </div>
 
-        <div className="px-1 pb-3 flex items-center gap-3">
+        <div className="px-2  pb-3 flex items-center gap-3">
           <span className="h-12 w-12 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center">
             {target.avatarUrl ? (
               <img
@@ -828,9 +828,9 @@ function MessagePreviewDrawer({
           </button>
         </div>
 
-        <div className="px-1 pb-5">
+        <div className="px-2  pb-5">
           {preview ? (
-            <div className="rounded-2xl bg-card px-1 py-4">
+            <div className="rounded-2xl bg-card px-2  py-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
                 Last message
               </p>
@@ -847,7 +847,7 @@ function MessagePreviewDrawer({
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl bg-muted px-1 py-6 text-center">
+            <div className="rounded-2xl bg-muted px-2  py-6 text-center">
               <Loader2 className="w-5 h-5 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
                 No messages yet — open the chat to say hello.

@@ -259,7 +259,7 @@ export function PublicProfile({ userId }: { userId: string }) {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-1 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-2  py-6 space-y-4">
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-32 rounded-2xl skeleton-shimmer" />
             </div>
@@ -268,7 +268,7 @@ export function PublicProfile({ userId }: { userId: string }) {
 
     if (!data) {
         return (
-            <div className="max-w-3xl mx-auto px-1 py-12 text-center">
+            <div className="max-w-3xl mx-auto px-2  py-12 text-center">
                 <p className="text-sm text-muted-foreground">This profile doesn't exist.</p>
             </div>
         );
@@ -311,7 +311,7 @@ export function PublicProfile({ userId }: { userId: string }) {
     const canEndorse = !!user && !isViewingSelf && isConnected && !!existingConnection;
 
     return (
-        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 animate-fade-in">
             <header className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
                 <InitialsAvatar
                     url={profile.avatar_url}
@@ -350,7 +350,7 @@ export function PublicProfile({ userId }: { userId: string }) {
             </header>
 
             {isUnverifiedCaregiver && !isViewingSelf && (
-                <div className="rounded-2xl bg-card px-1 py-3 mb-5 flex items-start gap-3">
+                <div className="rounded-2xl bg-card px-2  py-3 mb-5 flex items-start gap-3">
                     <ShieldAlert className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -563,7 +563,7 @@ export function PublicProfile({ userId }: { userId: string }) {
             {showMedicalEntry && <MedicalEntryCard clientId={profile.id} />}
 
             {client && (
-                <div className="rounded-2xl bg-card px-1 py-3 mb-5">
+                <div className="rounded-2xl bg-card px-2  py-3 mb-5">
                     <p className="text-xs text-muted-foreground">
                         {isConnected
                             ? "You're connected. Use the links above to view the patient's history or record an examination."
@@ -573,7 +573,7 @@ export function PublicProfile({ userId }: { userId: string }) {
             )}
 
             {caregiver?.peer_consultation_opt_in && (
-                <div className="rounded-2xl bg-primary/10 px-1 py-3">
+                <div className="rounded-2xl bg-primary/10 px-2  py-3">
                     <p className="text-xs text-foreground">
                         Open to peer consultation with other caregivers.
                     </p>
@@ -666,7 +666,7 @@ function ServiceCard({
                 />
             </div>
 
-            <div className="px-1 py-3">
+            <div className="px-2  py-3">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -813,7 +813,7 @@ function ServiceDetail({
                     />
                 </div>
 
-                <div className="px-1 pt-4 pb-6 space-y-4">
+                <div className="px-2  pt-4 pb-6 space-y-4">
                     {/* Title + price */}
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -979,7 +979,7 @@ function EndorseModal({
                     <span className="w-11" />
                 </div>
 
-                <div className="px-1 pb-6 space-y-4">
+                <div className="px-2  pb-6 space-y-4">
                     <p className="text-xs text-muted-foreground">
                         Tap the skills you trust them with. Tap again to remove. Only
                         connected people can endorse.
@@ -1004,7 +1004,7 @@ function EndorseModal({
                     </div>
 
                     {error && (
-                        <p className="rounded-2xl bg-destructive/10 px-1 py-2 text-sm text-destructive">
+                        <p className="rounded-2xl bg-destructive/10 px-2  py-2 text-sm text-destructive">
                             {error}
                         </p>
                     )}
@@ -1035,7 +1035,7 @@ function EndorseModal({
 
 function MedicalEntryCard({ clientId }: { clientId: string }) {
     return (
-        <div className="rounded-2xl bg-card px-1 py-4 mb-5">
+        <div className="rounded-2xl bg-card px-2  py-4 mb-5">
             <div className="flex items-center gap-2 mb-3">
                 <HeartPulse className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">Medical profile</p>

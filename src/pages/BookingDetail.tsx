@@ -1,5 +1,5 @@
 // src/pages/BookingDetail.tsx
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,7 +31,7 @@ import type {
     BookingStatusHistory,
     Profile,
 } from "@/types/db";
-
+import { CompletionReactionOverlay } from "@/components/booking/CompletionReactionOverlay";
 type BookingFull = Booking & {
     client: Pick<Profile, "id" | "display_name" | "avatar_url"> | null;
     caregiver: Pick<Profile, "id" | "display_name" | "avatar_url"> | null;
@@ -140,7 +140,9 @@ export default function BookingDetail() {
 
     // 🎉 Fires when the real M-Pesa payment succeeds.
     const [celebrate, setCelebrate] = useState<{ amountLabel: string } | null>(null);
-
+    // 🎉 Fires when the visit is completed (either role advancing to "completed")
+    const [completedCheer, setCompletedCheer] = useState<"client" | "caregiver" | null>(null);
+    const prevStatusRef = useRef<BookingStatus | null>(null);
     const bookingQ = useQuery({
         queryKey: ["booking", id],
         enabled: !!id,
@@ -190,7 +192,21 @@ export default function BookingDetail() {
             qc.invalidateQueries({ queryKey: ["notifications"] });
         },
     });
+    // Watch for status transitioning to "completed" and fire the cheer once.
+    useEffect(() => {
+        const status = bookingQ.data?.status;
+        if (!status || !user || !bookingQ.data) return;
 
+        const prev = prevStatusRef.current;
+        prevStatusRef.current = status;
+
+        // Only celebrate on a *transition* into completed, never on first load.
+        if (status === "completed" && prev && prev !== "completed") {
+            const role: "client" | "caregiver" =
+                user.id === bookingQ.data.caregiver_id ? "caregiver" : "client";
+            setCompletedCheer(role);
+        }
+    }, [bookingQ.data, user]);
     if (bookingQ.isLoading) {
         return (
             <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
@@ -443,7 +459,13 @@ export default function BookingDetail() {
                     }}
                 />
             )}
-
+            {completedCheer && (
+                <CompletionReactionOverlay
+                    open={!!completedCheer}
+                    role={completedCheer}
+                    onDone={() => setCompletedCheer(null)}
+                />
+            )}
             {/* 🎉 Payment success reaction overlay — plays over this page */}
             {celebrate && (
                 <PaymentReactionOverlay

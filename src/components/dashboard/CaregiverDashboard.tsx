@@ -32,6 +32,56 @@ export function CaregiverDashboard({ greeting }: { greeting: string }) {
         },
     });
 
+    // Real count from bookings — same source the milestone trigger uses.
+    // Never trust the denormalized `completed_bookings` column for logic;
+    // it can drift if a trigger missed a row.
+    const { data: completedCount = 0 } = useQuery({
+        queryKey: ["dashboard", "caregiver", "completed-count", user?.id],
+        enabled: !!user,
+        staleTime: 30_000,
+        refetchOnMount: "always",
+        queryFn: async (): Promise<number> => {
+            const { count, error } = await supabase
+                .from("bookings")
+                .select("id", { count: "exact", head: true })
+                .eq("caregiver_id", user!.id)
+                .eq("status", "completed");
+            if (error) return 0;
+            return count ?? 0;
+        },
+    });
+
+    // Total milestones earned — read from the real table the trigger writes to
+    const { data: milestonesEarned = 0 } = useQuery({
+        queryKey: ["dashboard", "caregiver", "milestones", user?.id],
+        enabled: !!user,
+        staleTime: 60_000,
+        queryFn: async (): Promise<number> => {
+            const { count, error } = await supabase
+                .from("service_milestones")
+                .select("id", { count: "exact", head: true })
+                .eq("caregiver_id", user!.id);
+            if (error) return 0;
+            return count ?? 0;
+        },
+    });
+
+    // Total CPD points — read from the aggregate view
+    const { data: cpdPoints = 0 } = useQuery({
+        queryKey: ["dashboard", "caregiver", "cpd-points", user?.id],
+        enabled: !!user,
+        staleTime: 60_000,
+        queryFn: async (): Promise<number> => {
+            const { data, error } = await supabase
+                .from("caregiver_cpd_totals")
+                .select("cpd_points")
+                .eq("caregiver_id", user!.id)
+                .maybeSingle();
+            if (error || !data) return 0;
+            return Number(data.cpd_points ?? 0);
+        },
+    });
+
     const { data: pending = [] } = useQuery({
         queryKey: ["dashboard", "caregiver", "pending", user?.id],
         enabled: !!user,
@@ -50,13 +100,15 @@ export function CaregiverDashboard({ greeting }: { greeting: string }) {
         },
     });
 
-    const completed = profile?.completed_bookings ?? 0;
-    const toNextMilestone = completed === 0 ? 10 : 10 - (completed % 10 || 10);
-    const progress = completed === 0 ? 0 : (completed % 10 === 0 ? 100 : ((10 - toNextMilestone) / 10) * 100);
+    // Milestone math — using the real count, not the cached column
+    const completed = completedCount;
+    const withinCycle = completed % 10;
+    const toNextMilestone = withinCycle === 0 && completed > 0 ? 10 : 10 - withinCycle;
+    const progress = withinCycle === 0 && completed > 0 ? 100 : (withinCycle / 10) * 100;
 
     return (
         <div className="space-y-5 animate-fade-in">
-            <AvailabilityToggle isAvailable={profile?.is_available ?? false} />
+            <AvailabilityToggle />
 
             <div className="grid grid-cols-2 gap-3">
                 <StatCard
@@ -79,20 +131,24 @@ export function CaregiverDashboard({ greeting }: { greeting: string }) {
                 />
                 <StatCard
                     label="CPD pts"
-                    value="0"
+                    value={String(Math.round(cpdPoints))}
                     icon={<Award className="w-4 h-4 text-primary" />}
                 />
             </div>
 
-            <section className="rounded-2xl bg-card px-4 py-4">
+            {/* Milestone progress — now linked to /certificates */}
+            <Link
+                to="/certificates"
+                className="block rounded-2xl bg-card px-4 py-4 active:bg-muted transition-colors"
+            >
                 <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-bold text-foreground">
-                        Next certificate
+                        Certificates
                     </p>
                     <p className="text-xs text-muted-foreground">
-                        {completed % 10 === 0 && completed > 0
-                            ? "Awarded"
-                            : `${completed % 10}/10 services`}
+                        {milestonesEarned > 0
+                            ? `${milestonesEarned} earned`
+                            : "None yet"}
                     </p>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -102,9 +158,16 @@ export function CaregiverDashboard({ greeting }: { greeting: string }) {
                     />
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                    Complete {toNextMilestone} more to earn your next certificate.
+                    {withinCycle === 0 && completed > 0
+                        ? `Milestone ${completed} achieved — tap to download.`
+                        : `${withinCycle}/10 services toward your next certificate.`}
                 </p>
-            </section>
+                <p className="text-xs text-muted-foreground mt-1">
+                    {toNextMilestone === 10 && withinCycle === 0 && completed === 0
+                        ? "Complete 10 services to earn your first certificate."
+                        : `Complete ${toNextMilestone} more to earn your next certificate.`}
+                </p>
+            </Link>
 
             <section>
                 <div className="flex items-center justify-between mb-2">

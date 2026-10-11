@@ -272,7 +272,7 @@ export default function Connections() {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-3 sm:space-y-4">
+            <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 space-y-3 sm:space-y-4">
                 <div className="h-8 w-40 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
@@ -283,13 +283,13 @@ export default function Connections() {
     const capReached = accepted.length >= SOFT_CAP;
 
     return (
-        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-4 sm:space-y-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2  sm:px-2  py-4 sm:py-6 space-y-4 sm:space-y-6 animate-fade-in">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                 Connections
             </h1>
 
             {role === "client" && capReached && (
-                <div className="rounded-2xl bg-primary/10 px-3 py-3 sm:px-1 flex items-start gap-2.5 sm:gap-3">
+                <div className="rounded-2xl bg-primary/10 px-3 py-3 sm:px-2  flex items-start gap-2.5 sm:gap-3">
                     <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -489,7 +489,7 @@ function PendingCard({
 }) {
     const name = row.other?.display_name || (role === "client" ? "Caregiver" : "Client");
     return (
-        <div className="rounded-2xl bg-card px-3 py-3 sm:px-1 flex items-center gap-3">
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-2  flex items-center gap-3">
 
             <InitialsAvatar
                 url={row.other?.avatar_url}
@@ -542,7 +542,7 @@ function AcceptedCard({
     const showMyEndorsement = myEndorsementCount > 0;
 
     return (
-        <div className="rounded-2xl bg-card px-3 py-3 sm:px-1 sm:py-4">
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-2  sm:py-4">
             <div className="flex items-center gap-3">
                 <div className="relative shrink-0">
 
@@ -553,7 +553,7 @@ function AcceptedCard({
                         textClassName="text-base"
                     />
                     {unread > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-2  rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                             {unread > 9 ? "9+" : unread}
                         </span>
                     )}
@@ -708,7 +708,7 @@ function EndorseModal({
                     <span className="w-11" />
                 </div>
 
-                <div className="px-1 pb-6 space-y-4">
+                <div className="px-2  pb-6 space-y-4">
                     <p className="text-xs text-muted-foreground">
                         Tap the skills you trust them with. Tap again to remove. Only
                         connected people can endorse.
@@ -734,7 +734,7 @@ function EndorseModal({
                     </div>
 
                     {error && (
-                        <p className="rounded-2xl bg-destructive/10 px-1 py-2 text-sm text-destructive">
+                        <p className="rounded-2xl bg-destructive/10 px-2  py-2 text-sm text-destructive">
                             {error}
                         </p>
                     )}
@@ -771,7 +771,7 @@ function EmptyCard({
     ctaTo?: string;
 }) {
     return (
-        <div className="rounded-2xl bg-card px-3 py-6 sm:px-1 text-center">
+        <div className="rounded-2xl bg-card px-3 py-6 sm:px-2  text-center">
             <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">{text}</p>
             {ctaLabel && ctaTo && (
