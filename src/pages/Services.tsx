@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import type { Service } from "@/types/db";
+import { SafeImage } from "@/components/brand/SafeImage";
 
 type FormState = {
     title: string;
@@ -256,36 +257,35 @@ export default function Services() {
     const categories = categoriesQ.data ?? [];
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
-            <div className="flex items-end justify-between gap-4 mb-5">
-                <div>
-                    <h1 className="text-2xl font-black tracking-tight text-foreground">
+        <div className="max-w-4xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+            <div className="flex items-start sm:items-end justify-between gap-3 sm:gap-4 mb-4 sm:mb-5">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                         Services
                     </h1>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-0.5 sm:mt-1">
                         What clients can book from you.
                     </p>
                 </div>
-                <Button onClick={openCreate} className="h-11 rounded-2xl">
+                <Button onClick={openCreate} className="h-10 sm:h-11 rounded-2xl shrink-0">
                     <Plus className="w-4 h-4 mr-1.5" />
                     New service
                 </Button>
             </div>
-
             {error && !form && (
-                <div className="rounded-2xl bg-destructive/10 px-4 py-3 mb-4">
+                <div className="rounded-2xl bg-destructive/10 px-3 py-1 sm:px-1 mb-3 sm:mb-4">
                     <p className="text-sm text-destructive">{error}</p>
                 </div>
             )}
 
             {servicesQ.isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <ServiceCardSkeleton key={i} />
                     ))}
                 </div>
             ) : services.length === 0 ? (
-                <div className="rounded-2xl bg-card px-4 py-14 text-center">
+                <div className="rounded-2xl bg-card px-1 py-12 sm:px-1 sm:py-14 text-center">
                     <Briefcase className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
                     <p className="text-sm text-muted-foreground">
                         No services yet. Create one to start receiving bookings.
@@ -406,18 +406,15 @@ function ServiceCard({
         >
             {/* Cover — full width banner */}
             <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center relative">
-                {s.cover_image ? (
-                    <img
-                        src={s.cover_image}
-                        alt=""
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                )}
+                <SafeImage
+                    src={s.cover_image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    fallback={<ImageIcon className="w-6 h-6 text-muted-foreground" />}
+                />
 
                 {/* Status chips overlay */}
-                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 flex items-center gap-1.5">
                     {!s.is_active && (
                         <span className="px-2 py-0.5 rounded-full bg-background/90 backdrop-blur text-[10px] font-bold text-muted-foreground">
                             Paused
@@ -431,7 +428,7 @@ function ServiceCard({
                 </div>
             </div>
 
-            <div className="px-4 py-3">
+            <div className="px-3 py-1 sm:px-4">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -471,7 +468,7 @@ function ServiceCard({
                 </div>
 
                 {/* Action row */}
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-2.5 sm:mt-3 flex items-center gap-1.5 sm:gap-2">
                     <button
                         type="button"
                         onClick={(e) => {
@@ -568,7 +565,7 @@ function ServiceDetail({
                 "
             >
                 {/* Sticky header */}
-                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-4">
+                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-1 sm:px-1">
                     <button
                         onClick={onClose}
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
@@ -582,18 +579,14 @@ function ServiceDetail({
 
                 {/* Cover */}
                 <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center">
-                    {service.cover_image ? (
-                        <img
-                            src={service.cover_image}
-                            alt=""
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <Briefcase className="w-8 h-8 text-muted-foreground" />
-                    )}
+                    <SafeImage
+                        src={service.cover_image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        fallback={<Briefcase className="w-8 h-8 text-muted-foreground" />}
+                    />
                 </div>
-
-                <div className="px-4 pt-4 pb-6 space-y-4">
+                <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-6 space-y-3 sm:space-y-4">
                     {/* Title + price */}
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -710,7 +703,7 @@ function ServiceSheet({
     return (
         <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
             {/* Header — sticky so Close/title stay visible while scrolling */}
-            <div className="sticky top-0 z-10 bg-background h-14 flex items-center justify-between px-4">
+            <div className="sticky top-0 z-10 bg-background h-14 flex items-center justify-between px-1 sm:px-1">
                 <button
                     onClick={onClose}
                     className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted transition-colors"
@@ -725,7 +718,7 @@ function ServiceSheet({
             </div>
 
             {/* Form content */}
-            <div className="px-4 pb-32">
+            <div className="px-1 sm:px-1 pb-32">
                 <div className="max-w-lg mx-auto space-y-4">
                     <Field label="Title">
                         <Input
@@ -879,15 +872,12 @@ function ServiceSheet({
                     <Field label="Cover image">
                         <div className="flex items-center gap-3">
                             <div className="w-20 h-20 rounded-2xl bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                                {form.cover_image ? (
-                                    <img
-                                        src={form.cover_image}
-                                        alt=""
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                                )}
+                                <SafeImage
+                                    src={form.cover_image}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                    fallback={<ImageIcon className="w-5 h-5 text-muted-foreground" />}
+                                />
                             </div>
                             <input
                                 ref={fileRef}

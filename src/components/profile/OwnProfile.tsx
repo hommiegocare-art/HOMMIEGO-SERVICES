@@ -23,6 +23,8 @@ import { MedicalProfileCard } from "@/components/profile/MedicalProfileCard";
 import { CaregiverCredentialsCard } from "@/components/profile/CaregiverCredentialsCard";
 import { DailyDiaryCard } from "../daily/DailyDiaryCard";
 import { VerifiedBadge } from "../brand/VerifiedBadge";
+import { InitialsAvatar } from "../brand/InitialsAvatar";
+import { SafeImage } from "../brand/SafeImage";
 
 async function fetchCaregiver(userId: string): Promise<CaregiverProfile | null> {
     const { data } = await supabase
@@ -92,17 +94,14 @@ export function OwnProfile() {
     const isVerified = status === "verified";
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-            <header className="flex items-start gap-4 mb-5">
-                <span className="w-20 h-20 rounded-full bg-primary/10 overflow-hidden shrink-0 flex items-center justify-center">
-                    {user.avatar_url ? (
-                        <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                        <span className="text-3xl font-black text-primary">
-                            {user.display_name?.[0]?.toUpperCase() ?? "U"}
-                        </span>
-                    )}
-                </span>
+        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+            <header className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
+                <InitialsAvatar
+                    url={user.avatar_url}
+                    name={user.display_name ?? "You"}
+                    className="h-20 w-20"
+                    textClassName="text-3xl"
+                />
 
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -133,7 +132,7 @@ export function OwnProfile() {
                 />
             )}
 
-            <div className="flex gap-2 mb-5">
+            <div className="flex gap-2 mb-4 sm:mb-5">
                 <button
                     onClick={() => setEditing((v) => !v)}
                     className="flex-1 h-11 rounded-2xl bg-muted text-foreground text-sm font-semibold inline-flex items-center justify-center gap-2 active:bg-secondary transition-colors"
@@ -162,7 +161,7 @@ export function OwnProfile() {
                 <>
                     {isCaregiver && caregiver && (
                         <>
-                            <div className="grid grid-cols-3 gap-3 mb-5">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4 sm:mb-5">
                                 <Stat
                                     label="Rating"
                                     value={
@@ -184,7 +183,7 @@ export function OwnProfile() {
                             <EndorsementsCard userId={user.id} />
 
                             {caregiver.bio && (
-                                <p className="text-sm text-foreground leading-relaxed mb-5">
+                                <p className="text-sm text-foreground leading-relaxed mb-4 sm:mb-5">
                                     {caregiver.bio}
                                 </p>
                             )}
@@ -195,7 +194,7 @@ export function OwnProfile() {
 
                             <Link
                                 to="/cpd"
-                                className="flex items-center justify-between rounded-2xl bg-card px-4 py-4 mb-3 active:bg-muted transition-colors"
+                                className="flex items-center justify-between rounded-2xl bg-card px-3 py-3 sm:px-4 sm:py-4 mb-2.5 sm:mb-3 active:bg-muted transition-colors"
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -215,7 +214,7 @@ export function OwnProfile() {
 
                             <Link
                                 to="/services"
-                                className="flex items-center justify-between rounded-2xl bg-card px-4 py-4 mb-3 active:bg-muted transition-colors"
+                                className="flex items-center justify-between rounded-2xl bg-card px-3 py-3 sm:px-4 sm:py-4 mb-2.5 sm:mb-3 active:bg-muted transition-colors"
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -257,7 +256,7 @@ function VerificationCard({
 }) {
     if (status === "pending") {
         return (
-            <div className="rounded-2xl bg-muted px-4 py-4 mb-5 flex items-start gap-3">
+            <div className="rounded-2xl bg-muted px-3 py-3 sm:px-4 sm:py-4 mb-4 sm:mb-5 flex items-start gap-2.5 sm:gap-3">
                 <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                     <p className="text-sm font-bold text-foreground">
@@ -273,7 +272,7 @@ function VerificationCard({
     }
 
     return (
-        <div className="rounded-2xl bg-primary/10 px-4 py-4 mb-5">
+        <div className="rounded-2xl bg-primary/10 px-3 py-3 sm:px-4 sm:py-4 mb-4 sm:mb-5">
             <div className="flex items-start gap-3">
                 <ShieldCheck className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -338,12 +337,12 @@ function ProfileViewsCard({ userId }: { userId: string }) {
     if (data.total_views === 0) return null;
 
     return (
-        <div className="rounded-2xl bg-card px-4 py-4 mb-3">
+        <div className="rounded-2xl bg-card px-1 py-3 sm:px-1 sm:py-4 mb-2.5 sm:mb-3">
             <div className="flex items-center gap-2 mb-3">
                 <Eye className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">Profile views</p>
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
                 <div>
                     <p className="text-lg font-black text-foreground">
                         {data.views_24h}
@@ -398,7 +397,7 @@ function EndorsementsCard({ userId }: { userId: string }) {
     const totalEndorsements = data.reduce((sum, e) => sum + e.total, 0);
 
     return (
-        <div className="rounded-2xl bg-card px-4 py-4 mb-3">
+        <div className="rounded-2xl bg-card px-1 py-3 sm:px-1 sm:py-4 mb-2.5 sm:mb-3">
             <div className="flex items-center gap-2 mb-3">
                 <Award className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">
@@ -454,7 +453,7 @@ function OwnGallery({ userId }: { userId: string }) {
     if (!data || data.length === 0) return null;
 
     return (
-        <section className="mb-5">
+        <section className="mb-4 sm:mb-5">
             <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
                     Photos
@@ -466,20 +465,23 @@ function OwnGallery({ userId }: { userId: string }) {
                     Manage photos
                 </Link>
             </div>
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 sm:grid-cols-4">
                 {data.map((m) => (
                     <li key={m.id}>
                         <a
                             href={m.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="block aspect-square overflow-hidden rounded-xl bg-muted"
+                            className="block aspect-square overflow-hidden rounded-xl bg-muted flex items-center justify-center"
                         >
-                            <img
+                            <SafeImage
                                 src={m.url}
                                 alt=""
                                 loading="lazy"
                                 className="h-full w-full object-cover"
+                                fallback={
+                                    <span className="text-xs text-muted-foreground">Photo</span>
+                                }
                             />
                         </a>
                     </li>
@@ -499,7 +501,7 @@ function Stat({
     icon?: React.ReactNode;
 }) {
     return (
-        <div className="rounded-2xl bg-card px-3 py-3 text-center">
+        <div className="rounded-2xl bg-card px-2 py-2.5 sm:px-3 sm:py-3 text-center">
             <p className="text-lg font-black text-foreground inline-flex items-center gap-1">
                 {icon}
                 {value}

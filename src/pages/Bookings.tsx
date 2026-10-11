@@ -12,6 +12,7 @@ import { useSession } from "@/hooks/useSession";
 import type { Booking, BookingStatus, Profile } from "@/types/db";
 import { Link } from "react-router-dom";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
+import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 
 const PAGE_SIZE = 20;
 
@@ -194,12 +195,12 @@ export default function Bookings() {
     }, [query]);
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-            <h1 className="text-2xl font-black tracking-tight text-foreground mb-4">
+        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground mb-3 sm:mb-4">
                 {role === "caregiver" ? "Jobs" : "Bookings"}
             </h1>
 
-            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 mb-4">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 sm:-mx-4 sm:px-1 mb-3 sm:mb-4">
                 {(["all", "active", "completed", "cancelled"] as Bucket[]).map((b) => (
                     <BucketChip
                         key={b}
@@ -216,7 +217,7 @@ export default function Bookings() {
                 <EmptyState role={role} bucket={bucket} />
             ) : (
                 <>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                         {filtered.map((b) => (
                             <Link
                                 key={b.id}
@@ -261,7 +262,7 @@ function BucketChip({
     return (
         <button
             onClick={onClick}
-            className={`px-4 h-11 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${active
+            className={`px-3 sm:px-4 h-10 sm:h-11 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${active
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-foreground"
                 }`}
@@ -284,22 +285,17 @@ function BookingCard({
     const name =
         b.counterparty?.display_name ||
         (role === "client" ? "Caregiver" : "Client");
-    const initial = name[0]?.toUpperCase() ?? "?";
+
 
     return (
-        <div className="rounded-2xl bg-card px-4 py-3">
-            <div className="flex items-center gap-3">
-                <span className="w-11 h-11 rounded-full bg-primary/10 shrink-0 overflow-hidden flex items-center justify-center">
-                    {b.counterparty?.avatar_url ? (
-                        <img
-                            src={b.counterparty.avatar_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <span className="text-primary font-black">{initial}</span>
-                    )}
-                </span>
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-1">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+                <InitialsAvatar
+                    url={b.counterparty?.avatar_url}
+                    name={name}
+                    className="h-11 w-11"
+                    textClassName="text-base"
+                />
 
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -353,9 +349,9 @@ function BookingCard({
 
 function ListSkeleton() {
     return (
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
             {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-2xl bg-card px-4 py-3">
+                <div key={i} className="rounded-2xl bg-card px-3 py-3 sm:px-1">
                     <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-full skeleton-shimmer" />
                         <div className="flex-1 space-y-2">

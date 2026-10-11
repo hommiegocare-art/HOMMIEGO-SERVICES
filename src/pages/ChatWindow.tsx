@@ -50,6 +50,7 @@ import {
     type PendingAttachment,
 } from "@/components/chat/ComposeAttachments";
 import { createPortal } from "react-dom";
+import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 const TTL_OPTIONS: { value: TtlOption; label: string; short: string }[] = [
     { value: 300, label: "5 minutes", short: "5m" },
     { value: 1800, label: "30 minutes", short: "30m" },
@@ -113,7 +114,7 @@ function TombstoneBubble({ mine }: { mine: boolean }) {
         <div className={cn("flex w-full", mine ? "justify-end" : "justify-start")}>
             <div
                 className={cn(
-                    "max-w-[78%] rounded-2xl px-4 py-2.5",
+                    "max-w-[82%] sm:max-w-[78%] rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5",
                     "bg-muted text-muted-foreground",
                 )}
             >
@@ -208,7 +209,7 @@ function Bubble({
                 onMouseUp={clearTimer}
                 onMouseLeave={clearTimer}
                 className={cn(
-                    "max-w-[78%] cursor-pointer select-none rounded-2xl px-4 py-2.5",
+                    "max-w-[82%] sm:max-w-[78%] cursor-pointer select-none rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5",
                     mine
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground",
@@ -248,7 +249,7 @@ function Bubble({
 
 function DayDivider({ label }: { label: string }) {
     return (
-        <div className="my-3 flex justify-center">
+        <div className="my-2.5 sm:my-3 flex justify-center">
             <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                 {label}
             </span>
@@ -799,7 +800,7 @@ export default function ChatWindow() {
     return (
         <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
             <header className="relative z-30 shrink-0 bg-background">
-                <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
+                <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-1 sm:px-1 py-2.5 sm:py-3">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
@@ -810,28 +811,27 @@ export default function ChatWindow() {
                     </button>
 
                     {metaLoading ? (
-                        <div className="skeleton-shimmer h-11 w-11 rounded-full" />
-                    ) : meta?.otherAvatarUrl ? (
-                        <img
-                            src={meta.otherAvatarUrl}
-                            alt=""
-                            className="h-11 w-11 rounded-full bg-muted object-cover"
-                        />
+                        <div className="skeleton-shimmer h-11 w-11 rounded-full shrink-0" />
                     ) : (
-                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-                            {(meta?.otherDisplayName ?? "?")
-                                .split(" ")
-                                .map((s) => s[0])
-                                .filter(Boolean)
-                                .slice(0, 2)
-                                .join("")
-                                .toUpperCase() || "?"}
-                        </div>
+                        <InitialsAvatar
+                            url={meta?.otherAvatarUrl}
+                            name={meta?.otherDisplayName ?? "?"}
+                            className="h-11 w-11"
+                            textClassName="text-sm"
+                        />
                     )}
 
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <p className="truncate text-sm font-bold text-foreground">
+                            <p
+                                className={cn(
+                                    "truncate font-bold text-foreground",
+                                    // Shrink name a bit if it's really long so more fits:
+                                    (meta?.otherDisplayName?.length ?? 0) > 14
+                                        ? "text-[13px] sm:text-sm"
+                                        : "text-sm",
+                                )}
+                            >
                                 {meta?.otherDisplayName ?? "Loading…"}
                             </p>
                             <VerifiedBadge
@@ -839,7 +839,7 @@ export default function ChatWindow() {
                                 className="w-4 h-4 shrink-0"
                             />
                         </div>
-                        <p className="truncate text-[11px] text-muted-foreground capitalize">
+                        <p className="truncate text-[10px] sm:text-[11px] text-muted-foreground capitalize">
                             {otherTyping ? (
                                 <span className="text-success font-bold">typing…</span>
                             ) : (
@@ -867,7 +867,7 @@ export default function ChatWindow() {
                 </div>
 
                 {menuOpen && (
-                    <div className="absolute right-3 top-16 z-40 w-48 rounded-2xl bg-popover p-1 animate-fade-in">
+                    <div className="absolute right-2 sm:right-3 top-14 sm:top-16 z-40 w-48 rounded-2xl bg-popover p-1 animate-fade-in">
                         <button
                             type="button"
                             onClick={onReport}
@@ -978,7 +978,7 @@ export default function ChatWindow() {
 
             {/* PINNED COMPOSE */}
             <div className="relative z-30 shrink-0 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-                <div className="mx-auto max-w-3xl px-4 pt-2">
+                <div className="mx-auto max-w-3xl px-2 sm:px-4 pt-1.5 sm:pt-2">
                     {connectionClosed ? (
                         <div className="rounded-2xl bg-muted px-4 py-4 text-center">
                             <p className="text-sm font-bold text-foreground">

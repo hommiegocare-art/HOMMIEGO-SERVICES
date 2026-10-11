@@ -221,7 +221,7 @@ export default function Cpd() {
     if (sessionLoading) return <PageSkeleton />;
     if (!user) {
         return (
-            <main className="mx-auto max-w-3xl px-6 py-20 text-center">
+            <main className="mx-auto max-w-3xl px-1 sm:px-1 py-20 text-center">
                 <h1 className="text-2xl font-semibold">Sign in required</h1>
                 <p className="mt-2 text-muted-foreground">Please sign in to view your CPD.</p>
             </main>
@@ -229,21 +229,21 @@ export default function Cpd() {
     }
 
     return (
-        <main className="mx-auto max-w-4xl px-6 py-10">
-            <header className="mb-6 flex items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-semibold tracking-tight">CPD</h1>
+        <main className="mx-auto max-w-4xl px-1 sm:px-1 py-6 sm:py-10">
+            <header className="mb-4 sm:mb-6 flex items-start sm:items-end justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight">CPD</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Track your continuing professional development.
                     </p>
                 </div>
-                <Button onClick={openCreate}>
+                <Button onClick={openCreate} className="shrink-0">
                     <Plus className="mr-1.5 h-4 w-4" /> Log event
                 </Button>
             </header>
 
             {/* TOTALS */}
-            <section className="mb-8 grid gap-4 sm:grid-cols-3">
+            <section className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 sm:grid-cols-3">
                 <TotalsCard
                     icon={<GraduationCap className="h-4 w-4" />}
                     label="Total hours"
@@ -262,22 +262,22 @@ export default function Cpd() {
             </section>
 
             {/* LOG */}
-            <section className="mb-10">
-                <div className="mb-4">
-                    <h2 className="text-xl font-medium">Log</h2>
+            <section className="mb-6 sm:mb-10">
+                <div className="mb-3 sm:mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold">Log</h2>
                     <p className="text-sm text-muted-foreground">
                         Your CPD events, most recent first.
                     </p>
                 </div>
 
                 {error && !dialogOpen && (
-                    <p className="mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    <p className="mb-3 sm:mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
                         {error}
                     </p>
                 )}
 
                 {events === null ? (
-                    <div className="grid gap-3">
+                    <div className="grid gap-2.5 sm:gap-3">
                         <Skeleton className="h-20 rounded-2xl" />
                         <Skeleton className="h-20 rounded-2xl" />
                     </div>
@@ -294,7 +294,7 @@ export default function Cpd() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <ul className="grid gap-3">
+                    <ul className="grid gap-2.5 sm:gap-3">
                         {events.map((ev) => (
                             <li key={ev.id}>
                                 <Card className="rounded-2xl">
@@ -349,13 +349,12 @@ export default function Cpd() {
 
             {/* MILESTONES */}
             <section>
-                <div className="mb-4">
-                    <h2 className="text-xl font-medium">Milestones</h2>
+                <div className="mb-3 sm:mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold">Milestones</h2>
                     <p className="text-sm text-muted-foreground">
                         Progress against service milestones.
                     </p>
                 </div>
-
                 {milestones.length === 0 ? (
                     <Card className="rounded-2xl border-dashed">
                         <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
@@ -366,7 +365,7 @@ export default function Cpd() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <ul className="grid gap-3 sm:grid-cols-2">
+                    <ul className="grid gap-2.5 sm:gap-3 sm:grid-cols-2">
                         {milestones.map((m) => {
                             const reqPts = m.required_points ?? 0;
                             const reqHrs = m.required_hours ?? 0;
@@ -589,7 +588,7 @@ function TotalsCard({
 
 function PageSkeleton() {
     return (
-        <main className="mx-auto max-w-4xl px-6 py-10">
+        <main className="mx-auto max-w-4xl px-1 sm:px-1 py-6 sm:py-10">
             <Skeleton className="h-9 w-32" />
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <Skeleton className="h-24 rounded-2xl" />

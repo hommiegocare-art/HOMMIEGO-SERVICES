@@ -155,7 +155,7 @@ export default function Notifications() {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-3 sm:space-y-4">
                 <div className="h-8 w-40 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
@@ -165,17 +165,16 @@ export default function Notifications() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-            <div className="flex items-center justify-between mb-5">
-                <h1 className="text-2xl font-black tracking-tight text-foreground">
+        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-3 sm:mb-5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                     Notifications
                 </h1>
                 {unreadCount > 0 && (
                     <button
                         onClick={() => markAll.mutate()}
                         disabled={markAll.isPending}
-                        className="h-11 px-3 rounded-2xl text-sm font-semibold text-primary active:bg-muted transition-colors disabled:opacity-60 inline-flex items-center gap-1.5"
-                    >
+                        className="h-10 sm:h-11 px-2.5 sm:px-3 rounded-2xl text-xs sm:text-sm font-semibold text-primary active:bg-muted transition-colors disabled:opacity-60 inline-flex items-center gap-1.5"                    >
                         <CheckCheck className="w-4 h-4" />
                         Mark all read
                     </button>
@@ -185,13 +184,13 @@ export default function Notifications() {
             {rows.length === 0 ? (
                 <EmptyState />
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                     {grouped.map(([label, items]) => (
                         <section key={label}>
-                            <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                            <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1.5 sm:mb-2">
                                 {label}
                             </h2>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5 sm:space-y-2">
                                 {items.map((n) => (
                                     <NotificationRow
                                         key={n.id}
@@ -221,7 +220,7 @@ function NotificationRow({
     const tone = toneFor(n.type, n.is_read);
 
     const content = (
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5 sm:gap-3">
             <span
                 className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center ${tone.bg}`}
             >
@@ -260,7 +259,7 @@ function NotificationRow({
             <Link
                 to={n.link}
                 onClick={onOpen}
-                className="block rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
+                className="block rounded-2xl bg-card px-3 py-3 sm:px-4 active:bg-muted transition-colors"
             >
                 {content}
             </Link>
@@ -270,7 +269,7 @@ function NotificationRow({
     return (
         <button
             onClick={onOpen}
-            className="w-full text-left rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
+            className="w-full text-left rounded-2xl bg-card px-3 py-3 sm:px-4 active:bg-muted transition-colors"
         >
             {content}
         </button>

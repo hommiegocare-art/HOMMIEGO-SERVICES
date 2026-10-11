@@ -55,25 +55,25 @@ export default function Earnings() {
     if (!user) return null;
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
-            <div className="mb-5">
-                <h1 className="text-2xl font-black tracking-tight text-foreground">
+        <div className="max-w-4xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+            <div className="mb-4 sm:mb-5">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                     Earnings
                 </h1>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-0.5 sm:mt-1">
                     Payouts from completed bookings.
                 </p>
             </div>
 
             {error && (
-                <div className="rounded-2xl bg-destructive/10 px-4 py-3 mb-4">
+                <div className="rounded-2xl bg-destructive/10 px-3 py-3 sm:px-4 mb-3 sm:mb-4">
                     <p className="text-sm text-destructive">
                         {(error as Error).message}
                     </p>
                 </div>
             )}
 
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-5 sm:mb-6">
                 <SummaryCard
                     icon={<Clock className="w-4 h-4 text-primary" />}
                     label="Pending"
@@ -130,7 +130,7 @@ export default function Earnings() {
                     loading={false}
                     empty=""
                     rows={grouped.other}
-                    className="mt-8"
+                    className="mt-6 sm:mt-8"
                 />
             )}
         </div>
@@ -149,12 +149,12 @@ function SummaryCard({
     hint?: string;
 }) {
     return (
-        <div className="rounded-2xl bg-card px-3 py-3">
+        <div className="rounded-2xl bg-card px-2.5 py-2.5 sm:px-3 sm:py-3">
             <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground font-bold">
                 {icon}
                 {label}
             </div>
-            <div className="mt-1.5 text-lg font-black text-foreground">
+            <div className="mt-1.5 text-base sm:text-lg font-black text-foreground truncate">
                 {value === null ? (
                     <span className="inline-block w-20 h-5 rounded skeleton-shimmer" />
                 ) : (
@@ -185,25 +185,24 @@ function Group({
 }) {
     return (
         <section className={className}>
-            <div className="mb-3">
+            <div className="mb-2 sm:mb-3">
                 <h2 className="text-sm uppercase tracking-wider font-bold text-muted-foreground">
                     {title}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
             </div>
-
             {loading ? (
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                     <div className="h-16 rounded-2xl skeleton-shimmer" />
                     <div className="h-16 rounded-2xl skeleton-shimmer" />
                 </div>
             ) : rows.length === 0 ? (
-                <div className="rounded-2xl bg-card px-4 py-10 text-center">
+                <div className="rounded-2xl bg-card px-3 py-8 sm:px-4 sm:py-10 text-center">
                     <Inbox className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">{empty}</p>
                 </div>
             ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                     {rows.map((p) => (
                         <PayoutRow key={p.id} p={p} />
                     ))}
@@ -218,7 +217,7 @@ function PayoutRow({ p }: { p: Payout }) {
     const dateStr = p.completed_at ?? p.created_at;
 
     const body = (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
             <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <Wallet className="w-4 h-4 text-primary" />
             </span>
@@ -246,7 +245,7 @@ function PayoutRow({ p }: { p: Payout }) {
         return (
             <Link
                 to={`/bookings/${p.booking_id}`}
-                className="block rounded-2xl bg-card px-4 py-3 active:bg-muted transition-colors"
+                className="block rounded-2xl bg-card px-3 py-3 sm:px-4 active:bg-muted transition-colors"
             >
                 {body}
             </Link>
@@ -254,6 +253,6 @@ function PayoutRow({ p }: { p: Payout }) {
     }
 
     return (
-        <div className="rounded-2xl bg-card px-4 py-3">{body}</div>
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-4">{body}</div>
     );
 }

@@ -85,7 +85,7 @@ export default function PrivacySettings() {
 
     if (!user || user.role !== "client") {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-12 text-center">
+            <div className="max-w-3xl mx-auto px-2 sm:px-4 py-12 text-center">
                 <p className="text-sm text-muted-foreground">
                     Privacy settings are for client accounts.
                 </p>
@@ -95,7 +95,7 @@ export default function PrivacySettings() {
 
     if (isLoading || !local) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-3">
+            <div className="max-w-3xl mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-2.5 sm:space-y-3">
                 <div className="h-8 w-40 rounded-2xl skeleton-shimmer" />
                 {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="h-16 rounded-2xl skeleton-shimmer" />
@@ -105,26 +105,26 @@ export default function PrivacySettings() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-2 sm:px-4 py-4 sm:py-6 animate-fade-in">
             <button
                 onClick={() => navigate(-1)}
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-2 mb-4 h-11"
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground -ml-1 sm:-ml-2 mb-3 sm:mb-4 h-10 sm:h-11"
             >
                 <ChevronLeft className="w-4 h-4" /> Back
             </button>
 
             <div className="flex items-center gap-2 mb-1">
                 <Shield className="w-5 h-5 text-primary" />
-                <h1 className="text-2xl font-black tracking-tight text-foreground">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                     Privacy
                 </h1>
             </div>
-            <p className="text-sm text-muted-foreground mb-5">
+            <p className="text-sm text-muted-foreground mb-4 sm:mb-5">
                 Control what unconnected caregivers see about you. Connected caregivers
                 may see more, depending on what you allow here.
             </p>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
                 {ROWS.map((r) => (
                     <ToggleRow
                         key={r.key}
@@ -138,6 +138,7 @@ export default function PrivacySettings() {
         </div>
     );
 }
+
 function ToggleRow({
     label,
     hint,
@@ -150,7 +151,7 @@ function ToggleRow({
     onChange: () => void;
 }) {
     return (
-        <div className="rounded-2xl bg-card px-4 py-3 flex items-center justify-between gap-3">
+        <div className="rounded-2xl bg-card px-1 py-3 sm:px- flex items-center justify-between gap-2.5 sm:gap-3">
             <div className="min-w-0">
                 <p className="text-sm font-semibold text-foreground">{label}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
@@ -162,7 +163,7 @@ function ToggleRow({
                 aria-checked={on}
                 aria-label={label}
                 onClick={onChange}
-                dir="ltr"                       // ← force LTR so RTL can't flip it
+                dir="ltr"
                 className={[
                     "relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center",
                     "rounded-full border border-transparent p-0.5",

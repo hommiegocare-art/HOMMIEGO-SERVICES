@@ -195,7 +195,7 @@ export default function Settings() {
     if (sessionLoading) return <PageSkeleton />;
     if (!user) {
         return (
-            <main className="mx-auto max-w-3xl px-6 py-20 text-center">
+            <main className="mx-auto max-w-3xl px-1 sm:px-1 py-20 text-center">
                 <h1 className="text-2xl font-semibold">Sign in required</h1>
             </main>
         );
@@ -206,16 +206,14 @@ export default function Settings() {
     const pushAvailable = pushSupported();
 
     return (
-        <main className="mx-auto max-w-2xl px-6 py-10">
-            <header className="mb-6">
-                <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    Manage appearance, notifications, and your account.
-                </p>
+        <main className="mx-auto max-w-2xl px-1 sm:px-1 py-6 sm:py-10">
+            <header className="mb-4 sm:mb-6">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Settings</h1>
+
             </header>
 
             {error && (
-                <p className="mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <p className="mb-3 sm:mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
                     {error}
                 </p>
             )}
@@ -265,7 +263,7 @@ export default function Settings() {
 
             {/* NOTIFICATIONS */}
             {pushAvailable && (
-                <Card className="mt-6 rounded-2xl">
+                <Card className="mt-6 rounded-2xl border-destructive/30">
                     <CardHeader>
                         <CardTitle className="text-base font-medium flex items-center gap-2">
                             <Bell className="h-4 w-4" /> Notifications
@@ -488,7 +486,7 @@ function LegalRow({
         <li>
             <Link
                 to={to}
-                className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-muted/40"
+                className="flex items-center gap-3 px-3 py-3 sm:px-6 sm:py-4 transition-colors hover:bg-muted/40"
             >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {icon}
@@ -543,7 +541,7 @@ async function clearAppState(qc: ReturnType<typeof useQueryClient>) {
 
 function PageSkeleton() {
     return (
-        <main className="mx-auto max-w-2xl px-6 py-10">
+        <main className="mx-auto max-w-2xl px-1 sm:px-1 py-6 sm:py-10">
             <Skeleton className="h-9 w-32" />
             <Skeleton className="mt-6 h-32 rounded-2xl" />
             <Skeleton className="mt-6 h-24 rounded-2xl" />

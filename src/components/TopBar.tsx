@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { Logo } from "@/components/brand/Logo";
+import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 
 export function TopBar() {
     const { user, loading } = useSession();
@@ -27,11 +28,9 @@ export function TopBar() {
         },
     });
 
-    const initial = user?.display_name?.[0]?.toUpperCase() ?? "U";
-
     return (
         <header className="sticky top-0 z-30 bg-background">
-            <div className="max-w-6xl mx-auto h-14 px-4 flex items-center justify-between">
+            <div className="max-w-6xl mx-auto h-14 px-2 sm:px-4 flex items-center justify-between">
                 <Link
                     to="/dashboard"
                     className="inline-flex items-center"
@@ -40,7 +39,7 @@ export function TopBar() {
                     <Logo size="sm" showIcon />
                 </Link>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                     <button
                         onClick={() => navigate("/notifications")}
                         className="relative h-11 w-11 rounded-full flex items-center justify-center active:bg-muted transition-colors"
@@ -59,20 +58,16 @@ export function TopBar() {
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted transition-colors"
                         aria-label="Profile"
                     >
-                        {user?.avatar_url ? (
-                            <img
-                                src={user.avatar_url}
-                                alt=""
-                                className="w-8 h-8 rounded-full object-cover"
-                                draggable={false}
-                            />
-                        ) : loading && !user ? (
-                            /* First-ever load, nothing cached yet: shimmer instead of letter */
-                            <span className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                        {loading && !user ? (
+                            /* First-ever load, nothing cached yet: shimmer */
+                            <span className="w-10 h-10 rounded-full bg-muted animate-pulse" />
                         ) : (
-                            <span className="w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-black flex items-center justify-center">
-                                {initial}
-                            </span>
+                            <InitialsAvatar
+                                url={user?.avatar_url}
+                                name={user?.display_name ?? "You"}
+                                className="h-10 w-10"
+                                textClassName="text-sm"
+                            />
                         )}
                     </Link>
                 </div>

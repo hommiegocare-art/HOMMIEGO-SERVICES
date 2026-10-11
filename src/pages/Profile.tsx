@@ -81,7 +81,7 @@ export default function Profile() {
 
     if (loading) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-3 sm:space-y-4">
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-32 rounded-2xl skeleton-shimmer" />
                 <div className="h-24 rounded-2xl skeleton-shimmer" />
@@ -96,12 +96,12 @@ export default function Profile() {
 
     // Someone else's profile
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-1 sm:px- py-4 sm:py-6 animate-fade-in">
             <PublicProfile userId={targetId!} />
 
             {/* Embedded medical record + daily diary — only for connected caregivers */}
             {showMedical && (
-                <div id="medical-record" className="mt-4 scroll-mt-24">
+                <div id="medical-record" className="mt-3 sm:mt-4 scroll-mt-24">
                     <DailyDiaryCard clientId={targetId!} defaultRangeDays={30} />
                     <MedicalProfileCard clientId={targetId!} />
                 </div>
