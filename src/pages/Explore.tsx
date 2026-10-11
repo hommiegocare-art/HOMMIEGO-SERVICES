@@ -25,6 +25,7 @@ import type {
   CaregiverDiscoveryRow,
   ClientDiscoveryRow,
 } from "@/types/db";
+import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 
 const PAGE_SIZE = 24;
 
@@ -353,8 +354,8 @@ export default function Explore() {
   const hasAnyRows = rows.length > 0;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pb-8">
-      <div className="sticky top-14 z-20 bg-background pt-3 pb-3">
+    <div className="max-w-6xl mx-auto px-1 sm:px-1 pb-6 sm:pb-8">
+      <div className="sticky top-14 z-20 bg-background pt-2 pb-2 px-2 -mx-2 sm:pt-3 sm:pb-3 sm:px-0 sm:mx-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -380,11 +381,11 @@ export default function Explore() {
       ) : (
         <>
           {connectedRows.length > 0 && (
-            <section className="mb-5">
+            <section className="mb-4 sm:mb-5">
               <SectionLabel>
                 {isCaregiver ? "My care circle" : "Your connections"}
               </SectionLabel>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                 {connectedRows.map(renderCard)}
               </div>
             </section>
@@ -395,7 +396,7 @@ export default function Explore() {
               {connectedRows.length > 0 && (
                 <SectionLabel>Discover more</SectionLabel>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 animate-fade-in">
                 {discoverRows.map(renderCard)}
               </div>
             </section>
@@ -436,48 +437,13 @@ export default function Explore() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mb-2 mt-1">
+    <p className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground mb-1.5 sm:mb-2 mt-1">
       {children}
     </p>
   );
 }
 
-function Avatar({
-  url,
-  name,
-  online,
-}: {
-  url: string | null;
-  name: string;
-  online?: boolean;
-}) {
-  const initial = name?.[0]?.toUpperCase() ?? "?";
-  return (
-    <div className="relative shrink-0">
-      <div className="h-20 w-20 rounded-full overflow-hidden bg-muted">
-        {url ? (
-          <img
-            src={url}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="h-full w-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-black">
-            {initial}
-          </div>
-        )}
-      </div>
-      {online && (
-        <span
-          className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-success"
-          aria-label="Online"
-        />
-      )}
-    </div>
-  );
-}
+
 
 /* ---------- meta strip: views + endorsements + endorsed-you ---------- */
 
@@ -566,7 +532,7 @@ function CardActions({
   const Icon = pending ? Clock : MessageCircle;
 
   return (
-    <div className="mt-4 flex items-center justify-end gap-2">
+    <div className="mt-3 sm:mt-4 flex items-center justify-end gap-1.5 sm:gap-2">
       {connected && (
         <span className="mr-auto text-[11px] font-bold uppercase tracking-wider text-success">
           Connected
@@ -574,7 +540,7 @@ function CardActions({
       )}
       <Link
         to={profileHref}
-        className="h-10 px-4 rounded-xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:bg-secondary transition-colors"
+        className="h-10 px-1 rounded-xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:bg-secondary transition-colors"
       >
         <Eye className="w-4 h-4" />
         View
@@ -583,7 +549,7 @@ function CardActions({
         type="button"
         onClick={() => onConsult(targetId, targetName, avatarUrl)}
         disabled={disabled}
-        className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 px-1 rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Icon className="w-4 h-4" />
         {label}
@@ -615,14 +581,14 @@ function CaregiverCard({
   const connected = conn?.status === "accepted";
 
   return (
-    <div className="rounded-2xl bg-card p-4 transition-colors">
+    <div className="rounded-2xl bg-card p-3 sm:p-4 transition-colors">
       <div className="flex items-start gap-3">
-        <Avatar
+
+        <InitialsAvatar
           url={c.avatar_url}
           name={c.display_name ?? "Caregiver"}
           online={c.is_available}
         />
-
         <div className="min-w-0 flex-1 pt-1">
           <div className="flex items-center gap-1">
             <Link
@@ -700,7 +666,10 @@ function ClientCard({
   return (
     <div className="rounded-2xl bg-card p-4 transition-colors">
       <div className="flex items-start gap-3">
-        <Avatar url={c.avatar_url} name={c.display_name ?? "Anonymous"} />
+        <InitialsAvatar
+          url={c.avatar_url}
+          name={c.display_name ?? "Anonymous"}
+        />
 
         <div className="min-w-0 flex-1 pt-1">
           <div className="flex items-center gap-1">
@@ -832,7 +801,7 @@ function MessagePreviewDrawer({
           <span className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
         </div>
 
-        <div className="px-4 pb-3 flex items-center gap-3">
+        <div className="px-1 pb-3 flex items-center gap-3">
           <span className="h-12 w-12 rounded-full overflow-hidden bg-muted shrink-0 flex items-center justify-center">
             {target.avatarUrl ? (
               <img
@@ -859,9 +828,9 @@ function MessagePreviewDrawer({
           </button>
         </div>
 
-        <div className="px-4 pb-5">
+        <div className="px-1 pb-5">
           {preview ? (
-            <div className="rounded-2xl bg-card px-4 py-4">
+            <div className="rounded-2xl bg-card px-1 py-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
                 Last message
               </p>
@@ -878,7 +847,7 @@ function MessagePreviewDrawer({
               </p>
             </div>
           ) : (
-            <div className="rounded-2xl bg-muted px-4 py-6 text-center">
+            <div className="rounded-2xl bg-muted px-1 py-6 text-center">
               <Loader2 className="w-5 h-5 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
                 No messages yet — open the chat to say hello.
@@ -901,7 +870,7 @@ function MessagePreviewDrawer({
 
 function GridSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 -mx-2 px-2 sm:mx-0 sm:px-0">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="rounded-2xl bg-card p-4">
           <div className="flex items-start gap-3">

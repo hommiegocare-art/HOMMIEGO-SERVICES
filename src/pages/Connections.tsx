@@ -15,6 +15,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import type { Connection, Profile } from "@/types/db";
+import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 
 const SOFT_CAP = 3;
 
@@ -271,7 +272,7 @@ export default function Connections() {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-3 sm:space-y-4">
                 <div className="h-8 w-40 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
@@ -282,13 +283,13 @@ export default function Connections() {
     const capReached = accepted.length >= SOFT_CAP;
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 animate-fade-in">
-            <h1 className="text-2xl font-black tracking-tight text-foreground">
+        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 space-y-4 sm:space-y-6 animate-fade-in">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
                 Connections
             </h1>
 
             {role === "client" && capReached && (
-                <div className="rounded-2xl bg-primary/10 px-4 py-3 flex items-start gap-3">
+                <div className="rounded-2xl bg-primary/10 px-3 py-3 sm:px-1 flex items-start gap-2.5 sm:gap-3">
                     <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -404,26 +405,14 @@ function Section({
 }) {
     return (
         <section>
-            <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
+            <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-1.5 sm:mb-2">
                 {title}
             </h2>
-            <div className="space-y-2">{children}</div>
+            <div className="space-y-1.5 sm:space-y-2">{children}</div>
         </section>
     );
 }
 
-function Avatar({ name, src }: { name: string; src: string | null }) {
-    const initial = name?.[0]?.toUpperCase() ?? "?";
-    return (
-        <span className="w-11 h-11 rounded-full bg-primary/10 shrink-0 overflow-hidden flex items-center justify-center">
-            {src ? (
-                <img src={src} alt="" className="w-full h-full object-cover" />
-            ) : (
-                <span className="text-primary font-black">{initial}</span>
-            )}
-        </span>
-    );
-}
 
 function RequestCard({
     row,
@@ -440,9 +429,15 @@ function RequestCard({
 }) {
     const name = row.other?.display_name || (role === "client" ? "Caregiver" : "Client");
     return (
-        <div className="rounded-2xl bg-card px-4 py-3">
-            <div className="flex items-center gap-3">
-                <Avatar name={name} src={row.other?.avatar_url ?? null} />
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-1">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+
+                <InitialsAvatar
+                    url={row.other?.avatar_url}
+                    name={name}
+                    className="h-11 w-11"
+                    textClassName="text-base"
+                />
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
                         {name}
@@ -459,7 +454,7 @@ function RequestCard({
                 </p>
             )}
 
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-2.5 sm:mt-3">
                 <button
                     onClick={onDecline}
                     disabled={busy}
@@ -494,8 +489,14 @@ function PendingCard({
 }) {
     const name = row.other?.display_name || (role === "client" ? "Caregiver" : "Client");
     return (
-        <div className="rounded-2xl bg-card px-4 py-3 flex items-center gap-3">
-            <Avatar name={name} src={row.other?.avatar_url ?? null} />
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-1 flex items-center gap-3">
+
+            <InitialsAvatar
+                url={row.other?.avatar_url}
+                name={name}
+                className="h-11 w-11"
+                textClassName="text-base"
+            />
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">{name}</p>
                 <p className="text-xs text-muted-foreground mt-0.5 inline-flex items-center gap-1">
@@ -541,10 +542,16 @@ function AcceptedCard({
     const showMyEndorsement = myEndorsementCount > 0;
 
     return (
-        <div className="rounded-2xl bg-card px-4 py-4">
+        <div className="rounded-2xl bg-card px-3 py-3 sm:px-1 sm:py-4">
             <div className="flex items-center gap-3">
                 <div className="relative shrink-0">
-                    <Avatar name={name} src={row.other?.avatar_url ?? null} />
+
+                    <InitialsAvatar
+                        url={row.other?.avatar_url}
+                        name={name}
+                        className="h-11 w-11"
+                        textClassName="text-base"
+                    />
                     {unread > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                             {unread > 9 ? "9+" : unread}
@@ -579,7 +586,7 @@ function AcceptedCard({
             </div>
 
             {/* Action row — Chat + Endorse, matching rectangular buttons */}
-            <div className="mt-3 flex items-stretch gap-2">
+            <div className="mt-2.5 sm:mt-3 flex items-stretch gap-1.5 sm:gap-2">
                 <button
                     onClick={onOpenChat}
                     className="flex-1 h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-bold active:opacity-90 transition-opacity inline-flex items-center justify-center gap-2"
@@ -689,7 +696,7 @@ function EndorseModal({
     return (
         <div className="fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm flex items-end sm:items-center justify-center">
             <div className="w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl max-h-[85dvh] overflow-y-auto border border-border pb-[calc(env(safe-area-inset-bottom)+72px)] sm:pb-6">
-                <div className="sticky top-0 bg-card h-14 flex items-center justify-between px-4">
+                <div className="sticky top-0 bg-card h-14 flex items-center justify-between px-1">
                     <button
                         onClick={onClose}
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
@@ -701,7 +708,7 @@ function EndorseModal({
                     <span className="w-11" />
                 </div>
 
-                <div className="px-4 pb-6 space-y-4">
+                <div className="px-1 pb-6 space-y-4">
                     <p className="text-xs text-muted-foreground">
                         Tap the skills you trust them with. Tap again to remove. Only
                         connected people can endorse.
@@ -727,7 +734,7 @@ function EndorseModal({
                     </div>
 
                     {error && (
-                        <p className="rounded-2xl bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                        <p className="rounded-2xl bg-destructive/10 px-1 py-2 text-sm text-destructive">
                             {error}
                         </p>
                     )}
@@ -764,7 +771,7 @@ function EmptyCard({
     ctaTo?: string;
 }) {
     return (
-        <div className="rounded-2xl bg-card px-4 py-6 text-center">
+        <div className="rounded-2xl bg-card px-3 py-6 sm:px-1 text-center">
             <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">{text}</p>
             {ctaLabel && ctaTo && (

@@ -160,13 +160,13 @@ export function DailyDiaryCard({
     return (
         <>
             {/*
-                Card is now edge-to-edge capable: no px-4 on the wrapper.
-                Each section provides its own px-4, EXCEPT the EmptyCTA
+                Card is now edge-to-edge capable: no px-1 on the wrapper.
+                Each section provides its own px-1, EXCEPT the EmptyCTA
                 which is a full-width tappable row.
             */}
             <div className="rounded-2xl bg-card py-4 mb-3 overflow-hidden">
                 {/* ---------- Header ---------- */}
-                <div className="flex items-center justify-between mb-2 px-4">
+                <div className="flex items-center justify-between mb-2 px-1">
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
                         <HeartPulse className="w-4 h-4 text-primary shrink-0" />
                         <p className="text-sm font-bold text-foreground truncate">
@@ -209,7 +209,7 @@ export function DailyDiaryCard({
 
                 {/* ---------- Last-logged line ---------- */}
                 {lastEntry && (
-                    <div className="flex items-center gap-1.5 mb-3 text-[11px] px-4">
+                    <div className="flex items-center gap-1.5 mb-3 text-[11px] px-1">
                         <Clock className={`w-3 h-3 ${lastColor}`} />
                         <span className={lastColor}>
                             {diary.isOwner ? "Last logged " : "Last entry: "}
@@ -224,7 +224,7 @@ export function DailyDiaryCard({
                 )}
 
                 {/* ---------- Range chips ---------- */}
-                <div className="flex gap-1.5 mt-4 mb-3 flex-wrap px-4">
+                <div className="flex gap-1.5 mt-4 mb-3 flex-wrap px-1">
                     {[
                         { label: "7 days", days: 7 },
                         { label: "30 days", days: 30 },
@@ -244,7 +244,7 @@ export function DailyDiaryCard({
                 </div>
 
                 {/* ---------- Tabs (edge-to-edge scroll) ---------- */}
-                <div className="px-4 mb-4 overflow-x-auto">
+                <div className="px-1 mb-4 overflow-x-auto">
                     <div className="flex gap-1 min-w-max">
                         {(["timeline", "heatmap", "trends"] as Tab[]).map((t) => (
                             <button
@@ -262,7 +262,7 @@ export function DailyDiaryCard({
                 </div>
 
                 {/* ---------- Bodies ---------- */}
-                <div className="px-4">
+                <div className="px-1">
                     {tab === "timeline" && (
                         <DiaryTimeline clientId={clientId} range={range} />
                     )}
@@ -299,7 +299,7 @@ function EmptyCTA({ onLog }: { onLog: () => void }) {
         <button
             type="button"
             onClick={onLog}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-primary/5 active:bg-primary/10 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-1 py-3 bg-primary/5 active:bg-primary/10 transition-colors text-left"
         >
 
             <div className="flex-1 min-w-0">
@@ -441,7 +441,7 @@ function TrendsTab({
             )}
 
             {topSymptoms.length === 0 && (
-                <div className="rounded-2xl bg-muted/60 border border-border px-4 py-6 text-center">
+                <div className="rounded-2xl bg-muted/60 border border-border px-1 py-6 text-center">
                     <Activity className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
                     <p className="text-xs text-muted-foreground">
                         No symptoms logged in this period.

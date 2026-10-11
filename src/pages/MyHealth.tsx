@@ -16,7 +16,7 @@ export default function MyHealth() {
     }
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
+        <div className="max-w-3xl mx-auto px-1 py-6 animate-fade-in">
             <header className="mb-5">
                 <div className="flex items-center gap-2 mb-1">
                     <HeartPulse className="w-6 h-6 text-primary" />
@@ -24,7 +24,6 @@ export default function MyHealth() {
                         My Health
                     </h1>
                 </div>
-
             </header>
 
             <DailyDiaryCard clientId={user.id} defaultRangeDays={30} />

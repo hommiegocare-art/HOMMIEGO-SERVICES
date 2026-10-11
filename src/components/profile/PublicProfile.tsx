@@ -31,6 +31,8 @@ import type {
     Connection,
 } from "@/types/db";
 import { VerifiedBadge } from "../brand/VerifiedBadge";
+import { InitialsAvatar } from "../brand/InitialsAvatar";
+import { SafeImage } from "../brand/SafeImage";
 
 type Media = { id: string; url: string; kind: string };
 
@@ -257,7 +259,7 @@ export function PublicProfile({ userId }: { userId: string }) {
 
     if (isLoading) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+            <div className="max-w-3xl mx-auto px-1 py-6 space-y-4">
                 <div className="h-20 rounded-2xl skeleton-shimmer" />
                 <div className="h-32 rounded-2xl skeleton-shimmer" />
             </div>
@@ -266,7 +268,7 @@ export function PublicProfile({ userId }: { userId: string }) {
 
     if (!data) {
         return (
-            <div className="max-w-3xl mx-auto px-4 py-12 text-center">
+            <div className="max-w-3xl mx-auto px-1 py-12 text-center">
                 <p className="text-sm text-muted-foreground">This profile doesn't exist.</p>
             </div>
         );
@@ -309,17 +311,14 @@ export function PublicProfile({ userId }: { userId: string }) {
     const canEndorse = !!user && !isViewingSelf && isConnected && !!existingConnection;
 
     return (
-        <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
-            <header className="flex items-start gap-4 mb-5">
-                <span className="w-20 h-20 rounded-full bg-muted overflow-hidden shrink-0 flex items-center justify-center">
-                    {profile.avatar_url ? (
-                        <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                        <span className="text-3xl font-black text-primary">
-                            {profile.display_name?.[0]?.toUpperCase() ?? "?"}
-                        </span>
-                    )}
-                </span>
+        <div className="max-w-3xl mx-auto px-1 sm:px-1 py-4 sm:py-6 animate-fade-in">
+            <header className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
+                <InitialsAvatar
+                    url={profile.avatar_url}
+                    name={profile.display_name ?? "Anonymous"}
+                    className="h-20 w-20"
+                    textClassName="text-3xl"
+                />
 
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -351,7 +350,7 @@ export function PublicProfile({ userId }: { userId: string }) {
             </header>
 
             {isUnverifiedCaregiver && !isViewingSelf && (
-                <div className="rounded-2xl bg-card px-4 py-3 mb-5 flex items-start gap-3">
+                <div className="rounded-2xl bg-card px-1 py-3 mb-5 flex items-start gap-3">
                     <ShieldAlert className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                     <div>
                         <p className="text-sm font-semibold text-foreground">
@@ -479,20 +478,23 @@ export function PublicProfile({ userId }: { userId: string }) {
                     <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
                         Photos
                     </h2>
-                    <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    <ul className="grid grid-cols-3 gap-1.5 sm:gap-2 sm:grid-cols-4 -mx-2 sm:mx-0">
                         {media.map((m) => (
                             <li key={m.id}>
                                 <a
                                     href={m.url}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="block aspect-square overflow-hidden rounded-xl bg-card"
+                                    className="block aspect-square overflow-hidden rounded-xl bg-card flex items-center justify-center"
                                 >
-                                    <img
+                                    <SafeImage
                                         src={m.url}
                                         alt=""
                                         loading="lazy"
                                         className="h-full w-full object-cover"
+                                        fallback={
+                                            <span className="text-xs text-muted-foreground">Photo</span>
+                                        }
                                     />
                                 </a>
                             </li>
@@ -506,7 +508,7 @@ export function PublicProfile({ userId }: { userId: string }) {
                     <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
                         Services
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2 -mx-2 sm:mx-0 space-y-2 sm:space-y-0">
                         {services.map((s) => {
                             const isFree = (s as Service & { is_free_consultation?: boolean })
                                 .is_free_consultation;
@@ -561,7 +563,7 @@ export function PublicProfile({ userId }: { userId: string }) {
             {showMedicalEntry && <MedicalEntryCard clientId={profile.id} />}
 
             {client && (
-                <div className="rounded-2xl bg-card px-4 py-3 mb-5">
+                <div className="rounded-2xl bg-card px-1 py-3 mb-5">
                     <p className="text-xs text-muted-foreground">
                         {isConnected
                             ? "You're connected. Use the links above to view the patient's history or record an examination."
@@ -571,7 +573,7 @@ export function PublicProfile({ userId }: { userId: string }) {
             )}
 
             {caregiver?.peer_consultation_opt_in && (
-                <div className="rounded-2xl bg-primary/10 px-4 py-3">
+                <div className="rounded-2xl bg-primary/10 px-1 py-3">
                     <p className="text-xs text-foreground">
                         Open to peer consultation with other caregivers.
                     </p>
@@ -656,18 +658,15 @@ function ServiceCard({
         >
             {/* Cover — full width */}
             <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center">
-                {service.cover_image ? (
-                    <img
-                        src={service.cover_image}
-                        alt=""
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <Briefcase className="w-6 h-6 text-muted-foreground" />
-                )}
+                <SafeImage
+                    src={service.cover_image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    fallback={<Briefcase className="w-6 h-6 text-muted-foreground" />}
+                />
             </div>
 
-            <div className="px-4 py-3">
+            <div className="px-1 py-3">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -792,7 +791,7 @@ function ServiceDetail({
                 "
             >
                 {/* Sticky header */}
-                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-4">
+                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-1">
                     <button
                         onClick={onClose}
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
@@ -806,18 +805,15 @@ function ServiceDetail({
 
                 {/* Cover */}
                 <div className="w-full aspect-[16/7] bg-muted overflow-hidden flex items-center justify-center">
-                    {service.cover_image ? (
-                        <img
-                            src={service.cover_image}
-                            alt=""
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <Briefcase className="w-8 h-8 text-muted-foreground" />
-                    )}
+                    <SafeImage
+                        src={service.cover_image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        fallback={<Briefcase className="w-8 h-8 text-muted-foreground" />}
+                    />
                 </div>
 
-                <div className="px-4 pt-4 pb-6 space-y-4">
+                <div className="px-1 pt-4 pb-6 space-y-4">
                     {/* Title + price */}
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -971,7 +967,7 @@ function EndorseModal({
     return (
         <div className="fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm flex items-end sm:items-center justify-center">
             <div className="w-full sm:max-w-lg bg-card rounded-t-3xl sm:rounded-3xl max-h-[85dvh] overflow-y-auto border border-border pb-[calc(env(safe-area-inset-bottom)+72px)] sm:pb-0">
-                <div className="sticky top-0 bg-card h-14 flex items-center justify-between px-4">
+                <div className="sticky top-0 bg-card h-14 flex items-center justify-between px-1">
                     <button
                         onClick={onClose}
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
@@ -983,7 +979,7 @@ function EndorseModal({
                     <span className="w-11" />
                 </div>
 
-                <div className="px-4 pb-6 space-y-4">
+                <div className="px-1 pb-6 space-y-4">
                     <p className="text-xs text-muted-foreground">
                         Tap the skills you trust them with. Tap again to remove. Only
                         connected people can endorse.
@@ -1008,7 +1004,7 @@ function EndorseModal({
                     </div>
 
                     {error && (
-                        <p className="rounded-2xl bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                        <p className="rounded-2xl bg-destructive/10 px-1 py-2 text-sm text-destructive">
                             {error}
                         </p>
                     )}
@@ -1039,7 +1035,7 @@ function EndorseModal({
 
 function MedicalEntryCard({ clientId }: { clientId: string }) {
     return (
-        <div className="rounded-2xl bg-card px-4 py-4 mb-5">
+        <div className="rounded-2xl bg-card px-1 py-4 mb-5">
             <div className="flex items-center gap-2 mb-3">
                 <HeartPulse className="w-4 h-4 text-primary" />
                 <p className="text-sm font-bold text-foreground">Medical profile</p>
