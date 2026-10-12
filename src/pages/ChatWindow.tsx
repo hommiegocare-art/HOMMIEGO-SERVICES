@@ -69,7 +69,7 @@ import {
 } from "@/lib/wallpaperStore";
 import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 import { ReceiptBadge } from "@/components/brand/ReceiptBadge";
-
+import { useVisualViewportHeight } from "@/hooks/useVisualViewportHeight";
 function haptic(pattern: number | number[] = 10) {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         (navigator as Navigator & { vibrate?: (p: number | number[]) => boolean })
@@ -781,7 +781,7 @@ export default function ChatWindow() {
     const anchoredRef = useRef(false);
     const [wallpaperSheetOpen, setWallpaperSheetOpen] = useState(false);
     const [wallpaperBlobUrl, setWallpaperBlobUrl] = useState<string | null>(null);
-
+    const { height: vvHeight, offsetTop: vvOffsetTop } = useVisualViewportHeight();
     const [wallpaper, setWallpaper] = useState<ChatWallpaper>(() =>
         connectionId ? loadWallpaper(connectionId) : { kind: "default" },
     );
@@ -1164,7 +1164,22 @@ export default function ChatWindow() {
             : 0;
 
     return (
-        <div className="flex h-[100dvh] flex-col overflow-hidden bg-background">
+        <div
+            className="flex flex-col overflow-hidden bg-background"
+            style={{
+                // Pin the app shell to the *visible* viewport, not the
+                // layout viewport. When the keyboard opens, `vvHeight`
+                // shrinks and `vvOffsetTop` compensates for iOS scroll,
+                // so the header stays anchored and only the message
+                // list reflows.
+                height: vvHeight > 0 ? `${vvHeight}px` : "100dvh",
+                transform: vvOffsetTop > 0 ? `translateY(${vvOffsetTop}px)` : undefined,
+                position: "fixed",
+                top: 0,
+                left: 0,
+                right: 0,
+            }}
+        >
             <header className="relative z-30 shrink-0 bg-background">
                 <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-2  sm:px-2  py-2.5 sm:py-3">
                     <button
@@ -1366,7 +1381,20 @@ export default function ChatWindow() {
                     </div>
                 </div>
             </div>
-            <div className="relative z-30 shrink-0 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+            <div
+                className="relative z-30 shrink-0 bg-background"
+                style={{
+                    // Safe-area padding only when the keyboard is closed.
+                    // When it's open we don't need to clear the home indicator.
+                    paddingBottom:
+                        vvHeight > 0 &&
+                            typeof window !== "undefined" &&
+                            (window.visualViewport?.height ?? vvHeight) ===
+                            (window.visualViewport?.height ?? 0)
+                            ? undefined
+                            : "max(0.5rem, env(safe-area-inset-bottom))",
+                }}
+            >
                 <div className="mx-auto max-w-3xl px-2 sm:px-4 pt-1.5 sm:pt-2">
                     {connectionClosed ? (
                         <div className="rounded-2xl bg-muted px-4 py-4 text-center">
