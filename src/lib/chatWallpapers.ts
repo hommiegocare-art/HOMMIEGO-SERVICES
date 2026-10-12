@@ -11,7 +11,7 @@ export type ChatWallpaper =
 export const DEFAULT_WALLPAPER_URL = "/wallpaper.png";
 
 /** Default dim applied to the shipped image so bubbles stay readable. */
-const DEFAULT_WALLPAPER_DIM = 0.78;
+const DEFAULT_WALLPAPER_DIM = 0.20;
 
 export const SOLID_PRESETS: { id: string; color: string; label: string }[] = [
     { id: "s1", color: "#0b1220", label: "Midnight" },
