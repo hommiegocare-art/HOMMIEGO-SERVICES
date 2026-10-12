@@ -70,6 +70,7 @@ import {
 import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 import { ReceiptBadge } from "@/components/brand/ReceiptBadge";
 import { useVisualViewportHeight } from "@/hooks/useVisualViewportHeight";
+
 function haptic(pattern: number | number[] = 10) {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         (navigator as Navigator & { vibrate?: (p: number | number[]) => boolean })
@@ -123,6 +124,22 @@ function canEditOrDelete(m: ChatMessage, myId: string | undefined): boolean {
     return age < EDIT_WINDOW_MS;
 }
 
+/**
+ * Pick a font size class for a name based on its length.
+ * - Short (<=10): normal size, comfortable
+ * - Medium (<=16): slightly smaller
+ * - Long (<=24): smaller still
+ * - Very long: smallest
+ * Never truncates. If it doesn't fit, the caller should let it wrap.
+ */
+function nameTextSizeClass(name: string | null | undefined): string {
+    const len = (name ?? "").length;
+    if (len <= 10) return "text-sm sm:text-base";
+    if (len <= 16) return "text-[13px] sm:text-sm";
+    if (len <= 24) return "text-[12px] sm:text-[13px]";
+    return "text-[11px] sm:text-[12px]";
+}
+
 function Ticks({ m, mine }: { m: ChatMessage; mine: boolean }) {
     if (!mine) return null;
     if (m.pending) return <Clock className="h-3 w-3 opacity-70" />;
@@ -130,51 +147,6 @@ function Ticks({ m, mine }: { m: ChatMessage; mine: boolean }) {
     if (m.readAt) return <CheckCheck className="h-3.5 w-3.5" />;
     if (m.deliveredAt) return <CheckCheck className="h-3.5 w-3.5 opacity-70" />;
     return <Check className="h-3 w-3 opacity-70" />;
-}
-
-/**
- * ReceiptBand — visible status text under your own messages.
- * grey "Sent" → grey "Delivered" → red "Read".
- * red matches the VerifiedBadge brand red (#E41E3F).
- */
-function ReceiptBand({ m, mine }: { m: ChatMessage; mine: boolean }) {
-    if (!mine) return null;
-    if (m.pending) {
-        return (
-            <span className="text-[10px] font-bold text-muted-foreground">
-                Sending…
-            </span>
-        );
-    }
-    if (m.failed) {
-        return (
-            <span className="text-[10px] font-bold text-destructive">
-                Not sent
-            </span>
-        );
-    }
-    if (m.readAt) {
-        return (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#E41E3F]">
-                <CheckCheck className="h-3 w-3" />
-                Read
-            </span>
-        );
-    }
-    if (m.deliveredAt) {
-        return (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
-                <CheckCheck className="h-3 w-3" />
-                Delivered
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
-            <Check className="h-3 w-3" />
-            Sent
-        </span>
-    );
 }
 
 function TombstoneBubble({ mine }: { mine: boolean }) {
@@ -457,12 +429,6 @@ function Bubble({
                                 <span className="font-bold text-destructive">Not sent</span>
                             </>
                         ) : null}
-                        {mine && m.pending ? (
-                            <Clock className="h-3 w-3 opacity-70" />
-                        ) : null}
-                        {mine && m.failed ? (
-                            <span className="text-[10px] font-bold text-destructive">!</span>
-                        ) : null}
                     </div>
                 </div>
 
@@ -481,6 +447,7 @@ function Bubble({
         </div>
     );
 }
+
 function DayDivider({ label }: { label: string }) {
     return (
         <div className="my-2.5 sm:my-3 flex justify-center">
@@ -630,104 +597,6 @@ function FailedMessageSheet({
     );
 }
 
-function PrivacyInfoButton({
-    meta,
-}: {
-    meta: ReturnType<typeof useChatWindow>["meta"];
-}) {
-    const [open, setOpen] = useState(false);
-
-    useEffect(() => {
-        if (!open) return;
-        const t = window.setTimeout(() => setOpen(false), 4000);
-        return () => window.clearTimeout(t);
-    }, [open]);
-
-    const ttlSeconds = meta?.defaultTtlSeconds ?? 86400;
-    const ttlLabel = (() => {
-        const found = TTL_OPTIONS.find((o) => o.value === (ttlSeconds as TtlOption));
-        return found?.label ?? "24 hours";
-    })();
-
-    return (
-        <div className="relative">
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                aria-label="Privacy details"
-                aria-expanded={open}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl text-success transition-colors active:bg-muted"
-            >
-                <ShieldCheck className="h-5 w-5" />
-            </button>
-
-            {open &&
-                createPortal(
-                    <>
-                        <div
-                            aria-hidden
-                            onPointerDown={(e) => {
-                                const el = e.target as HTMLElement;
-                                if (el.closest("[data-privacy-tooltip]")) return;
-                                setOpen(false);
-                            }}
-                            className="fixed inset-0 z-[9998]"
-                        />
-
-                        <div
-                            data-privacy-tooltip
-                            role="tooltip"
-                            className="fixed z-[9999] right-4 left-4 top-16 sm:left-auto sm:right-4 sm:w-80 rounded-2xl border border-border bg-popover p-4 text-left shadow-lg"
-                        >
-                            <div className="flex items-center gap-2 mb-2">
-                                <ShieldCheck className="h-4 w-4 text-success" />
-                                <p className="text-sm font-bold text-foreground">
-                                    Private & disappearing
-                                </p>
-                            </div>
-
-                            <p className="text-xs leading-relaxed text-muted-foreground">
-                                Messages in this conversation disappear after{" "}
-                                <span className="font-semibold text-foreground">
-                                    {ttlLabel}
-                                </span>{" "}
-                                by default. You can pick a different timer per message
-                                in the composer before sending.
-                            </p>
-
-                            <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
-                                <li className="flex items-start gap-2">
-                                    <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
-                                    <span>Screenshots can't be detected.</span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
-                                    <span>
-                                        Deleted messages show as "This message was
-                                        deleted".
-                                    </span>
-                                </li>
-                                <li className="flex items-start gap-2">
-                                    <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
-                                    <span>Keep health details between you two.</span>
-                                </li>
-                            </ul>
-
-                            <button
-                                type="button"
-                                onClick={() => setOpen(false)}
-                                className="mt-4 w-full h-9 rounded-2xl bg-muted text-foreground text-xs font-semibold active:bg-secondary transition-colors"
-                            >
-                                Got it
-                            </button>
-                        </div>
-                    </>,
-                    document.body,
-                )}
-        </div>
-    );
-}
-
 function useOtherVerification(
     otherUserId: string | null | undefined,
     otherRole: string | null | undefined,
@@ -759,6 +628,7 @@ export default function ChatWindow() {
     const [perMessageTtl, setPerMessageTtl] = useState<TtlOption | null>(null);
     const [ttlSheetOpen, setTtlSheetOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [privacyOpen, setPrivacyOpen] = useState(false);
     const [actionTarget, setActionTarget] = useState<MessageActionTarget | null>(null);
     const [editing, setEditing] = useState<ChatMessage | null>(null);
     const [pending, setPending] = useState<PendingAttachment[]>([]);
@@ -1079,6 +949,7 @@ export default function ChatWindow() {
             setDraft("");
             stopTyping();
             await editMessage(id, text);
+            composerRef.current?.focus();
             return;
         }
 
@@ -1094,6 +965,7 @@ export default function ChatWindow() {
                 await sendAttachments(items, text, perMessageTtl, replyId);
             } finally {
                 setSendingAttachments(false);
+                composerRef.current?.focus();
             }
             return;
         }
@@ -1104,6 +976,7 @@ export default function ChatWindow() {
         clearReplyTo();
         stopTyping();
         await send(text, perMessageTtl, replyId);
+        composerRef.current?.focus();
     };
 
     const onCancelEdit = () => {
@@ -1167,11 +1040,6 @@ export default function ChatWindow() {
         <div
             className="flex flex-col overflow-hidden bg-background"
             style={{
-                // Pin the app shell to the *visible* viewport, not the
-                // layout viewport. When the keyboard opens, `vvHeight`
-                // shrinks and `vvOffsetTop` compensates for iOS scroll,
-                // so the header stays anchored and only the message
-                // list reflows.
                 height: vvHeight > 0 ? `${vvHeight}px` : "100dvh",
                 transform: vvOffsetTop > 0 ? `translateY(${vvOffsetTop}px)` : undefined,
                 position: "fixed",
@@ -1181,12 +1049,12 @@ export default function ChatWindow() {
             }}
         >
             <header className="relative z-30 shrink-0 bg-background">
-                <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-2  sm:px-2  py-2.5 sm:py-3">
+                <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-2 sm:px-2 py-2.5 sm:py-3">
                     <button
                         type="button"
                         onClick={() => navigate(-1)}
                         aria-label="Back"
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl transition-colors active:bg-muted"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors active:bg-muted"
                     >
                         <ChevronLeft className="h-5 w-5 text-foreground" />
                     </button>
@@ -1197,7 +1065,7 @@ export default function ChatWindow() {
                         <InitialsAvatar
                             url={meta?.otherAvatarUrl}
                             name={meta?.otherDisplayName ?? "?"}
-                            className="h-11 w-11"
+                            className="h-11 w-11 shrink-0"
                             textClassName="text-sm"
                         />
                     )}
@@ -1206,10 +1074,8 @@ export default function ChatWindow() {
                         <div className="flex items-center gap-1.5 min-w-0">
                             <p
                                 className={cn(
-                                    "truncate font-bold text-foreground",
-                                    (meta?.otherDisplayName?.length ?? 0) > 14
-                                        ? "text-[13px] sm:text-sm"
-                                        : "text-sm",
+                                    "font-bold text-foreground leading-tight",
+                                    nameTextSizeClass(meta?.otherDisplayName),
                                 )}
                             >
                                 {meta?.otherDisplayName ?? "Loading…"}
@@ -1237,42 +1103,77 @@ export default function ChatWindow() {
                     </div>
                     <button
                         type="button"
-                        onClick={() => setWallpaperSheetOpen(true)}
-                        aria-label="Chat wallpaper"
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors active:bg-muted"
-                    >
-                        <Palette className="h-5 w-5" />
-                    </button>
-                    <PrivacyInfoButton meta={meta} />
-                    <button
-                        type="button"
                         onClick={() => setMenuOpen((v) => !v)}
                         aria-label="More"
-                        className="flex h-11 w-11 items-center justify-center rounded-2xl transition-colors active:bg-muted"
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-colors active:bg-muted"
                     >
                         <MoreVertical className="h-5 w-5 text-foreground" />
                     </button>
                 </div>
 
                 {menuOpen && (
-                    <div className="absolute right-2 sm:right-3 top-14 sm:top-16 z-40 w-48 rounded-2xl bg-popover p-1 animate-fade-in">
-                        <button
-                            type="button"
-                            onClick={onReport}
-                            className="flex h-11 w-full items-center gap-2 rounded-2xl px-3 text-left text-sm text-foreground transition-colors active:bg-muted"
-                        >
-                            <ShieldAlert className="h-4 w-4" />
-                            Report
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onBlock}
-                            className="flex h-11 w-full items-center gap-2 rounded-2xl px-3 text-left text-sm text-destructive transition-colors active:bg-muted"
-                        >
-                            <ShieldAlert className="h-4 w-4" />
-                            Block
-                        </button>
-                    </div>
+                    <>
+                        {/* Click-away backdrop */}
+                        <div
+                            aria-hidden
+                            className="fixed inset-0 z-30"
+                            onClick={() => setMenuOpen(false)}
+                        />
+                        <div className="absolute right-2 sm:right-3 top-14 sm:top-16 z-40 w-64 max-w-[calc(100vw-16px)] rounded-2xl bg-popover p-1 animate-fade-in border border-border shadow-lg">
+                            {/* Name + role header, wraps instead of truncating */}
+                            <div className="px-3 py-2">
+                                <p className="text-sm font-bold text-foreground leading-tight break-words">
+                                    {meta?.otherDisplayName ?? "Loading…"}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground capitalize break-words">
+                                    {meta?.otherRole ?? ""}
+                                </p>
+                            </div>
+                            <div className="my-1 h-px bg-border" />
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    setWallpaperSheetOpen(true);
+                                }}
+                                className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm text-foreground transition-colors active:bg-muted"
+                            >
+                                <Palette className="h-4 w-4 text-muted-foreground" />
+                                Theme
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    setPrivacyOpen(true);
+                                }}
+                                className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm text-foreground transition-colors active:bg-muted"
+                            >
+                                <ShieldCheck className="h-4 w-4 text-success" />
+                                Privacy
+                            </button>
+
+                            <div className="my-1 h-px bg-border" />
+
+                            <button
+                                type="button"
+                                onClick={onReport}
+                                className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm text-foreground transition-colors active:bg-muted"
+                            >
+                                <ShieldAlert className="h-4 w-4 text-muted-foreground" />
+                                Report
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onBlock}
+                                className="flex h-11 w-full items-center gap-3 rounded-2xl px-3 text-left text-sm text-destructive transition-colors active:bg-muted"
+                            >
+                                <ShieldAlert className="h-4 w-4" />
+                                Block
+                            </button>
+                        </div>
+                    </>
                 )}
             </header>
 
@@ -1358,34 +1259,81 @@ export default function ChatWindow() {
                             {grouped.map(({ day, items }) => (
                                 <div key={day} className="space-y-2">
                                     <DayDivider label={day} />
-                                    {items.map((m) => (
-                                        <Bubble
-                                            key={m.id}
-                                            m={m}
-                                            mine={m.senderId === user?.id}
-                                            otherName={meta?.otherDisplayName ?? "Them"}
-                                            onLongPress={openActions}
-                                            onReply={(mm) => {
-                                                if (mm.tombstoned) return;
-                                                setReplyTo(mm);
-                                                composerRef.current?.focus();
-                                            }}
-                                            onOpenAttachment={(messageId, index) =>
-                                                setViewerState({ messageId, index })
-                                            }
-                                        />
-                                    ))}
+                                    {items.map((m, i) => {
+                                        const mine = m.senderId === user?.id;
+                                        const prev = items[i - 1];
+                                        const next = items[i + 1];
+                                        const prevSame =
+                                            prev &&
+                                            prev.senderId === m.senderId &&
+                                            !prev.tombstoned &&
+                                            !m.tombstoned;
+                                        const nextSame =
+                                            next &&
+                                            next.senderId === m.senderId &&
+                                            !next.tombstoned &&
+                                            !m.tombstoned;
+                                        const isFirstInGroup = !prevSame;
+                                        const isLastInGroup = !nextSame;
+
+                                        return (
+                                            <div
+                                                key={m.id}
+                                                className={cn(
+                                                    "flex w-full gap-2",
+                                                    mine ? "justify-end" : "justify-start",
+                                                )}
+                                            >
+                                                {/* Incoming: avatar column */}
+                                                {!mine ? (
+                                                    <div className="w-8 shrink-0 flex items-end">
+                                                        {isLastInGroup ? (
+                                                            <InitialsAvatar
+                                                                url={meta?.otherAvatarUrl}
+                                                                name={meta?.otherDisplayName ?? "?"}
+                                                                className="h-7 w-7"
+                                                                textClassName="text-[10px]"
+                                                            />
+                                                        ) : null}
+                                                    </div>
+                                                ) : null}
+
+                                                <div className="min-w-0 flex-1">
+                                                    {/* Incoming: sender name above first bubble */}
+                                                    {!mine && isFirstInGroup ? (
+                                                        <p className="mb-0.5 pl-1 text-[11px] font-bold text-foreground/80">
+                                                            {meta?.otherDisplayName ?? "Them"}
+                                                        </p>
+                                                    ) : null}
+
+                                                    <Bubble
+                                                        m={m}
+                                                        mine={mine}
+                                                        otherName={meta?.otherDisplayName ?? "Them"}
+                                                        onLongPress={openActions}
+                                                        onReply={(mm) => {
+                                                            if (mm.tombstoned) return;
+                                                            setReplyTo(mm);
+                                                            composerRef.current?.focus();
+                                                        }}
+                                                        onOpenAttachment={(messageId, index) =>
+                                                            setViewerState({ messageId, index })
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
             </div>
+
             <div
                 className="relative z-30 shrink-0 bg-background"
                 style={{
-                    // Safe-area padding only when the keyboard is closed.
-                    // When it's open we don't need to clear the home indicator.
                     paddingBottom:
                         vvHeight > 0 &&
                             typeof window !== "undefined" &&
@@ -1486,6 +1434,7 @@ export default function ChatWindow() {
                                 <div className="flex flex-1 items-end gap-1 rounded-2xl bg-card px-1.5 py-1.5">
                                     <button
                                         type="button"
+                                        onPointerDown={(e) => e.preventDefault()}
                                         onClick={() => setAttachSheetOpen(true)}
                                         disabled={!!editing || sendingAttachments}
                                         aria-label="Attach"
@@ -1513,11 +1462,12 @@ export default function ChatWindow() {
                                         }}
                                         rows={1}
                                         placeholder={editing ? "Edit message…" : "Message"}
-                                        className="max-h-32 min-h-[36px] w-full flex-1 resize-none bg-transparent px-2  py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                                        className="max-h-32 min-h-[36px] w-full flex-1 resize-none bg-transparent px-2 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                                     />
 
                                     <button
                                         type="button"
+                                        onPointerDown={(e) => e.preventDefault()}
                                         onClick={() => setTtlSheetOpen(true)}
                                         disabled={!!editing}
                                         aria-label="Message timer"
@@ -1535,6 +1485,8 @@ export default function ChatWindow() {
 
                                 <button
                                     type="button"
+                                    onMouseDown={(e) => e.preventDefault()}
+                                    onPointerDown={(e) => e.preventDefault()}
                                     onClick={() => void onSend()}
                                     disabled={!canSend}
                                     aria-label="Send"
@@ -1574,6 +1526,67 @@ export default function ChatWindow() {
                     onPick={applyWallpaper}
                 />
             ) : null}
+
+            {/* Privacy popover — moved out of the header */}
+            {privacyOpen ? (
+                <div
+                    className="fixed inset-0 z-[60] flex items-start justify-center bg-foreground/40 p-4 pt-20 animate-fade-in"
+                    onClick={() => setPrivacyOpen(false)}
+                >
+                    <div
+                        className="w-full max-w-sm rounded-2xl border border-border bg-popover p-4 shadow-lg"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="mb-3 flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-success" />
+                            <p className="text-sm font-bold text-foreground">
+                                Private & disappearing
+                            </p>
+                        </div>
+
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                            Messages in this conversation disappear after{" "}
+                            <span className="font-semibold text-foreground">
+                                {(() => {
+                                    const ttlSeconds = meta?.defaultTtlSeconds ?? 86400;
+                                    const found = TTL_OPTIONS.find(
+                                        (o) => o.value === (ttlSeconds as TtlOption),
+                                    );
+                                    return found?.label ?? "24 hours";
+                                })()}
+                            </span>{" "}
+                            by default. You can pick a different timer per message
+                            in the composer before sending.
+                        </p>
+
+                        <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
+                            <li className="flex items-start gap-2">
+                                <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
+                                <span>Screenshots can't be detected.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
+                                <span>
+                                    Deleted messages show as "This message was deleted".
+                                </span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
+                                <span>Keep health details between you two.</span>
+                            </li>
+                        </ul>
+
+                        <button
+                            type="button"
+                            onClick={() => setPrivacyOpen(false)}
+                            className="mt-4 h-9 w-full rounded-2xl bg-muted text-xs font-semibold text-foreground active:bg-secondary transition-colors"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            ) : null}
+
             <AttachmentViewer
                 attachments={viewerAttachments}
                 index={viewerIndex}
