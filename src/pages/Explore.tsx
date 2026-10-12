@@ -1,6 +1,6 @@
 // src/pages/Explore.tsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -16,6 +16,8 @@ import {
   X,
   ArrowRight,
   Loader2,
+  Stethoscope,
+  CalendarPlus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +30,71 @@ import type {
 import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
 
 const PAGE_SIZE = 24;
+
+/* ---------- referral types + helpers ---------- */
+
+type ReferralServiceType =
+  | "home_nursing" | "wound_care" | "medication_admin" | "physiotherapy"
+  | "elderly_care" | "postnatal" | "transport" | "lab_delivery" | "other";
+
+type ReferralContext = {
+  id: string;
+  services_needed: ReferralServiceType[];
+  urgency: string;
+  hospital: { id: string; name: string; county: string | null } | null;
+};
+
+const SERVICE_MATCH_TOKENS: Record<ReferralServiceType, string[]> = {
+  home_nursing: ["nursing", "home care", "home nursing", "elderly", "geriatric"],
+  wound_care: ["wound", "wound care", "dressing"],
+  medication_admin: ["medication", "meds", "injection", "iv"],
+  physiotherapy: ["physio", "physiotherapy", "rehab", "mobility"],
+  elderly_care: ["elderly", "geriatric", "senior", "home care"],
+  postnatal: ["postnatal", "postpartum", "maternal", "newborn", "lactation"],
+  transport: ["transport", "ambulance", "transfer"],
+  lab_delivery: ["lab", "sample", "phlebotomy", "courier"],
+  other: [],
+};
+
+function caregiverMatchesServices(
+  row: CaregiverDiscoveryRow,
+  services: ReferralServiceType[]
+): number {
+  if (services.length === 0) return 0;
+  const specialties = (row.specialties ?? []).map((s) => s.toLowerCase());
+  if (specialties.length === 0) return 0;
+  const haystack = specialties.join(" | ");
+  let hits = 0;
+  for (const svc of services) {
+    const tokens = SERVICE_MATCH_TOKENS[svc] ?? [];
+    if (tokens.some((t) => haystack.includes(t))) hits += 1;
+  }
+  return hits;
+}
+
+function caregiverInCounty(
+  row: CaregiverDiscoveryRow,
+  county: string | null
+): boolean {
+  if (!county) return true;
+  const target = county.toLowerCase();
+  return (row.county ?? "").toLowerCase() === target;
+}
+
+async function fetchReferralContext(
+  referralId: string
+): Promise<ReferralContext | null> {
+  const { data, error } = await supabase
+    .from("referrals")
+    .select(
+      "id, services_needed, urgency, hospital:hospitals(id, name, county)"
+    )
+    .eq("id", referralId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as ReferralContext) ?? null;
+}
 
 /* ---------- fetch: caregivers (client view) ---------- */
 
@@ -170,6 +237,8 @@ export default function Explore() {
   const { user } = useSession();
   const navigate = useNavigate();
   const isCaregiver = user?.role === "caregiver";
+  const [searchParams] = useSearchParams();
+  const referralId = searchParams.get("referral");
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -179,6 +248,43 @@ export default function Explore() {
     name: string;
     avatarUrl: string | null;
   } | null>(null);
+
+  // Banner dismissal state — session-scoped, per referral id.
+  const bannerKey = referralId ? `explore-banner-dismissed:${referralId}` : "";
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  useEffect(() => {
+    if (!bannerKey) {
+      setBannerDismissed(false);
+      return;
+    }
+    try {
+      setBannerDismissed(sessionStorage.getItem(bannerKey) === "1");
+    } catch {
+      setBannerDismissed(false);
+    }
+  }, [bannerKey]);
+
+  const dismissBanner = () => {
+    setBannerDismissed(true);
+    if (bannerKey) {
+      try {
+        sessionStorage.setItem(bannerKey, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  // Referral context — only fetched when ?referral= is present.
+  const referralQuery = useQuery({
+    queryKey: ["explore", "referral", referralId],
+    enabled: !!referralId && !!user,
+    staleTime: 60_000,
+    queryFn: () => fetchReferralContext(referralId!),
+  });
+
+  const referral = referralQuery.data ?? null;
+  const referralActive = !!referral && !!referralId;
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 300);
@@ -238,7 +344,8 @@ export default function Explore() {
   const connByTarget = useMemo(() => {
     const map = new Map<string, { id: string; status: string }>();
     if (!user) return map;
-    const rank = (s: string) => (s === "accepted" ? 3 : s === "pending" ? 2 : 1);
+    const rank = (s: string) =>
+      s === "accepted" ? 3 : s === "pending" ? 2 : 1;
     for (const c of myConnections) {
       const otherId = c.client_id === user.id ? c.caregiver_id : c.client_id;
       const existing = map.get(otherId);
@@ -250,7 +357,8 @@ export default function Explore() {
   }, [myConnections, user]);
 
   const acceptedConnectionIds = useMemo(
-    () => myConnections.filter((c) => c.status === "accepted").map((c) => c.id),
+    () =>
+      myConnections.filter((c) => c.status === "accepted").map((c) => c.id),
     [myConnections]
   );
 
@@ -261,19 +369,66 @@ export default function Explore() {
     queryFn: () => fetchLatestMessages(acceptedConnectionIds),
   });
 
-  const { connectedRows, discoverRows } = useMemo(() => {
+  // ---------- referral-aware partitioning (caregiver view only) ----------
+
+  const { connectedRows, recommendedRows, discoverRows } = useMemo(() => {
     const connected: (CaregiverDiscoveryRow | ClientDiscoveryRow)[] = [];
+    const recommended: CaregiverDiscoveryRow[] = [];
     const discover: (CaregiverDiscoveryRow | ClientDiscoveryRow)[] = [];
+
+    // When a referral is active AND the viewer is a client, we run the
+    // recommendation logic. Otherwise we keep the exact current grouping.
+    const runReferralSort =
+      referralActive && !isCaregiver && !!referral;
+
+    const county = referral?.hospital?.county ?? null;
+    const services = referral?.services_needed ?? [];
+
+    const scored: { row: CaregiverDiscoveryRow; score: number; inCounty: boolean }[] = [];
+
     for (const r of rows) {
       const id = isCaregiver
         ? (r as ClientDiscoveryRow).client_id
         : (r as CaregiverDiscoveryRow).caregiver_id;
       const conn = connByTarget.get(id);
-      if (conn?.status === "accepted") connected.push(r);
-      else discover.push(r);
+      const isConnected = conn?.status === "accepted";
+
+      if (isConnected) {
+        connected.push(r);
+        continue;
+      }
+
+      if (runReferralSort) {
+        const cRow = r as CaregiverDiscoveryRow;
+        const score = caregiverMatchesServices(cRow, services);
+        const inCounty = caregiverInCounty(cRow, county);
+        scored.push({ row: cRow, score, inCounty });
+      } else {
+        discover.push(r);
+      }
     }
-    return { connectedRows: connected, discoverRows: discover };
-  }, [rows, connByTarget, isCaregiver]);
+
+    if (runReferralSort) {
+      // Sort: county match first, then service-hit count desc, then
+      // natural order (caregiver_id asc, as returned by the view).
+      scored.sort((a, b) => {
+        if (a.inCounty !== b.inCounty) return a.inCounty ? -1 : 1;
+        if (a.score !== b.score) return b.score - a.score;
+        return a.row.caregiver_id.localeCompare(b.row.caregiver_id);
+      });
+
+      for (const s of scored) {
+        if (s.score > 0 && s.inCounty) recommended.push(s.row);
+        else discover.push(s.row);
+      }
+    }
+
+    return {
+      connectedRows: connected,
+      recommendedRows: recommended,
+      discoverRows: discover,
+    };
+  }, [rows, connByTarget, isCaregiver, referralActive, referral]);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -324,6 +479,10 @@ export default function Explore() {
     }
   };
 
+  const onBookWithReferral = (caregiverId: string) => {
+    navigate(`/bookings/new?caregiver=${caregiverId}&referral=${referralId}`);
+  };
+
   const renderCard = (r: CaregiverDiscoveryRow | ClientDiscoveryRow) => {
     if (isCaregiver) {
       const c = r as ClientDiscoveryRow;
@@ -347,6 +506,8 @@ export default function Explore() {
         endorsementCount={endorsementTotals.get(c.caregiver_id) ?? 0}
         endorsedMeCount={endorsedMe.get(c.caregiver_id) ?? 0}
         onConsult={onConsult}
+        referralId={referralActive ? referralId! : null}
+        onBook={onBookWithReferral}
       />
     );
   };
@@ -356,6 +517,12 @@ export default function Explore() {
   return (
     <div className="max-w-6xl mx-auto px-2  sm:px-2  pb-6 sm:pb-8">
       <div className="sticky top-14 z-20 bg-background pt-2 pb-2 px-2 -mx-2 sm:pt-3 sm:pb-3 sm:px-0 sm:mx-0">
+        {referralActive && !bannerDismissed && referral && (
+          <ReferralBanner
+            referral={referral}
+            onDismiss={dismissBanner}
+          />
+        )}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -374,10 +541,7 @@ export default function Explore() {
       {query.isLoading ? (
         <GridSkeleton />
       ) : !hasAnyRows ? (
-        <EmptyState
-          isCaregiver={isCaregiver}
-          hasFilters={!!search}
-        />
+        <EmptyState isCaregiver={isCaregiver} hasFilters={!!search} />
       ) : (
         <>
           {connectedRows.length > 0 && (
@@ -391,10 +555,23 @@ export default function Explore() {
             </section>
           )}
 
+          {recommendedRows.length > 0 && (
+            <section className="mb-4 sm:mb-5">
+              <SectionLabel>Recommended for this referral</SectionLabel>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 animate-fade-in">
+                {recommendedRows.map(renderCard)}
+              </div>
+            </section>
+          )}
+
           {discoverRows.length > 0 && (
             <section>
-              {connectedRows.length > 0 && (
-                <SectionLabel>Discover more</SectionLabel>
+              {(connectedRows.length > 0 || recommendedRows.length > 0) && (
+                <SectionLabel>
+                  {recommendedRows.length > 0
+                    ? "Other caregivers"
+                    : "Discover more"}
+                </SectionLabel>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 animate-fade-in">
                 {discoverRows.map(renderCard)}
@@ -433,6 +610,43 @@ export default function Explore() {
   );
 }
 
+/* ---------- referral banner ---------- */
+
+function ReferralBanner({
+  referral,
+  onDismiss,
+}: {
+  referral: ReferralContext;
+  onDismiss: () => void;
+}) {
+  const serviceCount = referral.services_needed.length;
+  const county = referral.hospital?.county;
+  return (
+    <div className="mb-2 rounded-2xl bg-primary/10 p-3 flex items-start gap-2 animate-fade-in">
+      <Stethoscope className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold text-primary">
+          Referred by {referral.hospital?.name ?? "your hospital"}
+        </p>
+        <p className="text-[11px] text-primary/80 mt-0.5">
+          {serviceCount > 0
+            ? `${serviceCount} recommended ${serviceCount === 1 ? "service" : "services"
+            }${county ? ` in ${county}` : ""}.`
+            : `Browse caregivers${county ? ` in ${county}` : ""}.`}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="h-7 w-7 rounded-full inline-flex items-center justify-center active:bg-primary/20 transition-colors shrink-0"
+      >
+        <X className="w-3.5 h-3.5 text-primary" />
+      </button>
+    </div>
+  );
+}
+
 /* ---------- pieces ---------- */
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -442,8 +656,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     </p>
   );
 }
-
-
 
 /* ---------- meta strip: views + endorsements + endorsed-you ---------- */
 
@@ -497,6 +709,8 @@ function CardActions({
   conn,
   onConsult,
   connected,
+  referralId,
+  onBook,
 }: {
   profileHref: string;
   targetId: string;
@@ -505,22 +719,18 @@ function CardActions({
   conn: { id: string; status: string } | null;
   onConsult: (id: string, name: string, avatar: string | null) => void;
   connected?: boolean;
+  referralId?: string | null;
+  onBook?: (caregiverId: string) => void;
 }) {
   const { user } = useSession();
   const isCaregiver = user?.role === "caregiver";
+  const referralMode = !!referralId && !isCaregiver && !!onBook;
 
   const status = conn?.status;
   const accepted = status === "accepted";
   const pending = status === "pending";
-
-  // Pending → disabled
   const disabled = pending;
 
-  // Label logic:
-  //   no connection → "Connect"  (go to profile to send request)
-  //   accepted      → caregiver: "Attend" · client: "Consult"  (open chat)
-  //   pending       → "Pending"  (disabled)
-  //   ended/declined/blocked → "Connect" (go to profile to reconnect)
   const label = pending
     ? "Pending"
     : accepted
@@ -545,15 +755,27 @@ function CardActions({
         <Eye className="w-4 h-4" />
         View
       </Link>
-      <button
-        type="button"
-        onClick={() => onConsult(targetId, targetName, avatarUrl)}
-        disabled={disabled}
-        className="h-10 px-2  rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <Icon className="w-4 h-4" />
-        {label}
-      </button>
+
+      {referralMode ? (
+        <button
+          type="button"
+          onClick={() => onBook!(targetId)}
+          className="h-10 px-2  rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity"
+        >
+          <CalendarPlus className="w-4 h-4" />
+          Book
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onConsult(targetId, targetName, avatarUrl)}
+          disabled={disabled}
+          className="h-10 px-2  rounded-xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Icon className="w-4 h-4" />
+          {label}
+        </button>
+      )}
     </div>
   );
 }
@@ -566,12 +788,16 @@ function CaregiverCard({
   endorsementCount,
   endorsedMeCount,
   onConsult,
+  referralId,
+  onBook,
 }: {
   c: CaregiverDiscoveryRow;
   conn: { id: string; status: string } | null;
   endorsementCount: number;
   endorsedMeCount: number;
   onConsult: (id: string, name: string, avatar: string | null) => void;
+  referralId?: string | null;
+  onBook?: (caregiverId: string) => void;
 }) {
   const location = [c.city, c.county].filter(Boolean).join(", ") || "Kenya";
   const rating =
@@ -583,7 +809,6 @@ function CaregiverCard({
   return (
     <div className="rounded-2xl bg-card p-3 sm:p-4 transition-colors">
       <div className="flex items-start gap-3">
-
         <InitialsAvatar
           url={c.avatar_url}
           name={c.display_name ?? "Caregiver"}
@@ -639,6 +864,8 @@ function CaregiverCard({
         conn={conn}
         onConsult={onConsult}
         connected={connected}
+        referralId={referralId ?? null}
+        onBook={onBook}
       />
     </div>
   );

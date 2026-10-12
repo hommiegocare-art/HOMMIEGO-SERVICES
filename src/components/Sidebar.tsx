@@ -1,5 +1,6 @@
 // src/components/Sidebar.tsx
 import { NavLink } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
     Home,
     HeartPulse,
@@ -15,16 +16,51 @@ import {
     Settings,
     ShieldCheck,
     GraduationCap,
+    Stethoscope,
+    Building2,
+    MessageSquare,
 } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
 import { useAdmin } from "@/hooks/useAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/brand/Logo";
+
+async function hasAnyHospitalMembership(userId: string): Promise<boolean> {
+    const { count, error } = await supabase
+        .from("hospital_members")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_active", true);
+    if (error) return false;
+    return (count ?? 0) > 0;
+}
 
 export function Sidebar() {
     const { user } = useSession();
     const { isVerifier } = useAdmin();
     const isCaregiver = user?.role === "caregiver";
 
+    const membershipQuery = useQuery({
+        queryKey: ["hospital_members", "has_any", user?.id],
+        enabled: !!user,
+        staleTime: 5 * 60_000,
+        queryFn: () => hasAnyHospitalMembership(user!.id),
+    });
+    const threadsQuery = useQuery({
+        queryKey: ["care_team_threads", "has_any", user?.id],
+        enabled: !!user,
+        staleTime: 60_000,
+        queryFn: async () => {
+            const { count, error } = await supabase
+                .from("care_team_threads")
+                .select("id", { count: "exact", head: true });
+            if (error) return false;
+            return (count ?? 0) > 0;
+        },
+    });
+    const isStaff = membershipQuery.data === true;
+    const hasThreads = threadsQuery.data === true;
+    const showCareTeams = isStaff || hasThreads;
     const ITEMS = [
         { to: "/dashboard", label: "Home", icon: Home },
 
@@ -45,6 +81,19 @@ export function Sidebar() {
                 { to: "/certificates", label: "Certificates", icon: GraduationCap },
             ]
             : [{ to: "/bookings", label: "Bookings", icon: CalendarCheck }]),
+
+        // Hospital referral layer — staff only (hospital members).
+        // A plain patient or a caregiver never sees these.
+        ...(isStaff
+            ? [
+                { to: "/referrals", label: "Referrals", icon: Stethoscope },
+                { to: "/hospital/join", label: "Hospitals", icon: Building2 },
+            ]
+            : []),
+
+        ...(showCareTeams
+            ? [{ to: "/care-teams", label: "Care teams", icon: MessageSquare }]
+            : []),
 
         { to: "/notifications", label: "Notifications", icon: Bell },
         { to: user ? `/profile/${user.id}` : "/auth", label: "Profile", icon: User },

@@ -1,24 +1,37 @@
 // src/components/ChatFab.tsx
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
 import { useChatList, totalUnread } from "@/hooks/useChatList";
 import { cn } from "@/lib/utils";
 
+// Routes where the FAB is allowed to appear.
+// Everywhere else → hidden.
+const SHOW_ON = ["/dashboard"];
+
 export function ChatFab() {
     const { pathname } = useLocation();
     const { data } = useChatList();
     const unread = totalUnread(data);
+    const [mounted, setMounted] = useState(false);
 
-    // Hide on the chat list itself and on the chat window.
-    if (pathname.startsWith("/chats")) return null;
+    useEffect(() => setMounted(true), []);
 
-    return (
+    const allowed = SHOW_ON.some(
+        (p) => pathname === p || pathname.startsWith(p + "/")
+    );
+
+    if (!allowed) return null;
+    if (!mounted) return null;
+
+    return createPortal(
         <Link
             to="/chats"
             aria-label={unread > 0 ? `Chats, ${unread} unread` : "Chats"}
             className={cn(
-                "fixed right-5 z-40",
-                "bottom-20 lg:bottom-6", // clears the mobile bottom nav
+                "fixed right-4 z-40",
+                "bottom-20 lg:bottom-6",
                 "flex h-14 w-14 items-center justify-center rounded-full",
                 "bg-primary text-primary-foreground",
                 "transition-colors active:opacity-90",
@@ -31,6 +44,7 @@ export function ChatFab() {
                     {unread > 99 ? "99+" : unread}
                 </span>
             )}
-        </Link>
+        </Link>,
+        document.body
     );
 }

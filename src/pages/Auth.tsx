@@ -18,11 +18,21 @@ function normalizePhone(raw: string): string | null {
   return digits;
 }
 
+// Only allow same-origin paths as `next` targets.
+// Blocks javascript:, //evil.com, https://evil.com, etc.
+function safeNext(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/")) return null;
+  if (raw.startsWith("//")) return null;
+  return raw;
+}
+
 export default function Auth() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const isSignUp = params.get("mode") === "signup";
   const urlRole = params.get("role") as Role | null;
+  const next = safeNext(params.get("next"));
 
   const [role, setRole] = useState<Role>(urlRole ?? "client");
   const [fullName, setFullName] = useState("");
@@ -71,14 +81,14 @@ export default function Auth() {
           },
         });
         if (signUpErr) throw signUpErr;
-        navigate("/dashboard", { replace: true });
+        navigate(next ?? "/dashboard", { replace: true });
       } else {
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (signInErr) throw signInErr;
-        navigate("/dashboard", { replace: true });
+        navigate(next ?? "/dashboard", { replace: true });
       }
     } catch (err: any) {
       setError(err?.message ?? "Something went wrong. Try again.");
@@ -87,6 +97,15 @@ export default function Auth() {
     }
   }
 
+  // Preserve `next` when flipping between sign in / sign up.
+  const toggleHref = (() => {
+    const base = isSignUp ? "/auth" : `/auth?mode=signup&role=${role}`;
+    if (!next) return base;
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}next=${encodeURIComponent(next)}`;
+  })();
+  const isReferralSignup =
+    isSignUp && !!next && next.startsWith("/referral/");
   return (
     <div className="min-h-[100dvh] bg-background">
       <div className="max-w-md mx-auto p-5 pb-10">
@@ -105,8 +124,7 @@ export default function Auth() {
             ? "Choose how you'll use HommieCare."
             : "Sign in to continue."}
         </p>
-
-        {isSignUp && (
+        {isSignUp && !isReferralSignup && (
           <div className="grid grid-cols-2 gap-2 mb-6">
             {(["client", "caregiver"] as Role[]).map((r) => {
               const active = role === r;
@@ -117,8 +135,8 @@ export default function Auth() {
                   type="button"
                   onClick={() => setRole(r)}
                   className={`p-4 rounded-2xl text-left transition-colors ${active
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground"
                     }`}
                 >
                   <Icon
@@ -130,8 +148,8 @@ export default function Auth() {
                   </p>
                   <p
                     className={`text-xs mt-0.5 ${active
-                        ? "text-primary-foreground/80"
-                        : "text-muted-foreground"
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground"
                       }`}
                   >
                     {r === "client" ? "Book home visits" : "Nurse, therapist, etc."}
@@ -236,11 +254,7 @@ export default function Auth() {
         <div className="mt-6 text-center">
           <button
             type="button"
-            onClick={() =>
-              navigate(
-                isSignUp ? "/auth" : `/auth?mode=signup&role=${role}`
-              )
-            }
+            onClick={() => navigate(toggleHref)}
             className="text-sm text-primary font-semibold h-11"
           >
             {isSignUp

@@ -15,7 +15,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, Lock, ShieldCheck } from "lucide-react";
+import {
+    ChevronLeft,
+    Lock,
+    ShieldCheck,
+    Stethoscope,
+    AlertCircle,
+} from "lucide-react";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 
 type Service = {
@@ -38,12 +44,56 @@ type ClientProfile = {
     address: string | null;
 };
 
+type ReferralServiceType =
+    | "home_nursing" | "wound_care" | "medication_admin" | "physiotherapy"
+    | "elderly_care" | "postnatal" | "transport" | "lab_delivery" | "other";
+
+type ReferralStatus =
+    | "pending" | "accepted" | "declined" | "expired" | "converted";
+
+type ReferralContext = {
+    id: string;
+    status: ReferralStatus;
+    services_needed: ReferralServiceType[];
+    urgency: string;
+    expires_at: string;
+    hospital: { id: string; name: string; county: string | null } | null;
+};
+
+const SERVICE_LABEL: Record<ReferralServiceType, string> = {
+    home_nursing: "Home nursing",
+    wound_care: "Wound care",
+    medication_admin: "Medication",
+    physiotherapy: "Physiotherapy",
+    elderly_care: "Elderly care",
+    postnatal: "Postnatal",
+    transport: "Transport",
+    lab_delivery: "Lab",
+    other: "Other",
+};
+
+async function fetchReferralContext(
+    referralId: string
+): Promise<ReferralContext | null> {
+    const { data, error } = await supabase
+        .from("referrals")
+        .select(
+            "id, status, services_needed, urgency, expires_at, hospital:hospitals(id, name, county)"
+        )
+        .eq("id", referralId)
+        .is("deleted_at", null)
+        .maybeSingle();
+    if (error) throw error;
+    return (data as unknown as ReferralContext) ?? null;
+}
+
 export default function BookingNew() {
     const [params] = useSearchParams();
     const navigate = useNavigate();
     const { user, loading: sessionLoading } = useSession();
 
     const caregiverId = params.get("caregiver");
+    const referralId = params.get("referral");
 
     const [state, setState] = useState<
         | { kind: "loading" }
@@ -56,6 +106,10 @@ export default function BookingNew() {
     const [services, setServices] = useState<Service[] | null>(null);
     const [client, setClient] = useState<ClientProfile | null>(null);
 
+    // Referral context (loaded only when ?referral= is present)
+    const [referral, setReferral] = useState<ReferralContext | null>(null);
+    const [referralLoaded, setReferralLoaded] = useState(false);
+
     // form
     const [serviceId, setServiceId] = useState<string>("");
     const [scheduledAt, setScheduledAt] = useState("");
@@ -67,7 +121,45 @@ export default function BookingNew() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load caregiver + connection gate
+    // ---- Load referral context (independent of caregiver load) -----------
+    useEffect(() => {
+        if (!user || !referralId) {
+            setReferralLoaded(true);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await fetchReferralContext(referralId);
+                if (!cancelled) setReferral(data);
+            } catch {
+                if (!cancelled) setReferral(null);
+            } finally {
+                if (!cancelled) setReferralLoaded(true);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [user, referralId]);
+
+    // Referral is usable only if it's still pending and not expired.
+    const referralUsable = useMemo(() => {
+        if (!referral) return false;
+        if (referral.status !== "pending" && referral.status !== "accepted") {
+            return false;
+        }
+        // Once the patient has accepted, expiry no longer blocks booking.
+        // Expiry only matters for unaccepted referrals.
+        if (referral.status === "pending") {
+            if (new Date(referral.expires_at).getTime() < Date.now()) return false;
+        }
+        return true;
+    }, [referral]);
+
+    const effectiveReferralId = referralUsable ? referral!.id : null;
+
+    // ---- Load caregiver + connection gate (unchanged from current) -------
     useEffect(() => {
         if (!user || !caregiverId) return;
         let cancelled = false;
@@ -219,6 +311,8 @@ export default function BookingNew() {
                 total_amount: Math.round(totalAmount),
                 status: "pending_payment",
                 payment_status: "unpaid",
+                // One new field — null when no referral is present.
+                referral_id: effectiveReferralId,
             })
             .select("id")
             .single();
@@ -329,6 +423,14 @@ export default function BookingNew() {
                     </h1>
                 </div>
             </header>
+
+            {/* ---- Referral banner (only when ?referral= is present) ---- */}
+            {referralId && referralLoaded && referral && referralUsable && (
+                <ReferralBanner referral={referral} />
+            )}
+            {referralId && referralLoaded && (!referral || !referralUsable) && (
+                <StaleReferralBanner />
+            )}
 
             {noServices ? (
                 <Card className="rounded-2xl border-dashed">
@@ -465,6 +567,43 @@ export default function BookingNew() {
                 </>
             )}
         </main>
+    );
+}
+
+function ReferralBanner({ referral }: { referral: ReferralContext }) {
+    const services = referral.services_needed.slice(0, 3);
+    const extra = referral.services_needed.length - services.length;
+    return (
+        <div className="mb-4 rounded-2xl bg-primary/10 p-3 flex items-start gap-2 animate-fade-in">
+            <Stethoscope className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-primary">
+                    Referred by {referral.hospital?.name ?? "your hospital"}
+                </p>
+                <p className="text-[11px] text-primary/80 mt-0.5">
+                    {services.map((s) => SERVICE_LABEL[s]).join(" · ")}
+                    {extra > 0 ? ` · +${extra} more` : ""}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+function StaleReferralBanner() {
+    return (
+        <div className="mb-4 rounded-2xl bg-muted p-3 flex items-start gap-2 animate-fade-in">
+            <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-foreground">
+                    Referral no longer active
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                    This referral has been declined, expired, or is no longer active.
+                    You can still book normally — the booking just won't be linked
+                    to the referral.
+                </p>
+            </div>
+        </div>
     );
 }
 

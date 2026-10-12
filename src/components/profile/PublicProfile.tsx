@@ -33,7 +33,7 @@ import type {
 import { VerifiedBadge } from "../brand/VerifiedBadge";
 import { InitialsAvatar } from "../brand/InitialsAvatar";
 import { SafeImage } from "../brand/SafeImage";
-
+import { useOverlayLock } from "@/lib/overlayStore";
 type Media = { id: string; url: string; kind: string };
 
 type EndorsementChip = {
@@ -772,6 +772,7 @@ function ServiceDetail({
     isFreeConsultation: boolean;
     onClose: () => void;
 }) {
+    useOverlayLock();
     const priceSuffix =
         service.pricing_type === "hourly"
             ? "hour"
@@ -920,6 +921,7 @@ function EndorseModal({
     existing: string[];
     onClose: () => void;
 }) {
+    useOverlayLock();
     const qc = useQueryClient();
     const [selected, setSelected] = useState<string[]>(existing);
     const [error, setError] = useState<string | null>(null);

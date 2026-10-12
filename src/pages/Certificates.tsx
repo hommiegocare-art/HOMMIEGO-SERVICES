@@ -1,5 +1,6 @@
 // src/pages/Certificates.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -58,7 +59,7 @@ export default function Certificates() {
 
     return (
         <div className="max-w-3xl mx-auto px-2 sm:px-4 py-6 animate-fade-in">
-            <header className="mb-5 px-2 sm:px-0">
+            <header className="mb-5">
                 <h1 className="text-2xl font-black tracking-tight text-foreground">
                     Certificates
                 </h1>
@@ -92,7 +93,7 @@ export default function Certificates() {
                 <EmptyState />
             ) : (
                 <section>
-                    <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2 px-2 sm:px-0">
+                    <h2 className="text-xs uppercase tracking-wider font-bold text-muted-foreground mb-2">
                         Your milestones
                     </h2>
                     <div className="space-y-2">
@@ -100,7 +101,7 @@ export default function Certificates() {
                             <button
                                 key={m.id}
                                 onClick={() => setSelected(m)}
-                                className="w-full text-left rounded-2xl bg-card px-4 py-4 active:bg-muted transition-colors"
+                                className="w-full text-left rounded-2xl bg-card px-3 py-3 active:bg-muted transition-colors"
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -151,6 +152,7 @@ export default function Certificates() {
 }
 
 /* ---------- preview sheet ---------- */
+
 function CertificateSheet({
     milestone,
     caregiverId,
@@ -162,8 +164,11 @@ function CertificateSheet({
     caregiverName: string;
     onClose: () => void;
 }) {
+    const [mounted, setMounted] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => setMounted(true), []);
 
     // Fetch the exact services that earned this milestone
     const { data: services = [], isLoading: servicesLoading } = useQuery({
@@ -203,7 +208,9 @@ function CertificateSheet({
                 code = (data as string | null) ?? null;
             }
             if (!code) {
-                setError("This certificate is still being prepared. Try again in a moment.");
+                setError(
+                    "This certificate is still being prepared. Try again in a moment.",
+                );
                 return;
             }
             await downloadCertificate({
@@ -220,10 +227,30 @@ function CertificateSheet({
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 bg-foreground/40 flex items-end sm:items-center justify-center">
-            <div className="w-full sm:max-w-lg bg-background rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto">
-                <div className="sticky top-0 bg-background h-14 flex items-center justify-between px-2">
+    if (!mounted) return null;
+
+    return createPortal(
+        <div
+            className="
+                fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm
+                flex items-end sm:items-center justify-center
+                animate-fade-in
+            "
+            onClick={onClose}
+        >
+            <div
+                className="
+                    w-full sm:max-w-lg bg-card border border-border
+                    rounded-t-3xl sm:rounded-3xl
+                    max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto
+                    animate-slide-up sm:animate-none
+                "
+                style={{
+                    paddingBottom: "calc(env(safe-area-inset-bottom) + 72px)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="sticky top-0 z-10 bg-card h-14 flex items-center justify-between px-2 sm:px-4">
                     <button
                         onClick={onClose}
                         className="h-11 w-11 rounded-full flex items-center justify-center active:bg-muted"
@@ -237,7 +264,7 @@ function CertificateSheet({
 
                 <div className="px-2 sm:px-4 pb-6 space-y-5">
                     {/* Preview — mirrors the PDF */}
-                    <div className="rounded-2xl bg-card px-5 py-6">
+                    <div className="rounded-2xl bg-muted/40 px-4 py-6 sm:px-5">
                         <div className="flex flex-col items-center mb-3">
                             <img
                                 src="/pwa-512x512.png"
@@ -248,7 +275,7 @@ function CertificateSheet({
                                 Hommie<span className="text-brand-red">Care</span>
                             </p>
                         </div>
-                        <div className="my-3 h-px bg-muted" />
+                        <div className="my-3 h-px bg-border" />
                         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground text-center">
                             Certificate of Service Milestone
                         </p>
@@ -269,7 +296,7 @@ function CertificateSheet({
                         </p>
 
                         {/* Service list preview */}
-                        <div className="my-4 h-px bg-muted" />
+                        <div className="my-4 h-px bg-border" />
                         <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground text-center mb-2">
                             Services delivered
                         </p>
@@ -315,7 +342,7 @@ function CertificateSheet({
                             </ul>
                         )}
 
-                        <div className="my-4 h-px bg-muted" />
+                        <div className="my-4 h-px bg-border" />
                         <p className="text-xs text-muted-foreground text-center">
                             {new Date(milestone.awarded_at).toLocaleDateString(
                                 undefined,
@@ -364,7 +391,8 @@ function CertificateSheet({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
 

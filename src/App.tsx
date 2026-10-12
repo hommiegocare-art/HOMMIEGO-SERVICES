@@ -57,6 +57,16 @@ import AdminVerificationDetail from "@/pages/admin/AdminVerificationDetail";
 import HealthInsights from "./pages/HealthInsights";
 import Certificates from "./pages/Certificates";
 
+// Hospital referral layer
+import HospitalJoin from "./pages/HospitalJoin";
+import ReferralNew from "./pages/ReferralNew";
+import ReferralLanding from "./pages/ReferralLanding";
+import Referrals from "./pages/Referrals";
+import ReferralDashboard from "./pages/ReferralDashboard";
+import CareTeamThread from "./pages/CareTeamThread";
+import CareTeams from "./pages/CareTeams";
+import { DashboardActionFab } from "./components/HospitalFab";
+
 // 👇 NEW — unlock audio on the very first user gesture (browser autoplay policy)
 if (typeof window !== "undefined") {
   const unlock = () => unlockNotificationSound();
@@ -90,9 +100,15 @@ function isLegalRoute(path: string) {
   return path === "/legal" || path.startsWith("/legal/");
 }
 
-// Chat detail pages render their own full-screen chrome (own header,
-// own composer). They must NOT sit inside TopBar/BottomNav/main padding,
-// otherwise h-[100dvh] overflows the viewport and the page scrolls.
+// SMS landing page — must render for signed-out users, so it counts as bare.
+function isPublicReferralRoute(path: string) {
+  return /^\/referral\/[^/]+$/.test(path);
+}
+
+// Full-screen routes that render their own chrome (own header + composer).
+// Chat detail pages and the care team thread must NOT sit inside
+// TopBar/BottomNav/main padding, otherwise h-[100dvh] overflows the viewport
+// and the page scrolls.
 function isBareAppRoute(path: string) {
   return /^\/chats\/[^/]+$/.test(path);
 }
@@ -121,8 +137,12 @@ function Shell() {
   }
 
   // Bare routes render their own chrome (no Sidebar/TopBar/BottomNav).
-  // This includes the marketing landing, auth, and all legal pages.
-  const bare = isAuthRoute(pathname) || isLegalRoute(pathname);
+  // Includes the marketing landing, auth, legal pages, and the public
+  // SMS referral landing page.
+  const bare =
+    isAuthRoute(pathname) ||
+    isLegalRoute(pathname) ||
+    isPublicReferralRoute(pathname);
 
   if (bare) {
     return (
@@ -137,17 +157,21 @@ function Shell() {
         <Route path="/legal/about" element={<About />} />
         <Route path="/legal/contact" element={<Contact />} />
 
+        {/* Public SMS landing — reachable signed out. */}
+        <Route path="/referral/:id" element={<ReferralLanding />} />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     );
   }
 
-  // Full-screen chat window: no TopBar, no BottomNav, no main padding.
-  // ChatWindow renders its own header + composer and owns the viewport.
+  // Full-screen chat + care team: no TopBar, no BottomNav, no main padding.
+  // These pages render their own header + composer and own the viewport.
   if (isBareAppRoute(pathname)) {
     return (
       <Routes>
         <Route path="/chats/:connectionId" element={<ChatWindow />} />
+        <Route path="/care-team/:threadId" element={<CareTeamThread />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     );
@@ -177,10 +201,22 @@ function Shell() {
             <Route path="/medical/:clientId/exam/:visitId" element={<CaregiverMedicalExam />} />
             <Route path="/medical/:clientId/audit" element={<MedicalAuditPage />} />
             <Route path="/medical/:clientId/record" element={<MedicalRecordPage />} />
+
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/bookings/new" element={<BookingNew />} />
             <Route path="/bookings/:id" element={<BookingDetail />} />
             <Route path="/bookings/:id/notes" element={<VisitNotes />} />
+            <Route path="/care-teams" element={<CareTeams />} />
+            {/* Hospital referral layer */}
+            <Route path="/hospital/join" element={<HospitalJoin />} />
+            <Route path="/referrals/new" element={<ReferralNew />} />
+            <Route path="/referrals/dashboard" element={<ReferralDashboard />} />
+            <Route path="/referrals" element={<Referrals />} />
+            {/* /referral/:id is also registered in the bare block so
+                signed-out users can view it. This entry handles the
+                signed-in case without falling through to *. */}
+            <Route path="/referral/:id" element={<ReferralLanding />} />
+            <Route path="/care-team/:threadId" element={<CareTeamThread />} />
 
             <Route path="/services" element={<Services />} />
             <Route path="/cpd" element={<Cpd />} />
@@ -207,6 +243,7 @@ function Shell() {
         </main>
         <BottomNav />
         <ChatFab />
+        <DashboardActionFab />
         <NotificationToastHost />   {/* 👈 NEW */}
       </div>
     </div>
