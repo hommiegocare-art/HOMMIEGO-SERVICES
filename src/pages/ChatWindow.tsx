@@ -53,7 +53,6 @@ import {
     type PendingAttachment,
 } from "@/components/chat/ComposeAttachments";
 import { createPortal } from "react-dom";
-// add to your lucide imports
 import { WallpaperSheet } from "@/components/chat/WallpaperSheet";
 import {
     loadWallpaper,
@@ -69,10 +68,12 @@ import {
     deleteWallpaperImage,
 } from "@/lib/wallpaperStore";
 import { InitialsAvatar } from "@/components/brand/InitialsAvatar";
-function haptic(ms = 10) {
+import { ReceiptBadge } from "@/components/brand/ReceiptBadge";
+
+function haptic(pattern: number | number[] = 10) {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         (navigator as Navigator & { vibrate?: (p: number | number[]) => boolean })
-            .vibrate?.(ms);
+            .vibrate?.(pattern);
     }
 }
 
@@ -87,9 +88,6 @@ const TTL_OPTIONS: { value: TtlOption; label: string; short: string }[] = [
 ];
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
-
-// How close to the top (in px) the user has to scroll before we
-// start loading older messages. 400 gives a comfortable buffer.
 const TOP_SCROLL_TRIGGER_PX = 400;
 
 function shortTtl(ttl: TtlOption | null): string {
@@ -129,9 +127,54 @@ function Ticks({ m, mine }: { m: ChatMessage; mine: boolean }) {
     if (!mine) return null;
     if (m.pending) return <Clock className="h-3 w-3 opacity-70" />;
     if (m.failed) return <span className="text-[10px] font-bold text-destructive">!</span>;
-    if (m.readAt) return <CheckCheck className="h-3.5 w-3.5 text-primary-foreground" />;
+    if (m.readAt) return <CheckCheck className="h-3.5 w-3.5" />;
     if (m.deliveredAt) return <CheckCheck className="h-3.5 w-3.5 opacity-70" />;
     return <Check className="h-3 w-3 opacity-70" />;
+}
+
+/**
+ * ReceiptBand — visible status text under your own messages.
+ * grey "Sent" → grey "Delivered" → red "Read".
+ * red matches the VerifiedBadge brand red (#E41E3F).
+ */
+function ReceiptBand({ m, mine }: { m: ChatMessage; mine: boolean }) {
+    if (!mine) return null;
+    if (m.pending) {
+        return (
+            <span className="text-[10px] font-bold text-muted-foreground">
+                Sending…
+            </span>
+        );
+    }
+    if (m.failed) {
+        return (
+            <span className="text-[10px] font-bold text-destructive">
+                Not sent
+            </span>
+        );
+    }
+    if (m.readAt) {
+        return (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#E41E3F]">
+                <CheckCheck className="h-3 w-3" />
+                Read
+            </span>
+        );
+    }
+    if (m.deliveredAt) {
+        return (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+                <CheckCheck className="h-3 w-3" />
+                Delivered
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+            <Check className="h-3 w-3" />
+            Sent
+        </span>
+    );
 }
 
 function TombstoneBubble({ mine }: { mine: boolean }) {
@@ -186,6 +229,7 @@ function ReplyPreview({
         </div>
     );
 }
+
 function Bubble({
     m,
     mine,
@@ -203,14 +247,12 @@ function Bubble({
 }) {
     const longPressTimer = useRef<number | null>(null);
 
-    // ---- swipe-to-reply state ----
     const SWIPE_MAX = 72;
     const SWIPE_THRESHOLD = 56;
     const [dragX, setDragX] = useState(0);
     const [dragging, setDragging] = useState(false);
     const pointerStart = useRef<{ x: number; y: number; id: number } | null>(null);
     const swipeDirection = mine ? -1 : 1;
-    // -----------------------------
 
     if (m.tombstoned) {
         return <TombstoneBubble mine={mine} />;
@@ -230,7 +272,6 @@ function Bubble({
         }, 450);
     };
 
-    // ---- pointer handlers for swipe + long-press coexistence ----
     const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
         if (e.pointerType === "mouse" && e.button !== 0) return;
         pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
@@ -285,7 +326,6 @@ function Bubble({
         setDragging(false);
         setDragX(0);
     };
-    // -----------------------------------------------------------
 
     const progress = Math.min(Math.abs(dragX) / SWIPE_THRESHOLD, 1);
 
@@ -296,74 +336,151 @@ function Bubble({
                 mine ? "justify-end" : "justify-start",
             )}
         >
-            {/* Reply affordance behind the bubble */}
-            <div
-                aria-hidden
-                className={cn(
-                    "pointer-events-none absolute inset-y-0 flex items-center justify-center text-muted-foreground",
-                    mine ? "right-0 pr-3" : "left-0 pl-3",
-                )}
-                style={{
-                    opacity: progress,
-                    transform: `scale(${0.7 + progress * 0.3})`,
-                }}
-            >
-                <Reply className="h-5 w-5" />
-            </div>
-
-            <div
-                onContextMenu={(e) => {
-                    e.preventDefault();
-                    onLongPress(m);
-                }}
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={endSwipe}
-                onPointerCancel={cancelSwipe}
-                style={{
-                    transform: `translateX(${dragX}px)`,
-                    transition: dragging ? "none" : "transform 180ms ease-out",
-                    touchAction: "pan-y",
-                }}
-                className={cn(
-                    "relative z-10 max-w-[82%] sm:max-w-[78%] cursor-pointer select-none rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5",
-                    mine
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground",
-                )}
-            >
-                {m.replyToId ? (
-                    <ReplyPreview parent={m.replyToPreview} mine={mine} otherName={otherName} />
-                ) : null}
-
-                {m.attachments.length > 0 ? (
-                    <div className={m.body ? "mb-2" : ""}>
-                        <AttachmentBubble
-                            attachments={m.attachments}
-                            onOpenIndex={(i) => onOpenAttachment(m.id, i)}
-                        />
-                    </div>
-                ) : null}
-
-                {m.body ? (
-                    <p className="whitespace-pre-wrap break-words text-sm">{m.body}</p>
-                ) : null}
-
+            {!m.failed && (
                 <div
+                    aria-hidden
                     className={cn(
-                        "mt-1 flex items-center gap-1 text-[10px]",
-                        mine ? "text-primary-foreground/80" : "text-muted-foreground",
+                        "pointer-events-none absolute inset-y-0 flex items-center justify-center text-muted-foreground",
+                        mine ? "right-0 pr-3" : "left-0 pl-3",
+                    )}
+                    style={{
+                        opacity: progress,
+                        transform: `scale(${0.7 + progress * 0.3})`,
+                    }}
+                >
+                    <Reply className="h-5 w-5" />
+                </div>
+            )}
+
+            <div
+                className={cn(
+                    "flex flex-col",
+                    mine ? "items-end" : "items-start",
+                    "max-w-[82%] sm:max-w-[78%]",
+                )}
+            >
+                <div
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        onLongPress(m);
+                    }}
+                    onPointerDown={m.failed ? undefined : onPointerDown}
+                    onPointerMove={m.failed ? undefined : onPointerMove}
+                    onPointerUp={m.failed ? undefined : endSwipe}
+                    onPointerCancel={m.failed ? undefined : cancelSwipe}
+                    onClick={
+                        m.failed
+                            ? () => {
+                                onLongPress(m);
+                            }
+                            : undefined
+                    }
+                    style={{
+                        transform: m.failed ? undefined : `translateX(${dragX}px)`,
+                        transition: dragging ? "none" : "transform 180ms ease-out",
+                        touchAction: "pan-y",
+                    }}
+                    className={cn(
+                        "relative z-10 w-full cursor-pointer select-none rounded-2xl px-3.5 sm:px-4 py-2 sm:py-2.5",
+                        m.failed
+                            ? "bg-destructive/10 text-foreground ring-1 ring-destructive/40"
+                            : mine
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-foreground",
                     )}
                 >
-                    {m.editedAt ? <span className="italic">edited</span> : null}
-                    <span>{fmtTime(m.createdAt)}</span>
-                    <Ticks m={m} mine={mine} />
+                    {m.replyToId ? (
+                        <ReplyPreview parent={m.replyToPreview} mine={mine} otherName={otherName} />
+                    ) : null}
+
+                    {m.attachments.length > 0 ? (
+                        <div className={m.body ? "mb-2" : ""}>
+                            <AttachmentBubble
+                                attachments={m.attachments}
+                                onOpenIndex={(i) => onOpenAttachment(m.id, i)}
+                            />
+                        </div>
+                    ) : null}
+
+                    {m.body ? (
+                        <p className="whitespace-pre-wrap break-words text-sm">{m.body}</p>
+                    ) : null}
+
+                    <div
+                        className={cn(
+                            "mt-1 flex items-center gap-1 text-[10px]",
+                            m.failed
+                                ? "text-destructive"
+                                : mine
+                                    ? "text-primary-foreground/80"
+                                    : "text-muted-foreground",
+                        )}
+                    >
+                        {m.editedAt ? <span className="italic">edited</span> : null}
+                        <span>{fmtTime(m.createdAt)}</span>
+                        {mine && !m.pending && !m.failed ? (
+                            <>
+                                <ReceiptBadge
+                                    state={
+                                        m.readAt
+                                            ? "read"
+                                            : m.deliveredAt
+                                                ? "delivered"
+                                                : "sent"
+                                    }
+                                />
+                                <span
+                                    className={cn(
+                                        "font-bold",
+                                        m.readAt ? "text-[#E41E3F]/80" : "text-current",
+                                    )}
+                                >
+                                    {m.readAt
+                                        ? "Read"
+                                        : m.deliveredAt
+                                            ? "Delivered"
+                                            : "Sent"}
+                                </span>
+                            </>
+                        ) : null}
+                        {mine && m.pending ? (
+                            <>
+                                <Clock className="h-3 w-3 opacity-70" />
+                                <span className="font-bold opacity-70 text-current">
+                                    Sending…
+                                </span>
+                            </>
+                        ) : null}
+                        {mine && m.failed ? (
+                            <>
+                                <span className="text-[10px] font-bold text-destructive">!</span>
+                                <span className="font-bold text-destructive">Not sent</span>
+                            </>
+                        ) : null}
+                        {mine && m.pending ? (
+                            <Clock className="h-3 w-3 opacity-70" />
+                        ) : null}
+                        {mine && m.failed ? (
+                            <span className="text-[10px] font-bold text-destructive">!</span>
+                        ) : null}
+                    </div>
                 </div>
+
+                {m.failed ? (
+                    <button
+                        type="button"
+                        onClick={() => onLongPress(m)}
+                        className="mt-1 flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive active:bg-destructive/20"
+                    >
+                        <span>Not sent</span>
+                        <span className="opacity-70">·</span>
+                        <span>Tap to retry</span>
+                    </button>
+                ) : null}
             </div>
         </div>
     );
 }
-
 function DayDivider({ label }: { label: string }) {
     return (
         <div className="my-2.5 sm:my-3 flex justify-center">
@@ -451,6 +568,68 @@ function TtlSheet({
         </div>
     );
 }
+
+function FailedMessageSheet({
+    open,
+    onClose,
+    onRetry,
+    onDiscard,
+    canRetry,
+}: {
+    open: boolean;
+    onClose: () => void;
+    onRetry: () => void;
+    onDiscard: () => void;
+    canRetry: boolean;
+}) {
+    if (!open) return null;
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-end bg-foreground/40 animate-fade-in"
+            onClick={onClose}
+        >
+            <div
+                className="w-full rounded-t-3xl bg-card px-4 pb-6 pt-4 animate-slide-up"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted" />
+                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Message not sent
+                </p>
+
+                <button
+                    type="button"
+                    onClick={onRetry}
+                    disabled={!canRetry}
+                    className={cn(
+                        "flex h-12 w-full items-center gap-3 rounded-2xl px-4 text-sm font-bold text-foreground transition-colors active:bg-muted",
+                        !canRetry && "opacity-40",
+                    )}
+                >
+                    <Send className="h-4 w-4" />
+                    {canRetry ? "Retry sending" : "Retry unavailable"}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={onDiscard}
+                    className="flex h-12 w-full items-center gap-3 rounded-2xl px-4 text-sm font-bold text-destructive transition-colors active:bg-muted"
+                >
+                    <X className="h-4 w-4" />
+                    Delete this message
+                </button>
+
+                {!canRetry ? (
+                    <p className="mt-2 px-2 text-[11px] text-muted-foreground">
+                        Attachments can't be retried automatically. Delete this
+                        message and re-attach the file to send it again.
+                    </p>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
 function PrivacyInfoButton({
     meta,
 }: {
@@ -458,7 +637,6 @@ function PrivacyInfoButton({
 }) {
     const [open, setOpen] = useState(false);
 
-    // Auto-close after 4 seconds
     useEffect(() => {
         if (!open) return;
         const t = window.setTimeout(() => setOpen(false), 4000);
@@ -525,8 +703,8 @@ function PrivacyInfoButton({
                                 <li className="flex items-start gap-2">
                                     <span className="mt-1 h-1 w-1 rounded-full bg-muted-foreground shrink-0" />
                                     <span>
-                                        Deleted messages show as “This message was
-                                        deleted”.
+                                        Deleted messages show as "This message was
+                                        deleted".
                                     </span>
                                 </li>
                                 <li className="flex items-start gap-2">
@@ -548,9 +726,8 @@ function PrivacyInfoButton({
                 )}
         </div>
     );
-
-
 }
+
 function useOtherVerification(
     otherUserId: string | null | undefined,
     otherRole: string | null | undefined,
@@ -592,11 +769,11 @@ export default function ChatWindow() {
         index: number;
     } | null>(null);
     const [attachSheetOpen, setAttachSheetOpen] = useState(false);
+    const [failedTarget, setFailedTarget] = useState<ChatMessage | null>(null);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const composerRef = useRef<HTMLTextAreaElement>(null);
 
-    // Refs used for scroll anchoring when older messages are prepended.
     const prevFirstIdRef = useRef<string | null>(null);
     const prevLastIdRef = useRef<string | null>(null);
     const prevScrollHeightRef = useRef<number>(0);
@@ -605,19 +782,14 @@ export default function ChatWindow() {
     const [wallpaperSheetOpen, setWallpaperSheetOpen] = useState(false);
     const [wallpaperBlobUrl, setWallpaperBlobUrl] = useState<string | null>(null);
 
-    // Read the wallpaper descriptor synchronously on first render so we
-    // never paint the default before the user's choice.
     const [wallpaper, setWallpaper] = useState<ChatWallpaper>(() =>
         connectionId ? loadWallpaper(connectionId) : { kind: "default" },
     );
 
-    // If the user navigates to a different chat (connectionId changes),
-    // re-read synchronously *before* the next paint by comparing ids.
     const lastConnectionIdRef = useRef<string | undefined>(connectionId);
     if (lastConnectionIdRef.current !== connectionId) {
         lastConnectionIdRef.current = connectionId;
         const next = connectionId ? loadWallpaper(connectionId) : ({ kind: "default" } as ChatWallpaper);
-        // Only update if it actually differs, to avoid a needless re-render
         if (JSON.stringify(next) !== JSON.stringify(wallpaper)) {
             setWallpaper(next);
         }
@@ -628,7 +800,6 @@ export default function ChatWindow() {
             setWallpaper(wp);
             if (connectionId) {
                 saveWallpaper(connectionId, wp);
-                // If the new choice no longer uses a local blob, free the old one.
                 if (!usesLocalBlob(wp)) {
                     void deleteWallpaperImage(connectionId).catch(() => {
                         /* non-fatal */
@@ -638,7 +809,7 @@ export default function ChatWindow() {
         },
         [connectionId],
     );
-    // Resolve the custom wallpaper's blob URL from IndexedDB.
+
     const wallpaperCustomDim = wallpaper.kind === "custom" ? wallpaper.dim : null;
     useEffect(() => {
         let cancelled = false;
@@ -657,6 +828,7 @@ export default function ChatWindow() {
             cancelled = true;
         };
     }, [wallpaper.kind, wallpaperCustomDim, connectionId]);
+
     const {
         meta,
         metaLoading,
@@ -664,6 +836,8 @@ export default function ChatWindow() {
         messagesLoading,
         send,
         sendAttachments,
+        retry,
+        discard,
         editMessage,
         deleteMessage,
         markDelivered,
@@ -691,8 +865,26 @@ export default function ChatWindow() {
         return () => document.removeEventListener("visibilitychange", onVis);
     }, []);
 
-    // Track scroll position continuously so we can compute an anchor
-    // delta after prepending older messages.
+    // --- Vibration on incoming message while chat is open ---
+    const lastSeenMessageIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (!user) return;
+        const last = messages.length > 0 ? messages[messages.length - 1] : null;
+        if (!last) return;
+
+        if (lastSeenMessageIdRef.current === null) {
+            lastSeenMessageIdRef.current = last.id;
+            return;
+        }
+
+        if (last.id !== lastSeenMessageIdRef.current) {
+            lastSeenMessageIdRef.current = last.id;
+            if (last.senderId !== user.id && focused) {
+                haptic([20, 60, 20]);
+            }
+        }
+    }, [messages, user, focused]);
+
     const handleScroll = useCallback(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -700,7 +892,6 @@ export default function ChatWindow() {
         prevScrollHeightRef.current = el.scrollHeight;
         prevScrollTopRef.current = el.scrollTop;
 
-        // Near the top? Ask for older messages.
         if (
             el.scrollTop < TOP_SCROLL_TRIGGER_PX &&
             hasMoreOlder &&
@@ -711,9 +902,6 @@ export default function ChatWindow() {
         }
     }, [hasMoreOlder, loadingOlder, loadOlder]);
 
-    // After messages change, either:
-    //   - if anchored (we just loaded older), restore the viewport
-    //   - if a new message arrived at the bottom, jump to bottom
     useLayoutEffect(() => {
         const el = scrollRef.current;
         if (!el) return;
@@ -732,19 +920,12 @@ export default function ChatWindow() {
             el.scrollTop = el.scrollHeight;
             anchoredRef.current = false;
         } else if (anchoredRef.current && gotOlder) {
-            // Prepend case. Restore by offsetting scrollTop by the
-            // delta in scrollHeight that occurred since the fetch
-            // started.
             const delta = el.scrollHeight - prevScrollHeightRef.current;
             if (delta > 0) {
                 el.scrollTop = prevScrollTopRef.current + delta;
             }
             anchoredRef.current = false;
         } else if (gotNewer) {
-            // New message arrived at the bottom (send or realtime).
-            // Only auto-scroll if the user was already near the bottom;
-            // if they're reading older messages, leave their viewport
-            // alone.
             const distanceFromBottom =
                 el.scrollHeight - el.scrollTop - el.clientHeight;
             if (distanceFromBottom < 200) {
@@ -809,6 +990,10 @@ export default function ChatWindow() {
     }, [meta]);
 
     const openActions = (m: ChatMessage) => {
+        if (m.failed) {
+            setFailedTarget(m);
+            return;
+        }
         setActionTarget({
             id: m.id,
             body: m.body,
@@ -847,6 +1032,16 @@ export default function ChatWindow() {
         );
         if (!ok) return;
         await deleteMessage(t.id);
+    };
+
+    const onRetryFailed = async (m: ChatMessage) => {
+        setFailedTarget(null);
+        await retry(m.id);
+    };
+
+    const onDiscardFailed = (m: ChatMessage) => {
+        setFailedTarget(null);
+        discard(m.id);
     };
 
     const onAddAttachment = useCallback(
@@ -997,7 +1192,6 @@ export default function ChatWindow() {
                             <p
                                 className={cn(
                                     "truncate font-bold text-foreground",
-                                    // Shrink name a bit if it's really long so more fits:
                                     (meta?.otherDisplayName?.length ?? 0) > 14
                                         ? "text-[13px] sm:text-sm"
                                         : "text-sm",
@@ -1067,19 +1261,12 @@ export default function ChatWindow() {
                 )}
             </header>
 
-            {/* SCROLLABLE MESSAGES */}
-            {/* SCROLLABLE MESSAGES */}
-            {/* SCROLLABLE MESSAGES */}
             <div className="relative min-h-0 flex-1">
-                {/* Wallpaper layer (does not scroll) */}
-                {/* Wallpaper layer (does not scroll) */}
                 <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0"
                     style={wallpaperToStyle(wallpaper, wallpaperBlobUrl)}
                 />
-                {/* Dim overlay (only for custom) */}
-                {/* Dim overlay (custom + default) */}
                 {(wallpaper.kind === "custom" || wallpaper.kind === "default") &&
                     wallpaperDimOpacity(wallpaper) > 0 && (
                         <div
@@ -1088,7 +1275,6 @@ export default function ChatWindow() {
                             style={{ opacity: wallpaperDimOpacity(wallpaper) }}
                         />
                     )}
-                {/* Scroll container sits above the wallpaper */}
                 <div
                     ref={scrollRef}
                     onScroll={handleScroll}
@@ -1105,7 +1291,6 @@ export default function ChatWindow() {
                             </div>
                         </div>
 
-                        {/* Older-messages loading / no-more pill */}
                         {messages.length > 0 ? (
                             <div className="my-3 flex justify-center">
                                 {loadingOlder ? (
@@ -1181,7 +1366,6 @@ export default function ChatWindow() {
                     </div>
                 </div>
             </div>
-            {/* PINNED COMPOSE */}
             <div className="relative z-30 shrink-0 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                 <div className="mx-auto max-w-3xl px-2 sm:px-4 pt-1.5 sm:pt-2">
                     {connectionClosed ? (
@@ -1345,6 +1529,13 @@ export default function ChatWindow() {
                 onClose={() => setTtlSheetOpen(false)}
                 current={perMessageTtl}
                 onPick={(v) => setPerMessageTtl(v)}
+            />
+            <FailedMessageSheet
+                open={!!failedTarget}
+                onClose={() => setFailedTarget(null)}
+                onRetry={() => failedTarget && void onRetryFailed(failedTarget)}
+                onDiscard={() => failedTarget && onDiscardFailed(failedTarget)}
+                canRetry={!!failedTarget && failedTarget.attachments.length === 0}
             />
             {connectionId ? (
                 <WallpaperSheet

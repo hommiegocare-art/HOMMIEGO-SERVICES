@@ -53,6 +53,7 @@ export interface ChatMessage {
     attachments: ChatAttachment[];
     pending?: boolean;
     failed?: boolean;
+    failureReason?: string;
 }
 
 export interface ChatWindowMeta {
@@ -650,6 +651,46 @@ export function useChatWindow(
         [user, connectionId, metaQuery.data?.defaultTtlSeconds, qc, serverMessages],
     );
 
+    /**
+     * Retry a failed optimistic text message.
+     * Attachments can't be retried (the File objects are gone by now) —
+     * the UI disables retry in that case and offers Discard only.
+     */
+    const retry = useCallback(
+        async (tempId: string) => {
+            if (!user || !connectionId) return;
+
+            const failed = optimistic.find((m) => m.id === tempId);
+            if (!failed || !failed.failed) return;
+
+            // Attachments can't be retried from a temp row.
+            if (failed.attachments.length > 0) return;
+
+            const body = failed.body ?? "";
+            const replyId = failed.replyToId ?? null;
+
+            // Remove the failed row; send() will add a fresh optimistic row.
+            setOptimistic((prev) => prev.filter((m) => m.id !== tempId));
+
+            await send(body, null, replyId);
+        },
+        [user, connectionId, optimistic, send],
+    );
+
+    /**
+     * Drop a failed optimistic message from local state without sending.
+     */
+    const discard = useCallback((tempId: string) => {
+        setOptimistic((prev) => {
+            const row = prev.find((m) => m.id === tempId);
+            // Free any blob URLs that were created for attachment previews.
+            row?.attachments.forEach((a) => {
+                if (a.url.startsWith("blob:")) URL.revokeObjectURL(a.url);
+            });
+            return prev.filter((m) => m.id !== tempId);
+        });
+    }, []);
+
     const editMessage = useCallback(
         async (id: string, newBody: string) => {
             if (!user) return;
@@ -902,6 +943,8 @@ export function useChatWindow(
         loadOlder,
         send,
         sendAttachments,
+        retry,
+        discard,
         editMessage,
         deleteMessage,
         markDelivered,
