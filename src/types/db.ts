@@ -57,6 +57,17 @@ export type DeliveryType = "vaginal" | "cesarean";
 export type AuditAction = "insert" | "update" | "delete" | "lock";
 export type AuditActorRole = "client" | "caregiver" | "admin" | "unknown";
 
+// ---- Hospital referral layer ----
+export type HospitalRole =
+    | "doctor" | "nurse" | "discharge_officer"
+    | "social_worker" | "admin" | "staff";
+
+export type ReferralStatus =
+    | "pending" | "accepted" | "declined" | "expired" | "converted";
+
+export type ReferralServiceType =
+    | "home_nursing" | "wound_care" | "medication_admin" | "physiotherapy"
+    | "elderly_care" | "postnatal" | "transport" | "lab_delivery" | "other";
 // ---- Hospital referral layer enums ----
 export type HospitalRole =
     | "doctor" | "nurse" | "discharge_officer"

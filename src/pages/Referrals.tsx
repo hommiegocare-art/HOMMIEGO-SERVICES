@@ -1,18 +1,24 @@
 // src/pages/Referrals.tsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Calendar,
     ChevronRight,
     Clock,
+    Copy,
     Loader2,
     MoreVertical,
     Phone,
     Plus,
     Send,
+    Users,
     X,
+    AlertCircle,
     MessageCircle,
+    ExternalLink,
+    Ban,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
@@ -103,14 +109,6 @@ async function fetchReferrals(userId: string): Promise<ReferralRow[]> {
 }
 
 // ---- WhatsApp helpers ------------------------------------------------------
-
-function normalisePhone(raw: string): string {
-    const digits = raw.replace(/[^\d+]/g, "");
-    if (digits.startsWith("+")) return digits;
-    if (digits.startsWith("0")) return "+254" + digits.slice(1);
-    if (digits.startsWith("254")) return "+" + digits;
-    return "+254" + digits;
-}
 
 function toWaNumber(raw: string): string {
     const digits = raw.replace(/\D/g, "");
@@ -205,7 +203,9 @@ export default function Referrals() {
     const filtered = useMemo(() => {
         if (filter === "all") return all;
         if (filter === "closed")
-            return all.filter((r) => r.status === "declined" || r.status === "expired");
+            return all.filter(
+                (r) => r.status === "declined" || r.status === "expired"
+            );
         return all.filter((r) => r.status === filter);
     }, [all, filter]);
 
@@ -343,18 +343,19 @@ export default function Referrals() {
                         </Group>
                     )}
 
-                    {(grouped.declined.length > 0 || grouped.expired.length > 0) && (
-                        <Group title="History">
-                            {[...grouped.declined, ...grouped.expired].map((r) => (
-                                <ReferralCard
-                                    key={r.id}
-                                    referral={r}
-                                    onOpen={() => navigate(`/referral/${r.id}`)}
-                                    onMenu={() => setMenuFor(r)}
-                                />
-                            ))}
-                        </Group>
-                    )}
+                    {(grouped.declined.length > 0 ||
+                        grouped.expired.length > 0) && (
+                            <Group title="History">
+                                {[...grouped.declined, ...grouped.expired].map((r) => (
+                                    <ReferralCard
+                                        key={r.id}
+                                        referral={r}
+                                        onOpen={() => navigate(`/referral/${r.id}`)}
+                                        onMenu={() => setMenuFor(r)}
+                                    />
+                                ))}
+                            </Group>
+                        )}
                 </div>
             )}
 
@@ -362,7 +363,7 @@ export default function Referrals() {
                 <ActionSheet
                     referral={menuFor}
                     onClose={() => setMenuFor(null)}
-                    onResent={() => {
+                    onChanged={() => {
                         qc.invalidateQueries({
                             queryKey: ["referrals", "mine", user?.id],
                         });
@@ -408,79 +409,77 @@ function ReferralCard({
     const phone = referral.patient_phone;
 
     return (
-        <div className="rounded-2xl bg-card p-3 sm:p-4">
-            <div className="flex items-start gap-3">
+        <div className="rounded-2xl bg-card p-3 sm:p-4 flex items-center gap-3">
+            <button
+                type="button"
+                onClick={onOpen}
+                className="min-w-0 flex-1 text-left active:opacity-80 transition-opacity"
+            >
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-bold text-foreground truncate">
+                        {referral.patient_name || formatPhone(phone)}
+                    </p>
+                    <StatusChip status={status} />
+                </div>
+
+                {referral.patient_name && (
+                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3" />
+                        {formatPhone(phone)}
+                    </p>
+                )}
+
+                {referral.hospital?.name && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                        {referral.hospital.name}
+                    </p>
+                )}
+
+                <div className="flex flex-wrap gap-1 mt-2">
+                    {referral.services_needed.slice(0, 4).map((s) => (
+                        <span
+                            key={s}
+                            className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground"
+                        >
+                            {SERVICE_SHORT[s]}
+                        </span>
+                    ))}
+                    {referral.services_needed.length > 4 && (
+                        <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                            +{referral.services_needed.length - 4}
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {relative(referral.created_at)}
+                    </span>
+                    {status === "pending" && (
+                        <span className="inline-flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Expires {relativeFuture(referral.expires_at)}
+                        </span>
+                    )}
+                    {status === "accepted" && referral.consent_granted_at && (
+                        <span className="inline-flex items-center gap-1 text-success">
+                            Accepted {relative(referral.consent_granted_at)}
+                        </span>
+                    )}
+                </div>
+            </button>
+
+            <div className="flex flex-col items-end gap-1 shrink-0">
                 <button
                     type="button"
-                    onClick={onOpen}
-                    className="min-w-0 flex-1 text-left active:opacity-80 transition-opacity"
+                    onClick={onMenu}
+                    aria-label="More"
+                    className="h-9 w-9 rounded-full inline-flex items-center justify-center active:bg-muted transition-colors"
                 >
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-sm font-bold text-foreground truncate">
-                            {referral.patient_name || formatPhone(phone)}
-                        </p>
-                        <StatusChip status={status} />
-                    </div>
-
-                    {referral.patient_name && (
-                        <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
-                            <Phone className="w-3 h-3" />
-                            {formatPhone(phone)}
-                        </p>
-                    )}
-
-                    {referral.hospital?.name && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                            {referral.hospital.name}
-                        </p>
-                    )}
-
-                    <div className="flex flex-wrap gap-1 mt-2">
-                        {referral.services_needed.slice(0, 4).map((s) => (
-                            <span
-                                key={s}
-                                className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground"
-                            >
-                                {SERVICE_SHORT[s]}
-                            </span>
-                        ))}
-                        {referral.services_needed.length > 4 && (
-                            <span className="px-2 py-0.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                                +{referral.services_needed.length - 4}
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {relative(referral.created_at)}
-                        </span>
-                        {status === "pending" && (
-                            <span className="inline-flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                Expires {relativeFuture(referral.expires_at)}
-                            </span>
-                        )}
-                        {status === "accepted" && referral.consent_granted_at && (
-                            <span className="inline-flex items-center gap-1 text-success">
-                                Accepted {relative(referral.consent_granted_at)}
-                            </span>
-                        )}
-                    </div>
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </button>
-
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                    <button
-                        type="button"
-                        onClick={onMenu}
-                        aria-label="More"
-                        className="h-9 w-9 rounded-full inline-flex items-center justify-center active:bg-muted transition-colors"
-                    >
-                        <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </div>
         </div>
     );
@@ -511,16 +510,38 @@ function StatusChip({ status }: { status: ReferralStatus }) {
 function ActionSheet({
     referral,
     onClose,
-    onResent,
+    onChanged,
 }: {
     referral: ReferralRow;
     onClose: () => void;
-    onResent: () => void;
+    onChanged: () => void;
 }) {
-    const [busy, setBusy] = useState<"resend" | null>(null);
+    const navigate = useNavigate();
+    const [mounted, setMounted] = useState(false);
+    const [busy, setBusy] = useState<"resend" | "cancel" | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
+    const [copied, setCopied] = useState<"wa" | "phone" | null>(null);
     const [opened, setOpened] = useState(false);
+
+    useEffect(() => setMounted(true), []);
+
+    useEffect(() => {
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = prev;
+        };
+    }, []);
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [onClose]);
+
+    if (!mounted) return null;
 
     const link =
         typeof window !== "undefined"
@@ -528,6 +549,8 @@ function ActionSheet({
             : `/referral/${referral.id}`;
 
     const canResend = referral.status === "pending";
+    const canCancel = referral.status === "pending";
+    const isConverted = referral.status === "converted";
 
     const waLink = buildWhatsAppLink(
         referral.patient_phone,
@@ -545,16 +568,13 @@ function ActionSheet({
                     "Couldn't open WhatsApp automatically. Use the link below."
                 );
             }
-
-            // Mark that we attempted to share. Best-effort.
             if (!referral.consent_sent_at) {
                 await supabase
                     .from("referrals")
                     .update({ consent_sent_at: new Date().toISOString() })
                     .eq("id", referral.id);
             }
-
-            onResent();
+            onChanged();
         } catch (e) {
             setError((e as Error)?.message ?? "Could not open WhatsApp.");
         } finally {
@@ -562,29 +582,70 @@ function ActionSheet({
         }
     };
 
-    const onCopy = async () => {
+    const onCancel = async () => {
+        const ok = window.confirm(
+            `Cancel the referral for ${referral.patient_name || formatPhone(referral.patient_phone)
+            }? They won't be able to accept it.`
+        );
+        if (!ok) return;
+
+        setError(null);
+        setBusy("cancel");
         try {
-            await navigator.clipboard.writeText(waLink);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
+            const { error } = await supabase
+                .from("referrals")
+                .update({
+                    status: "declined",
+                    declined_at: new Date().toISOString(),
+                })
+                .eq("id", referral.id);
+            if (error) throw error;
+            onChanged();
+        } catch (e) {
+            setError((e as Error)?.message ?? "Could not cancel.");
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const copyText = async (text: string, which: "wa" | "phone") => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(which);
+            setTimeout(() => setCopied(null), 1500);
         } catch {
             /* ignore */
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 bg-foreground/40 flex items-end justify-center">
-            <div onClick={onClose} className="absolute inset-0" aria-hidden />
+    return createPortal(
+        <div
+            className="
+                fixed inset-0 z-[9999] bg-background/70 backdrop-blur-sm
+                flex items-end sm:items-center justify-center
+                animate-fade-in
+            "
+            onClick={onClose}
+        >
             <div
-                className="relative w-full max-w-3xl bg-background rounded-t-3xl animate-slide-up"
-                style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+                className="
+                    relative w-full sm:max-w-md bg-card border border-border
+                    rounded-t-3xl sm:rounded-3xl
+                    max-h-[90dvh] sm:max-h-[85dvh] overflow-y-auto
+                    animate-slide-up sm:animate-none
+                "
+                style={{
+                    paddingBottom: "calc(env(safe-area-inset-bottom) + 72px)",
+                }}
+                onClick={(e) => e.stopPropagation()}
             >
-                <div className="pt-3 pb-2 flex justify-center">
+                {/* Drag handle — phone only */}
+                <div className="pt-3 pb-2 flex justify-center sm:hidden">
                     <span className="w-10 h-1.5 rounded-full bg-muted-foreground/30" />
                 </div>
 
-                <div className="px-4 sm:px-6 pb-6">
-                    <div className="flex items-start gap-3 pb-4">
+                <div className="px-2 sm:px-6 pb-6">
+                    <div className="flex items-start gap-3 pb-4 pt-3 sm:pt-5">
                         <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold text-foreground truncate">
                                 {referral.patient_name ||
@@ -610,49 +671,134 @@ function ActionSheet({
 
                     <div className="space-y-2">
                         {canResend && (
-                            <button
-                                type="button"
+                            <ActionButton
+                                icon={
+                                    busy === "resend" ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <MessageCircle className="w-4 h-4" />
+                                    )
+                                }
+                                label={
+                                    opened
+                                        ? "Open WhatsApp again"
+                                        : "Resend via WhatsApp"
+                                }
                                 onClick={onResend}
                                 disabled={busy !== null}
-                                className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-2 active:opacity-90 transition-opacity disabled:opacity-50"
-                            >
-                                {busy === "resend" ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <MessageCircle className="w-4 h-4" />
-                                )}
-                                {opened
-                                    ? "Open WhatsApp again"
-                                    : "Resend via WhatsApp"}
-                            </button>
+                                tone="primary"
+                            />
                         )}
 
-                        <button
-                            type="button"
-                            onClick={onCopy}
-                            className="w-full h-11 rounded-2xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-2 active:bg-secondary transition-colors"
-                        >
-                            <Send className="w-4 h-4" />
-                            {copied ? "Copied!" : "Copy WhatsApp link"}
-                        </button>
+                        <ActionButton
+                            icon={<Copy className="w-4 h-4" />}
+                            label={
+                                copied === "wa"
+                                    ? "Link copied!"
+                                    : "Copy referral link"
+                            }
+                            onClick={() => copyText(link, "wa")}
+                            tone="muted"
+                        />
 
-                        <Link
-                            to={`/referral/${referral.id}`}
-                            onClick={onClose}
-                            className="w-full h-11 rounded-2xl bg-muted text-foreground text-sm font-bold inline-flex items-center justify-center gap-2 active:bg-secondary transition-colors"
-                        >
-                            Open landing page
-                        </Link>
+                        <ActionButton
+                            icon={<Copy className="w-4 h-4" />}
+                            label={
+                                copied === "phone"
+                                    ? "Phone copied!"
+                                    : `Copy phone · ${formatPhone(
+                                        referral.patient_phone
+                                    )}`
+                            }
+                            onClick={() =>
+                                copyText(referral.patient_phone, "phone")
+                            }
+                            tone="muted"
+                        />
+
+                        <ActionButton
+                            icon={<ExternalLink className="w-4 h-4" />}
+                            label="Open landing page"
+                            onClick={() => {
+                                onClose();
+                                navigate(`/referral/${referral.id}`);
+                            }}
+                            tone="muted"
+                        />
+
+                        {isConverted && referral.converted_booking_id && (
+                            <ActionButton
+                                icon={<Users className="w-4 h-4" />}
+                                label="Open care team"
+                                onClick={() => {
+                                    onClose();
+                                    navigate(`/bookings/${referral.converted_booking_id}`);
+                                }}
+                                tone="muted"
+                            />
+                        )}
+
+                        {canCancel && (
+                            <>
+                                <div className="pt-2 border-t border-border/40" />
+                                <ActionButton
+                                    icon={
+                                        busy === "cancel" ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Ban className="w-4 h-4" />
+                                        )
+                                    }
+                                    label="Cancel referral"
+                                    onClick={onCancel}
+                                    disabled={busy !== null}
+                                    tone="destructive"
+                                />
+                            </>
+                        )}
                     </div>
 
                     {error && (
-                        <p className="text-xs text-destructive mt-3 text-center">
-                            {error}
-                        </p>
+                        <div className="mt-3 rounded-2xl bg-destructive/10 px-3 py-2 flex items-start gap-2">
+                            <AlertCircle className="w-3.5 h-3.5 text-destructive shrink-0 mt-0.5" />
+                            <p className="text-xs text-destructive">{error}</p>
+                        </div>
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
+    );
+}
+function ActionButton({
+    icon,
+    label,
+    onClick,
+    disabled,
+    tone,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    tone: "primary" | "muted" | "destructive";
+}) {
+    const cls =
+        tone === "primary"
+            ? "bg-primary text-primary-foreground active:opacity-90"
+            : tone === "destructive"
+                ? "bg-destructive/10 text-destructive active:bg-destructive/20"
+                : "bg-muted text-foreground active:bg-secondary";
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            className={`w-full h-11 rounded-2xl text-sm font-bold inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50 ${cls}`}
+        >
+            {icon}
+            {label}
+        </button>
     );
 }
 
@@ -662,15 +808,16 @@ function ListSkeleton() {
     return (
         <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="rounded-2xl bg-card p-4">
-                    <div className="flex items-start gap-3">
-                        <div className="flex-1 space-y-2">
-                            <div className="h-3 rounded skeleton-shimmer w-1/2" />
-                            <div className="h-2.5 rounded skeleton-shimmer w-1/3" />
-                            <div className="h-2.5 rounded skeleton-shimmer w-2/3" />
-                        </div>
-                        <div className="h-9 w-9 rounded-full skeleton-shimmer" />
+                <div
+                    key={i}
+                    className="rounded-2xl bg-card p-3 flex items-center gap-3"
+                >
+                    <div className="flex-1 space-y-2">
+                        <div className="h-3 rounded skeleton-shimmer w-1/2" />
+                        <div className="h-2.5 rounded skeleton-shimmer w-1/3" />
+                        <div className="h-2.5 rounded skeleton-shimmer w-2/3" />
                     </div>
+                    <div className="h-9 w-9 rounded-full skeleton-shimmer" />
                 </div>
             ))}
         </div>
