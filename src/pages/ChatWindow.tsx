@@ -86,13 +86,14 @@ const TTL_OPTIONS: { value: TtlOption; label: string; short: string }[] = [
     { value: 86400, label: "24 hours", short: "24h" },
     { value: 604800, label: "7 days", short: "7d" },
     { value: -1, label: "Until read + 5 min", short: "↺5m" },
+    { value: 0, label: "Never", short: "∞" },
 ];
-
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 const TOP_SCROLL_TRIGGER_PX = 400;
 
 function shortTtl(ttl: TtlOption | null): string {
     if (ttl === null) return "auto";
+    if (ttl === 0) return "∞";
     const found = TTL_OPTIONS.find((o) => o.value === ttl);
     return found ? found.short : "auto";
 }
@@ -1038,15 +1039,27 @@ export default function ChatWindow() {
 
     return (
         <div
-            className="flex flex-col overflow-hidden bg-background"
-            style={{
-                height: vvHeight > 0 ? `${vvHeight}px` : "100dvh",
-                transform: vvOffsetTop > 0 ? `translateY(${vvOffsetTop}px)` : undefined,
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-            }}
+            className={cn(
+                "flex flex-col overflow-hidden bg-background",
+                // Desktop: sit inside the shell as a centered panel, same max-width
+                // as other pages, with a fixed height so only the message list scrolls.
+                "lg:relative lg:mx-auto lg:my-6 lg:h-[calc(100dvh-8rem)] lg:w-full lg:max-w-3xl lg:rounded-2xl lg:border lg:border-border",
+            )}
+            style={
+                typeof window !== "undefined" && window.innerWidth < 1024
+                    ? {
+                        height: vvHeight > 0 ? `${vvHeight}px` : "100dvh",
+                        transform:
+                            vvOffsetTop > 0
+                                ? `translateY(${vvOffsetTop}px)`
+                                : undefined,
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                    }
+                    : undefined
+            }
         >
             <header className="relative z-30 shrink-0 bg-background">
                 <div className="mx-auto flex max-w-3xl items-center gap-2 sm:gap-3 px-2 sm:px-2 py-2.5 sm:py-3">

@@ -57,6 +57,17 @@ export type DeliveryType = "vaginal" | "cesarean";
 export type AuditAction = "insert" | "update" | "delete" | "lock";
 export type AuditActorRole = "client" | "caregiver" | "admin" | "unknown";
 
+// ---- Hospital referral layer enums ----
+export type HospitalRole =
+    | "doctor" | "nurse" | "discharge_officer"
+    | "social_worker" | "admin" | "staff";
+
+export type ReferralStatus =
+    | "pending" | "accepted" | "declined" | "expired" | "converted";
+
+export type ReferralServiceType =
+    | "home_nursing" | "wound_care" | "medication_admin" | "physiotherapy"
+    | "elderly_care" | "postnatal" | "transport" | "lab_delivery" | "other";
 export type Profile = {
     id: string;
     role: UserRole;
@@ -315,7 +326,6 @@ export type Review = {
     comment: string | null;
     created_at: string;
 };
-
 export type Notification = {
     id: string;
     user_id: string;
@@ -323,10 +333,10 @@ export type Notification = {
     body: string | null;
     type: string | null;
     link: string | null;
+    thread_id: string | null;   // ← ADD
     is_read: boolean;
     created_at: string;
 };
-
 export type CpdEvent = {
     id: string;
     caregiver_id: string;
@@ -970,6 +980,109 @@ export type Report = {
 };
 
 // ============================================================
+// HOSPITAL REFERRAL LAYER
+// ============================================================
+
+export type Hospital = {
+    id: string;
+    name: string;
+    county: string | null;
+    city: string | null;
+    physical_address: string | null;
+    contact_phone: string | null;
+    contact_email: string | null;
+    mfl_code: string | null;
+    verified: boolean;
+    verified_at: string | null;
+    verified_by: string | null;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+};
+
+export type HospitalMember = {
+    id: string;
+    hospital_id: string;
+    user_id: string;
+    role: HospitalRole;
+    title: string | null;
+    license_number: string | null;
+    is_active: boolean;
+    joined_at: string;
+    updated_at: string;
+};
+
+export type Referral = {
+    id: string;
+    hospital_id: string;
+    referring_member_id: string;
+    referring_user_id: string;
+    patient_phone: string;
+    patient_name: string | null;
+    patient_user_id: string | null;
+    services_needed: ReferralServiceType[];
+    urgency: string;
+    recommended_start_date: string | null;
+    recommended_end_date: string | null;
+    note_to_patient: string | null;
+    note_to_caregiver: string | null;
+    status: ReferralStatus;
+    consent_sent_at: string | null;
+    consent_granted_at: string | null;
+    declined_at: string | null;
+    expires_at: string;
+    converted_booking_id: string | null;
+    converted_at: string | null;
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+};
+
+export type CareTeamThread = {
+    id: string;
+    referral_id: string;
+    client_id: string;
+    caregiver_id: string | null;
+    hospital_id: string;
+    created_by: string;
+    is_archived: boolean;
+    expires_at: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type CareTeamMessage = {
+    id: string;
+    thread_id: string;
+    sender_id: string;
+    sender_role: string;
+    body: string | null;
+    attachment_url: string | null;
+    reply_to_id: string | null;
+    edited_at: string | null;
+    created_at: string;
+    deleted_at: string | null;
+};
+
+export type CareTeamAttachment = {
+    id: string;
+    message_id: string;
+    thread_id: string;
+    uploader_id: string;
+    kind: "image" | "video";
+    cloudinary_public_id: string;
+    cloudinary_url: string;
+    mime_type: string | null;
+    bytes: number | null;
+    width: number | null;
+    height: number | null;
+    duration_seconds: number | null;
+    position: number;
+    created_at: string;
+    deleted_at: string | null;
+};
+// ============================================================
 // Supabase Database shape
 // ============================================================
 export type Database = {
@@ -1024,6 +1137,13 @@ export type Database = {
             chat_connection_settings: { Row: ChatConnectionSettings; Insert: Partial<ChatConnectionSettings>; Update: Partial<ChatConnectionSettings> };
             reports: { Row: Report; Insert: Partial<Report>; Update: Partial<Report> };
 
+            // ---- Hospital referral layer ----
+            hospitals: { Row: Hospital; Insert: Partial<Hospital>; Update: Partial<Hospital> };
+            hospital_members: { Row: HospitalMember; Insert: Partial<HospitalMember>; Update: Partial<HospitalMember> };
+            referrals: { Row: Referral; Insert: Partial<Referral>; Update: Partial<Referral> };
+            care_team_threads: { Row: CareTeamThread; Insert: Partial<CareTeamThread>; Update: Partial<CareTeamThread> };
+            care_team_messages: { Row: CareTeamMessage; Insert: Partial<CareTeamMessage>; Update: Partial<CareTeamMessage> };
+            care_team_attachments: { Row: CareTeamAttachment; Insert: Partial<CareTeamAttachment>; Update: Partial<CareTeamAttachment> };
         };
         Views: {
             caregiver_discovery_view: { Row: CaregiverDiscoveryRow };
@@ -1042,6 +1162,9 @@ export type Database = {
             cpd_source: CpdSource;
             verification_status: VerificationStatus;
             visit_type: VisitType;
+            hospital_role: HospitalRole;
+            referral_status: ReferralStatus;
+            referral_service_type: ReferralServiceType;
         };
     };
 };

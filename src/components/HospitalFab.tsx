@@ -21,7 +21,7 @@ export function DashboardActionFab() {
     const isCaregiver = user?.role === "caregiver";
     const isClient = user?.role === "client";
 
-    // For clients: do they have any care-team thread? (client_id = me)
+    // For clients: do they have any care-team thread?
     const { data: hasThread, isLoading: threadLoading } = useQuery({
         queryKey: ["care-team-thread-exists", user?.id],
         enabled: !!user && isClient,
@@ -35,6 +35,25 @@ export function DashboardActionFab() {
             return (count ?? 0) > 0;
         },
     });
+
+    // Unread care team notifications count.
+    const { data: unreadCount } = useQuery({
+        queryKey: ["notifications", "unread_care_team", user?.id],
+        enabled: !!user && isClient,
+        staleTime: 30_000,
+        queryFn: async () => {
+            const { count, error } = await supabase
+                .from("notifications")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", user!.id)
+                .eq("type", "care_team_message")
+                .eq("is_read", false);
+            if (error) return 0;
+            return count ?? 0;
+        },
+    });
+
+    const unread = unreadCount ?? 0;
 
     const onDashboard = SHOW_ON.some(
         (p) => pathname === p || pathname.startsWith(p + "/")
@@ -65,7 +84,7 @@ export function DashboardActionFab() {
         );
     }
 
-    // ---------- CLIENT: care-team FAB, but only if they have a thread ----------
+    // ---------- CLIENT: care-team FAB, only if they have a thread ----------
     if (isClient) {
         if (threadLoading) return null;
         if (!hasThread) return null;
@@ -85,6 +104,11 @@ export function DashboardActionFab() {
                 )}
             >
                 <Users className="h-6 w-6" />
+                {unread > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold inline-flex items-center justify-center ring-2 ring-background">
+                        {unread > 99 ? "99+" : unread}
+                    </span>
+                )}
             </Link>,
             document.body
         );

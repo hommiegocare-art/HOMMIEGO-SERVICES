@@ -2,8 +2,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ChatAttachment } from "@/hooks/useChatWindow";
-
+export type ViewerAttachment = {
+    id: string;
+    kind: "image" | "video";
+    url: string;
+    publicId: string;
+    mimeType: string | null;
+    bytes: number | null;
+    width: number | null;
+    height: number | null;
+    durationSeconds: number | null;
+    position: number;
+};
 const SWIPE_THRESHOLD_PX = 60;
 
 export function AttachmentViewer({

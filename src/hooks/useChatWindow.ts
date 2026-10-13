@@ -13,7 +13,8 @@ export type TtlOption =
     | 21600
     | 86400
     | 604800
-    | -1;
+    | -1
+    | 0; // never expire
 
 export type AttachmentKind = "image" | "video";
 
@@ -70,7 +71,8 @@ export interface ChatWindowMeta {
 
 const PAGE_SIZE = 50;
 const UNTIL_READ_TTL = 300;
-
+const NEVER_EXPIRES_ISO = "9999-12-31T00:00:00.000Z";
+const NEVER_TTL_SENTINEL = -2;
 const MESSAGE_SELECT = `
   id,
   connection_id,
@@ -158,6 +160,7 @@ function resolveTtlSeconds(
     perMessage: TtlOption | null,
     connectionDefault: number | null,
 ): number {
+    if (perMessage === 0) return NEVER_TTL_SENTINEL;
     if (perMessage === -1) return UNTIL_READ_TTL;
     if (typeof perMessage === "number" && perMessage > 0) return perMessage;
     if (typeof connectionDefault === "number" && connectionDefault > 0) {
@@ -165,7 +168,6 @@ function resolveTtlSeconds(
     }
     return 86400;
 }
-
 export interface PendingAttachmentInput {
     file: File;
     kind: AttachmentKind;
@@ -399,9 +401,11 @@ export function useChatWindow(
                 metaQuery.data?.defaultTtlSeconds ?? null,
             );
             const now = new Date();
-            const messageExpiresAt = new Date(
-                now.getTime() + ttlSeconds * 1000,
-            ).toISOString();
+            const messageExpiresAt =
+                ttlSeconds === NEVER_TTL_SENTINEL
+                    ? NEVER_EXPIRES_ISO
+                    : new Date(now.getTime() + ttlSeconds * 1000).toISOString();
+            const dbTtlSeconds = ttlSeconds === NEVER_TTL_SENTINEL ? null : ttlSeconds;
 
             const parent = replyToId
                 ? serverMessages.find((m) => m.id === replyToId) ?? null
@@ -437,7 +441,7 @@ export function useChatWindow(
                         connection_id: connectionId,
                         sender_id: user.id,
                         body: trimmed,
-                        ttl_seconds: ttlSeconds,
+                        ttl_seconds: dbTtlSeconds,
                         expires_at: messageExpiresAt,
                         reply_to_id: replyToId ?? null,
                     })
@@ -506,15 +510,16 @@ export function useChatWindow(
             if (sessionExpiresAt - Date.now() / 1000 < 60) {
                 await supabase.auth.refreshSession();
             }
-
             const ttlSeconds = resolveTtlSeconds(
                 ttl,
                 metaQuery.data?.defaultTtlSeconds ?? null,
             );
             const now = new Date();
-            const messageExpiresAt = new Date(
-                now.getTime() + ttlSeconds * 1000,
-            ).toISOString();
+            const messageExpiresAt =
+                ttlSeconds === NEVER_TTL_SENTINEL
+                    ? NEVER_EXPIRES_ISO
+                    : new Date(now.getTime() + ttlSeconds * 1000).toISOString();
+            const dbTtlSeconds = ttlSeconds === NEVER_TTL_SENTINEL ? null : ttlSeconds;
 
             const parent = replyToId
                 ? serverMessages.find((m) => m.id === replyToId) ?? null
@@ -577,7 +582,7 @@ export function useChatWindow(
                         connection_id: connectionId,
                         sender_id: user.id,
                         body: caption.trim() || null,
-                        ttl_seconds: ttlSeconds,
+                        ttl_seconds: dbTtlSeconds,
                         expires_at: messageExpiresAt,
                         reply_to_id: replyToId ?? null,
                     })

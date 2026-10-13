@@ -37,6 +37,17 @@ async function hasAnyHospitalMembership(userId: string): Promise<boolean> {
   return (count ?? 0) > 0;
 }
 
+async function unreadCareTeamCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("type", "care_team_message")
+    .eq("is_read", false);
+  if (error) return 0;
+  return count ?? 0;
+}
+
 export function BottomNav() {
   const { user } = useSession();
   const { isVerifier } = useAdmin();
@@ -55,6 +66,7 @@ export function BottomNav() {
     staleTime: 5 * 60_000,
     queryFn: () => hasAnyHospitalMembership(user!.id),
   });
+
   const threadsQuery = useQuery({
     queryKey: ["care_team_threads", "has_any", user?.id],
     enabled: !!user,
@@ -67,9 +79,19 @@ export function BottomNav() {
       return (count ?? 0) > 0;
     },
   });
+
+  const unreadQuery = useQuery({
+    queryKey: ["notifications", "unread_care_team", user?.id],
+    enabled: !!user,
+    staleTime: 30_000,
+    queryFn: () => unreadCareTeamCount(user!.id),
+  });
+
   const isStaff = membershipQuery.data === true;
   const hasThreads = threadsQuery.data === true;
   const showCareTeams = isStaff || hasThreads;
+  const unreadCareTeams = unreadQuery.data ?? 0;
+
   // Tabs — Health only for clients
   const TABS = isCaregiver
     ? [
@@ -85,40 +107,53 @@ export function BottomNav() {
       { to: "/connections", label: "Connect", icon: Users },
     ];
 
-  const MORE = [
-    ...(isCaregiver
-      ? [{ to: "/services", label: "Services", icon: Briefcase }]
-      : [{ to: "/bookings", label: "Bookings", icon: CalendarCheck }]),
+  const MORE: {
+    to: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number;
+  }[] = [
+      ...(isCaregiver
+        ? [{ to: "/services", label: "Services", icon: Briefcase }]
+        : [{ to: "/bookings", label: "Bookings", icon: CalendarCheck }]),
 
-    // Hospital referral layer — staff only (hospital members).
-    ...(isStaff
-      ? [
-        { to: "/referrals", label: "Referrals", icon: Stethoscope },
-        { to: "/hospital/join", label: "Hospitals", icon: Building2 },
-      ]
-      : []),
+      // Hospital referral layer — staff only (hospital members).
+      ...(isStaff
+        ? [
+          { to: "/referrals", label: "Referrals", icon: Stethoscope },
+          { to: "/hospital/join", label: "Hospitals", icon: Building2 },
+        ]
+        : []),
 
-    ...(showCareTeams
-      ? [{ to: "/care-teams", label: "Care teams", icon: MessageSquare }]
-      : []),
-    { to: "/notifications", label: "Notifications", icon: Bell },
+      ...(showCareTeams
+        ? [
+          {
+            to: "/care-teams",
+            label: "Care teams",
+            icon: MessageSquare,
+            badge: unreadCareTeams,
+          },
+        ]
+        : []),
 
-    ...(isCaregiver
-      ? [
-        { to: "/earnings", label: "Earnings", icon: Wallet },
-        { to: "/cpd", label: "CPD", icon: Award },
-        { to: "/certificates", label: "Certificates", icon: GraduationCap },
-      ]
-      : []),
+      { to: "/notifications", label: "Notifications", icon: Bell },
 
-    { to: user ? `/profile/${user.id}` : "/auth", label: "Profile", icon: User },
-    { to: "/settings", label: "Settings", icon: Settings },
+      ...(isCaregiver
+        ? [
+          { to: "/earnings", label: "Earnings", icon: Wallet },
+          { to: "/cpd", label: "CPD", icon: Award },
+          { to: "/certificates", label: "Certificates", icon: GraduationCap },
+        ]
+        : []),
 
-    // Verifiers only
-    ...(isVerifier
-      ? [{ to: "/admin/verifications", label: "Verifications", icon: ShieldCheck }]
-      : []),
-  ];
+      { to: user ? `/profile/${user.id}` : "/auth", label: "Profile", icon: User },
+      { to: "/settings", label: "Settings", icon: Settings },
+
+      // Verifiers only
+      ...(isVerifier
+        ? [{ to: "/admin/verifications", label: "Verifications", icon: ShieldCheck }]
+        : []),
+    ];
 
   return (
     <>
@@ -142,10 +177,15 @@ export function BottomNav() {
           ))}
           <button
             onClick={() => setOpen(true)}
-            className="flex flex-col items-center justify-center gap-1 h-14 transition-colors text-muted-foreground"
+            className="relative flex flex-col items-center justify-center gap-1 h-14 transition-colors text-muted-foreground"
             aria-label="More"
           >
-            <Menu className="w-5 h-5" />
+            <span className="relative">
+              <Menu className="w-5 h-5" />
+              {unreadCareTeams > 0 && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive" />
+              )}
+            </span>
             <span className="text-[10px] font-medium">More</span>
           </button>
         </div>
@@ -163,7 +203,12 @@ function MoreSheet({
 }: {
   open: boolean;
   onClose: () => void;
-  items: { to: string; label: string; icon: React.ComponentType<{ className?: string }> }[];
+  items: {
+    to: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number;
+  }[];
 }) {
   const navigate = useNavigate();
   const [dragY, setDragY] = useState(0);
@@ -256,7 +301,7 @@ function MoreSheet({
         </div>
 
         <ul className="px-3 pb-4 max-h-[60vh] overflow-y-auto">
-          {items.map(({ to, label, icon: Icon }) => (
+          {items.map(({ to, label, icon: Icon, badge }) => (
             <li key={label}>
               <button
                 onClick={() => {
@@ -269,6 +314,11 @@ function MoreSheet({
                   <Icon className="w-4 h-4" />
                 </span>
                 <span className="text-sm font-medium">{label}</span>
+                {badge && badge > 0 ? (
+                  <span className="ml-auto inline-flex items-center justify-center rounded-full bg-destructive/10 text-destructive text-[10px] font-bold px-2 py-0.5">
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                ) : null}
               </button>
             </li>
           ))}

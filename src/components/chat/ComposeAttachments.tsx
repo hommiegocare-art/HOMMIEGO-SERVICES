@@ -2,8 +2,7 @@
 import { useRef, useState } from "react";
 import { Camera, Film, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AttachmentKind } from "@/hooks/useChatWindow";
-
+export type AttachmentKind = "image" | "video";
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_VIDEO_BYTES = 25 * 1024 * 1024; // 25 MB
 const MAX_VIDEO_SECONDS = 60;

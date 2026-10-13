@@ -109,7 +109,14 @@ function isPublicReferralRoute(path: string) {
 // Chat detail pages and the care team thread must NOT sit inside
 // TopBar/BottomNav/main padding, otherwise h-[100dvh] overflows the viewport
 // and the page scrolls.
+// Full-screen routes that render their own chrome (own header + composer).
+// On mobile, chat detail must be bare so the composer stays above the
+// keyboard. On desktop (lg+) we want it inside the normal app shell so the
+// Sidebar/TopBar stay visible, just like every other page.
 function isBareAppRoute(path: string) {
+  if (typeof window === "undefined") return /^\/chats\/[^/]+$/.test(path);
+  const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+  if (isDesktop) return false; // never bare on desktop
   return /^\/chats\/[^/]+$/.test(path);
 }
 
@@ -195,7 +202,7 @@ function Shell() {
             <Route path="/health/insights" element={<HealthInsights />} />
             {/* Chat list — detail pages render bare (see isBareAppRoute). */}
             <Route path="/chats" element={<Chats />} />
-
+            <Route path="/chats/:connectionId" element={<ChatWindow />} />
             {/* Medical */}
             <Route path="/medical/:clientId/exam/new" element={<CaregiverMedicalExam />} />
             <Route path="/medical/:clientId/exam/:visitId" element={<CaregiverMedicalExam />} />

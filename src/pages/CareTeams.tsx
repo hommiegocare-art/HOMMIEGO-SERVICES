@@ -37,6 +37,14 @@ type ProfileLite = {
     avatar_url: string | null;
 };
 
+type LastMessage = {
+    thread_id: string;
+    sender_id: string;
+    body: string | null;
+    created_at: string;
+    has_attachment: boolean;
+};
+
 // ---- fetch -----------------------------------------------------------------
 
 async function fetchMyThreads(): Promise<ThreadLite[]> {
@@ -54,6 +62,57 @@ async function fetchMyThreads(): Promise<ThreadLite[]> {
         .limit(100);
     if (error) throw error;
     return (data ?? []) as unknown as ThreadLite[];
+}
+
+async function fetchLastMessages(
+    threadIds: string[]
+): Promise<Map<string, LastMessage>> {
+    if (threadIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+        .from("care_team_messages")
+        .select("thread_id, sender_id, body, created_at, attachment_url")
+        .in("thread_id", threadIds)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(threadIds.length * 4);
+
+    if (error) return new Map();
+
+    const map = new Map<string, LastMessage>();
+    for (const row of data ?? []) {
+        if (!map.has(row.thread_id)) {
+            map.set(row.thread_id, {
+                thread_id: row.thread_id,
+                sender_id: row.sender_id,
+                body: row.body,
+                created_at: row.created_at,
+                has_attachment: !!row.attachment_url,
+            });
+        }
+    }
+    return map;
+}
+
+async function fetchUnreadByThread(
+    userId: string,
+    threadIds: string[]
+): Promise<Map<string, number>> {
+    if (threadIds.length === 0) return new Map();
+    const { data, error } = await supabase
+        .from("notifications")
+        .select("thread_id")
+        .eq("user_id", userId)
+        .eq("type", "care_team_message")
+        .eq("is_read", false)
+        .in("thread_id", threadIds);
+    if (error) return new Map();
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) {
+        if (!row.thread_id) continue;
+        counts.set(row.thread_id, (counts.get(row.thread_id) ?? 0) + 1);
+    }
+    return counts;
 }
 
 async function fetchProfiles(ids: string[]): Promise<Map<string, ProfileLite>> {
@@ -84,6 +143,30 @@ export default function CareTeams() {
 
     const threads = threadsQuery.data ?? [];
 
+    const threadIds = useMemo(() => threads.map((t) => t.id), [threads]);
+    const threadIdsKey = useMemo(
+        () => [...threadIds].sort().join(","),
+        [threadIds]
+    );
+
+    const lastMsgQuery = useQuery({
+        queryKey: ["care_team_last_messages", threadIdsKey],
+        enabled: threadIds.length > 0,
+        staleTime: 30_000,
+        queryFn: () => fetchLastMessages(threadIds),
+    });
+
+    const lastMessages = lastMsgQuery.data ?? new Map<string, LastMessage>();
+
+    const unreadQuery = useQuery({
+        queryKey: ["care_team_unread_by_thread", user?.id, threadIdsKey],
+        enabled: !!user && threadIds.length > 0,
+        staleTime: 30_000,
+        queryFn: () => fetchUnreadByThread(user!.id, threadIds),
+    });
+
+    const unreadByThread = unreadQuery.data ?? new Map<string, number>();
+
     const allProfileIds = useMemo(() => {
         const ids: string[] = [];
         for (const t of threads) {
@@ -91,8 +174,11 @@ export default function CareTeams() {
             if (t.caregiver_id) ids.push(t.caregiver_id);
             if (t.referral?.referring_user_id) ids.push(t.referral.referring_user_id);
         }
+        for (const lm of lastMessages.values()) {
+            ids.push(lm.sender_id);
+        }
         return ids;
-    }, [threads]);
+    }, [threads, lastMessages]);
 
     const profilesQuery = useQuery({
         queryKey: ["care_team_profiles", allProfileIds.sort().join(",")],
@@ -136,9 +222,7 @@ export default function CareTeams() {
                 <h1 className="text-2xl font-black tracking-tight text-foreground">
                     Care teams
                 </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                    {subheading}
-                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">{subheading}</p>
             </header>
 
             {threadsQuery.isLoading ? (
@@ -158,6 +242,8 @@ export default function CareTeams() {
                                         <ThreadCard
                                             thread={t}
                                             profiles={profiles}
+                                            lastMessage={lastMessages.get(t.id) ?? null}
+                                            unread={unreadByThread.get(t.id) ?? 0}
                                             viewerId={user?.id ?? ""}
                                             onOpen={() => navigate(`/care-team/${t.id}`)}
                                         />
@@ -178,6 +264,8 @@ export default function CareTeams() {
                                         <ThreadCard
                                             thread={t}
                                             profiles={profiles}
+                                            lastMessage={lastMessages.get(t.id) ?? null}
+                                            unread={unreadByThread.get(t.id) ?? 0}
                                             viewerId={user?.id ?? ""}
                                             onOpen={() => navigate(`/care-team/${t.id}`)}
                                         />
@@ -197,11 +285,15 @@ export default function CareTeams() {
 function ThreadCard({
     thread,
     profiles,
+    lastMessage,
+    unread,
     viewerId,
     onOpen,
 }: {
     thread: ThreadLite;
     profiles: Map<string, ProfileLite>;
+    lastMessage: LastMessage | null;
+    unread: number;
     viewerId: string;
     onOpen: () => void;
 }) {
@@ -250,19 +342,30 @@ function ThreadCard({
                 : ""
             : "Patient: ";
 
-    const hospitalName = thread.referral?.hospital?.name ?? null;
+    // ---- preview line ----
+    let preview: string;
+    if (lastMessage) {
+        const senderProfile = profiles.get(lastMessage.sender_id);
+        const isMine = lastMessage.sender_id === viewerId;
+        const who = isMine ? "You" : senderProfile?.display_name ?? "Someone";
+        const rawText = (lastMessage.body ?? "").trim();
+        const text = rawText
+            ? rawText.length > 60
+                ? rawText.slice(0, 60) + "…"
+                : rawText
+            : lastMessage.has_attachment
+                ? "Sent an attachment"
+                : "";
+        preview = `${who}: ${text}`;
+    } else {
+        preview = "No messages yet";
+    }
 
-    const urgency = thread.referral?.urgency;
-    const urgencyLabel =
-        urgency === "urgent"
-            ? "Urgent"
-            : urgency === "soon"
-                ? "Within 48h"
-                : null;
+    const whenLabel = lastMessage
+        ? relativeShort(lastMessage.created_at)
+        : relativeShort(thread.created_at);
 
-    const subtitle = hospitalName
-        ? hospitalName + (urgencyLabel ? ` · ${urgencyLabel}` : "")
-        : urgencyLabel ?? "Care team";
+    const hasUnread = unread > 0;
 
     return (
         <button
@@ -283,34 +386,48 @@ function ThreadCard({
                         </span>
                         {titleName}
                     </p>
-                    {closed ? (
+                    {closed && (
                         <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                             Closed
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                            Active
                         </span>
                     )}
                 </div>
 
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {subtitle}
+                <p
+                    className={
+                        "text-xs truncate mt-0.5 " +
+                        (hasUnread
+                            ? "text-foreground font-semibold"
+                            : "text-muted-foreground")
+                    }
+                >
+                    {preview}
                 </p>
 
                 <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        Care team
-                    </span>
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 shrink-0">
                         <Clock className="w-3 h-3" />
-                        {closed ? "Ended" : relativeFuture(thread.expires_at)}
+                        {whenLabel}
                     </span>
+                    {thread.referral?.hospital?.name && (
+                        <span className="inline-flex items-center gap-1 truncate">
+                            <Users className="w-3 h-3 shrink-0" />
+                            <span className="truncate">
+                                {thread.referral.hospital.name}
+                            </span>
+                        </span>
+                    )}
                 </div>
             </div>
 
-            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                {hasUnread && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+                        {unread > 99 ? "99+" : unread}
+                    </span>
+                )}
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </div>
         </button>
     );
 }
@@ -348,11 +465,17 @@ function EmptyState({ body }: { body: string }) {
 
 // ---- helpers ---------------------------------------------------------------
 
-function relativeFuture(iso: string): string {
-    const diff = new Date(iso).getTime() - Date.now();
-    if (diff <= 0) return "ended";
-    const h = Math.floor(diff / 3_600_000);
-    if (h < 24) return `${h}h left`;
+function relativeShort(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60_000);
+    if (m < 1) return "just now";
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
     const d = Math.floor(h / 24);
-    return `${d}d left`;
+    if (d < 30) return `${d}d ago`;
+    return new Date(iso).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+    });
 }
